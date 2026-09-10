@@ -45,6 +45,8 @@ signing.properties
 *.pem
 .env
 .env.*
+google-services.json
+**/google-services.json
 
 # Project-local config & docs (do not push)
 /config/
