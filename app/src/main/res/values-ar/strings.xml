@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">DemoProject</string>
+    <string name="brand_label">Demo</string>
+    <string name="push_channel_messages">الرسائل</string>
+    <string name="push_channel_messages_description">إشعارات الرسائل الجديدة</string>
+    <string name="push_new_message_title">رسالة جديدة</string>
+    <string name="push_new_message_body">لديك رسالة جديدة</string>
+    <string name="push_like_title">إعجاب جديد</string>
+    <string name="push_like_body">أعجب بك شخص ما</string>
+    <string name="payment_generic_error">حدث خطأ ما. يُرجى المحاولة مرة أخرى.</string>
+</resources>

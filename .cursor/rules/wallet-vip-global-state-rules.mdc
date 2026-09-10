@@ -1,0 +1,28 @@
+---
+description: demoproject 金币余额与 VIP 状态全局订阅规则
+alwaysApply: false
+---
+
+# Wallet & VIP Global State Rules
+
+在新增或修改展示金币余额、VIP 状态的页面/弹窗，或任何拉取/变更余额与 VIP 的接口（充值、消费、送礼、开通 VIP、App Init、Billing 验单等）时使用。
+
+## Single Source Of Truth
+
+- VIP：唯一全局来源是 `:platform:data` 的 `VipStatusStore.status`（`StateFlow`）。
+- 金币余额：使用全局可重放快照（目标为 `AccountBalanceStore` 一类 store）；禁止页面私有副本。
+- 禁止各自单独请求后只更新自己的 UI，导致多入口不一致。
+- 任何返回余额或 VIP 字段的接口，在 Repository 成功后必须回写对应全局 store，不能只返回给调用方。
+- 页面 / ViewModel 只能 `collect` 全局快照再合并进 `XxxUiState`；不允许仅依赖一次性接口返回值渲染余额或 VIP。
+- 退出登录随 session 清空清零 store；页面无需自行清理。
+
+## Write Path
+
+- 充值、消费、送礼、通话计费、Billing 验单、VIP 开通/续费等成功路径，必须在对应 Repository（或统一 purchase coordinator）写入全局状态。
+- VIP 验单后可用 `VipStatusStore.markVerifiedOptimistically`；到期文案仍以权威刷新为准。
+- 禁止用无 replay 的事件总线承载余额 / VIP。
+
+## Read Path
+
+- 新的余额 / VIP 展示入口注入全局 store 并订阅 Flow，不要为展示而重复打目录 / Init / 个人主页。
+- App Init 等缓存只保留余额 / VIP 之外的字段；不要再从中读取 coin / isVip 作为展示源。

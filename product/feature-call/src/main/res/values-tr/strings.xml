@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="call_title">Arama</string>
+    <string name="call_label_coordinator_fmt">koordinatör: %1$s</string>
+    <string name="call_media_hint_fmt">CallKit video=%1$s ses=%2$s</string>
+    <string name="call_action_reload_records">Kayıtları Yenile</string>
+    <string name="call_action_start_video">Görüntülü Arama Başlat</string>
+    <string name="call_action_start_voice">Sesli Arama Başlat</string>
+    <string name="call_action_hangup">Kapat</string>
+    <string name="call_status_loading_records">Arama kayıtları yükleniyor…</string>
+    <string name="call_status_loaded_fmt">%1$d yüklendi (daha fazla=%2$s)</string>
+    <string name="call_status_coordinator_missing">CallCoordinator yüklü değil</string>
+    <string name="call_status_resolving_callee">Aranan kişi çözülüyor…</string>
+    <string name="call_status_discover_failed_fmt">keşif başarısız: %1$s</string>
+    <string name="call_status_no_peer">Aranacak keşif kullanıcısı yok</string>
+    <string name="call_status_creating_fmt">Arama oluşturuluyor hedef=%1$s…</string>
+    <string name="call_status_create_failed_fmt">oluşturma başarısız kod=%1$s %2$s</string>
+    <string name="call_status_outgoing_fmt">Giden oda=%1$s kanal=%2$s appIdLen=%3$d</string>
+    <string name="call_status_hangup_fmt">Kapatma istendi durum=%1$s</string>
+    <string name="call_row_fmt">%1$s %2$s/%3$s medya=%4$s fiyat=%5$s</string>
+
+    <string name="call_records_title">Arama Kayıtları</string>
+    <string name="call_records_tab_all">Tümü</string>
+    <string name="call_records_tab_unanswered">Cevapsız</string>
+    <string name="call_records_tab_matches">Eşleşmeler</string>
+    <string name="call_records_empty_title">Henüz görüntülü sohbet yok</string>
+    <string name="call_records_empty_subtitle">Bir sohbet başlatın ve yeni bağlantılar kurun!</string>
+    <string name="call_records_empty_cta">Görüntülü Sohbet Başlat</string>
+    <string name="call_records_retry">Yeniden dene</string>
+    <string name="call_records_cd_video">Görüntülü arama</string>
+    <string name="call_records_cd_loading">Yükleniyor</string>
+    <string name="call_records_nav_match">Eşleşme</string>
+    <string name="call_records_status_missed">Eşleşmeyi kaçırdı</string>
+    <string name="call_records_status_rejected">Eşleşmeyi reddetti</string>
+    <string name="call_records_status_cancelled">Eşleşmeyi iptal etti</string>
+    <string name="call_records_status_match_default">Rastgele eşleşme</string>
+</resources>

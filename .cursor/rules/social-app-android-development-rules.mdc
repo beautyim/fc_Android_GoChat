@@ -1,0 +1,42 @@
+---
+description: demoproject 核心规则，保持默认上下文精简
+alwaysApply: true
+---
+
+# demoproject Core Rules
+
+这些规则每轮都会进入上下文，只保留跨任务都必须遵守的底线。细分规则按任务需要读取。
+
+## 项目身份
+
+- 包名前缀统一 `com.example.demoproject`；`applicationId` 由 `config/app.properties` 经 `BrandConfig` 注入。
+- 密钥与环境值放 `config/*.local.properties`（gitignored），不要写进源码或已跟踪的 `*.properties`。
+- 版本号集中在 `gradle/libs.versions.toml`，不要在模块内散落写依赖版本。
+
+## 架构底线
+
+- 分层：`:app`（壳/导航/应用级 DI）→ `:product:feature-*`（业务 UI）→ `:platform:*`（网络/数据/RTC/MQTT 等）→ `:ui:*`（token/主题）。
+- 优先复用现有 `platform/*` 与 `ui/*`，避免在 `app` 或 feature 里重复实现网络、Room、RTC、签名加密、设计 token。
+- 默认架构：单 Activity + Navigation Compose + Hilt + ViewModel + StateFlow。
+- 页面 UDF：`<Feature>UiState` + `<Feature>Intent` + `<Feature>Effect`（通常放在 `*Contract.kt`）+ ViewModel。
+- Repository 在 `:platform:data`，返回 domain model；不把 DTO、envelope 或后端临时字段暴露给 UI。
+
+## UI 与文案底线
+
+- 页面优先复用 `:ui:foundation`、`:ui:designsystem` 的 token 与主题（`DemoBrandThemes`）。
+- Figma 数值只是基准画板下的表现：布局用 `fillMaxWidth` / `weight` / `widthIn` / `aspectRatio` + `WindowInsets` 求解，固定 dp 只描述元素自身尺寸；禁止整屏固定高、`offset` 抄坐标、按屏宽等比缩放。
+- 新增通用视觉 token 先下沉到对应 `ui` 模块；尚无 `:ui:components` / `:ui:social` 时，可复用控件先放 `designsystem`，不要长期堆在 feature 私有实现。
+- 用户可见文案必须资源化；上线相关页面同步维护 `values`、`values-en`、`values-tr`、`values-es`、`values-pt`、`values-ar`。
+- Figma / 组件细则见 `figma-ui-implementation-rules.mdc`；IME 见 `kotlin-compose-conventions.mdc`。
+
+## 安全与发布底线
+
+- 敏感偏好、session token、数据库 passphrase 不得明文落地。
+- Debug 可保留排查日志；Release 必须关闭 BODY / packet 明文日志并脱敏 token、uid、手机号、邮箱、签名密钥、数据库密钥、RTC token。
+- 涉及数据库、网络协议、上传、RTC、Billing、混淆时，按需读取对应细则并扩大验证范围。
+
+## 默认工作方式
+
+- 每次任务先限定范围，避免默认读取 `build/`、`.gradle/`、`intermediates/`、`outputs/`。
+- 合入前至少验证相关模块；完整交付时再跑 `:app:assembleDebug` 与相关单测。
+- 提交信息说明“为什么改”，不要长期使用 `fix bug`、`adjust`。

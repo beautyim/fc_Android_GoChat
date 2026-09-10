@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="home_online_title">Çevrimiçi</string>
+    <string name="home_online_filter_all">Tümü</string>
+    <string name="home_online_filter_new">Yeni</string>
+    <string name="home_online_filter_following">Takip</string>
+    <string name="home_online_filter_popular">Popüler</string>
+    <string name="home_online_filter_english">İngilizce</string>
+    <string name="home_online_filter_spanish">İspanyolca</string>
+    <string name="home_online_filter_portuguese">Portekizce</string>
+    <string name="home_online_status_online">Çevrimiçi</string>
+    <string name="home_online_status_chatting">Sohbet ediyor…</string>
+    <string name="home_online_status_offline">Çevrimdışı</string>
+    <string name="home_online_free">ÜCRETSİZ</string>
+    <string name="home_online_empty">Henüz kimse yok</string>
+    <string name="home_online_retry">Yeniden dene</string>
+    <string name="home_online_report_coming_soon">Şikayet yakında gelecek</string>
+    <string name="home_online_cd_report">Şikayet et</string>
+    <string name="home_online_cd_message">Mesaj</string>
+    <string name="home_online_cd_video">Görüntülü arama</string>
+    <string name="home_nav_match">Eşleşme</string>
+    <string name="home_online_cd_loading">Yükleniyor</string>
+</resources>
+

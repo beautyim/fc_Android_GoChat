@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="me_title">ملفي</string>
+    <string name="me_age_suffix_fmt">، %1$d</string>
+    <string name="me_followers">المتابعون</string>
+    <string name="me_following">أتابع</string>
+    <string name="me_balance_label">رصيدي</string>
+    <string name="me_add_coins">إضافة عملات</string>
+    <string name="me_vip_title">عضوية VIP</string>
+    <string name="me_vip_not_member">لست عضو VIP</string>
+    <string name="me_vip_expiry">تاريخ الانتهاء: %1$s</string>
+    <string name="me_menu_profile">الملف الشخصي</string>
+    <string name="me_menu_gift">هدية</string>
+    <string name="me_menu_verify">التحقق من شخص حقيقي</string>
+    <string name="me_menu_settings">الإعدادات</string>
+    <string name="me_retry">إعادة المحاولة</string>
+    <string name="me_nav_match">مطابقة</string>
+    <string name="me_cd_avatar">الصورة الشخصية</string>
+    <string name="me_cd_camera">تعديل الصورة</string>
+    <string name="me_cd_loading">جارٍ التحميل</string>
+    <string name="me_message_camera_soon">تعديل الصورة قادم قريبًا</string>
+    <string name="me_message_vip_soon">VIP قادم قريبًا</string>
+    <string name="me_message_gift_soon">الهدايا قادمة قريبًا</string>
+    <string name="me_message_verify_soon">التحقق قادم قريبًا</string>
+    <string name="me_message_settings_soon">الإعدادات قادمة قريبًا</string>
+    <string name="me_message_profile_soon">الملف الشخصي قادم قريبًا</string>
+</resources>

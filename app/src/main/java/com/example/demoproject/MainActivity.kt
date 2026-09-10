@@ -1,0 +1,437 @@
+package com.example.demoproject
+
+import android.Manifest
+import android.app.Activity
+import android.app.Application
+import android.content.Intent
+import android.os.Build
+import android.os.Bundle
+import android.provider.Settings
+import android.widget.Toast
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.Surface
+import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
+import androidx.compose.material3.windowsizeclass.WindowHeightSizeClass
+import androidx.compose.material3.windowsizeclass.WindowSizeClass
+import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
+import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavHostController
+import androidx.navigation.NavType
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
+import com.example.demoproject.BuildConfig
+import com.example.demoproject.platform.data.model.Session
+import com.example.demoproject.platform.data.network.NetworkRuntime
+import com.example.demoproject.platform.data.session.SessionManager
+import com.example.demoproject.product.auth.AuthScreen
+import com.example.demoproject.product.auth.AuthViewModel
+import com.example.demoproject.product.call.CallRecordsEffect
+import com.example.demoproject.product.call.CallRecordsScreen
+import com.example.demoproject.product.call.CallRecordsViewModel
+import com.example.demoproject.product.call.CallScreen
+import com.example.demoproject.product.call.CallViewModel
+import com.example.demoproject.product.chat.ChatDetailScreen
+import com.example.demoproject.product.chat.ChatDetailViewModel
+import com.example.demoproject.product.chat.ChatListIntent
+import com.example.demoproject.product.chat.ChatListScreen
+import com.example.demoproject.product.chat.ChatListViewModel
+import com.example.demoproject.product.home.HomeEffect
+import com.example.demoproject.product.home.HomeScreen
+import com.example.demoproject.product.home.HomeViewModel
+import com.example.demoproject.product.match.MatchScreen
+import com.example.demoproject.product.match.MatchViewModel
+import com.example.demoproject.product.me.MeEffect
+import com.example.demoproject.product.me.MeScreen
+import com.example.demoproject.product.me.MeViewModel
+import com.example.demoproject.product.profile.ProfileScreen
+import com.example.demoproject.product.profile.ProfileViewModel
+import com.example.demoproject.product.store.StoreScreen
+import com.example.demoproject.product.store.StoreViewModel
+import com.example.demoproject.ui.designsystem.DemoTheme
+import com.example.demoproject.ui.foundation.DemoWindowSize
+import com.example.demoproject.ui.foundation.ProvideWindowSize
+import com.example.demoproject.ui.foundation.WindowHeightClass
+import com.example.demoproject.ui.foundation.WindowWidthClass
+import java.net.URLDecoder
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
+
+object DemoRoutes {
+    const val Home = "home"
+    const val Auth = "auth"
+    const val Chat = "chat"
+    const val ChatDetail = "chat/detail/{conversationId}/{nickname}"
+    const val Match = "match"
+    const val Call = "call"
+    const val CallRecords = "call-records"
+    const val Store = "store"
+    const val Profile = "profile"
+    const val ProfileUser = "profile/user/{userId}"
+
+    fun chatDetail(conversationId: String, nickname: String): String {
+        val id = URLEncoder.encode(conversationId, StandardCharsets.UTF_8.toString())
+        val name = URLEncoder.encode(nickname.ifBlank { "_" }, StandardCharsets.UTF_8.toString())
+        return "chat/detail/$id/$name"
+    }
+
+    fun profileUser(externalUserId: String): String {
+        val id = URLEncoder.encode(externalUserId, StandardCharsets.UTF_8.toString())
+        return "profile/user/$id"
+    }
+}
+
+class MainActivity : ComponentActivity() {
+    @OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
+        setContent {
+            ProvideWindowSize(calculateWindowSizeClass(this).toDemoWindowSize()) {
+                DemoTheme {
+                    Surface(modifier = Modifier.fillMaxSize()) {
+                        DemoNavHost()
+                    }
+                }
+            }
+        }
+    }
+}
+
+/** Collapse Material's experimental size classes into `:ui:foundation` types for feature code. */
+@OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
+private fun WindowSizeClass.toDemoWindowSize(): DemoWindowSize = DemoWindowSize(
+    widthClass = when (widthSizeClass) {
+        WindowWidthSizeClass.Compact -> WindowWidthClass.Compact
+        WindowWidthSizeClass.Medium -> WindowWidthClass.Medium
+        else -> WindowWidthClass.Expanded
+    },
+    heightClass = when (heightSizeClass) {
+        WindowHeightSizeClass.Compact -> WindowHeightClass.Compact
+        WindowHeightSizeClass.Medium -> WindowHeightClass.Medium
+        else -> WindowHeightClass.Expanded
+    },
+)
+
+@Composable
+private fun DemoNavHost() {
+    val app = LocalContext.current.applicationContext as Application
+    val context = LocalContext.current
+    val sessionManager = remember(app) { NetworkRuntime.get(app).sessionManager }
+    var startDestination by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(sessionManager) {
+        val session = sessionManager.awaitInitialHydration()
+        startDestination = if (session != null) DemoRoutes.Home else DemoRoutes.Auth
+    }
+
+    val destination = startDestination ?: return
+
+    val navController = rememberNavController()
+    val factory = remember(app) {
+        object : ViewModelProvider.Factory {
+            @Suppress("UNCHECKED_CAST")
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                return when {
+                    modelClass.isAssignableFrom(HomeViewModel::class.java) -> HomeViewModel(app) as T
+                    modelClass.isAssignableFrom(AuthViewModel::class.java) -> AuthViewModel(app) as T
+                    modelClass.isAssignableFrom(ChatListViewModel::class.java) -> ChatListViewModel(app) as T
+                    modelClass.isAssignableFrom(MatchViewModel::class.java) -> MatchViewModel(app) as T
+                    modelClass.isAssignableFrom(CallViewModel::class.java) -> CallViewModel(app) as T
+                    modelClass.isAssignableFrom(CallRecordsViewModel::class.java) -> CallRecordsViewModel(app) as T
+                    modelClass.isAssignableFrom(StoreViewModel::class.java) -> StoreViewModel(app) as T
+                    modelClass.isAssignableFrom(MeViewModel::class.java) -> MeViewModel(app) as T
+                    modelClass.isAssignableFrom(ProfileViewModel::class.java) -> ProfileViewModel(app) as T
+                    else -> error("Unknown ViewModel: ${modelClass.name}")
+                }
+            }
+        }
+    }
+
+    LaunchedEffect(navController, sessionManager) {
+        observeSessionNavigation(navController, sessionManager)
+    }
+
+    NavHost(navController = navController, startDestination = destination) {
+        composable(DemoRoutes.Home) {
+            val vm: HomeViewModel = viewModel(factory = factory)
+            val state by vm.uiState.collectAsStateWithLifecycle()
+            LaunchedEffect(vm) {
+                vm.effects.collect { effect ->
+                    when (effect) {
+                        is HomeEffect.OpenProfile -> {
+                            navController.navigate(DemoRoutes.profileUser(effect.externalUserId))
+                        }
+                        is HomeEffect.OpenChatDetail -> {
+                            navController.navigate(
+                                DemoRoutes.chatDetail(effect.conversationId, effect.nickname),
+                            )
+                        }
+                        is HomeEffect.StartVideoCall -> {
+                            navController.navigate(DemoRoutes.Call)
+                        }
+                        HomeEffect.OpenStore -> navController.navigate(DemoRoutes.Store)
+                        is HomeEffect.ShowMessage -> {
+                            Toast.makeText(context, effect.message, Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                }
+            }
+            HomeScreen(
+                state = state,
+                onIntent = vm::onIntent,
+                onNavigateTab = { route ->
+                    navigateMainTab(navController, route)
+                },
+            )
+        }
+        composable(DemoRoutes.CallRecords) {
+            val vm: CallRecordsViewModel = viewModel(factory = factory)
+            val state by vm.uiState.collectAsStateWithLifecycle()
+            LaunchedEffect(vm) {
+                vm.effects.collect { effect ->
+                    when (effect) {
+                        is CallRecordsEffect.OpenProfile -> {
+                            navController.navigate(DemoRoutes.profileUser(effect.externalUserId))
+                        }
+                        is CallRecordsEffect.StartVideoCall -> {
+                            navController.navigate(DemoRoutes.Call)
+                        }
+                        CallRecordsEffect.OpenStore -> navController.navigate(DemoRoutes.Store)
+                        CallRecordsEffect.OpenMatch -> navController.navigate(DemoRoutes.Match)
+                        is CallRecordsEffect.ShowMessage -> {
+                            Toast.makeText(context, effect.message, Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                }
+            }
+            CallRecordsScreen(
+                state = state,
+                onIntent = vm::onIntent,
+                onNavigateTab = { route ->
+                    navigateMainTab(navController, route)
+                },
+            )
+        }
+        composable(DemoRoutes.Auth) {
+            val vm: AuthViewModel = viewModel(factory = factory)
+            AuthScreen(
+                viewModel = vm,
+                onBack = {
+                    if (!navController.popBackStack()) {
+                        (context as? Activity)?.finish()
+                    }
+                },
+                termsUrl = BuildConfig.TERMS_URL,
+                privacyUrl = BuildConfig.PRIVACY_URL,
+            )
+        }
+        composable(DemoRoutes.Chat) {
+            val vm: ChatListViewModel = viewModel(factory = factory)
+            val activity = context as ComponentActivity
+            val notificationPermissionLauncher = rememberLauncherForActivityResult(
+                ActivityResultContracts.RequestPermission(),
+            ) {
+                vm.onIntent(ChatListIntent.NotificationPermissionResult)
+            }
+            ChatListScreen(
+                viewModel = vm,
+                onNavigateTab = { route -> navigateMainTab(navController, route) },
+                onOpenChatDetail = { conversationId, nickname ->
+                    navController.navigate(DemoRoutes.chatDetail(conversationId, nickname))
+                },
+                onOpenHome = { navigateMainTab(navController, "home") },
+                onRequestNotificationPermission = {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                    } else {
+                        activity.startActivity(
+                            Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+                                putExtra(Settings.EXTRA_APP_PACKAGE, activity.packageName)
+                            },
+                        )
+                        vm.onIntent(ChatListIntent.NotificationPermissionResult)
+                    }
+                },
+            )
+        }
+        composable(
+            route = DemoRoutes.ChatDetail,
+            arguments = listOf(
+                navArgument("conversationId") { type = NavType.StringType },
+                navArgument("nickname") { type = NavType.StringType },
+            ),
+        ) { entry ->
+            val conversationId = URLDecoder.decode(
+                entry.arguments?.getString("conversationId").orEmpty(),
+                StandardCharsets.UTF_8.toString(),
+            )
+            val nicknameRaw = URLDecoder.decode(
+                entry.arguments?.getString("nickname").orEmpty(),
+                StandardCharsets.UTF_8.toString(),
+            )
+            val nickname = nicknameRaw.takeUnless { it == "_" }.orEmpty()
+            val chatDetailFactory = remember(app, conversationId, nickname) {
+                object : ViewModelProvider.Factory {
+                    @Suppress("UNCHECKED_CAST")
+                    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                        require(modelClass.isAssignableFrom(ChatDetailViewModel::class.java))
+                        return ChatDetailViewModel(
+                            application = app,
+                            conversationId = conversationId,
+                            initialNickname = nickname,
+                        ) as T
+                    }
+                }
+            }
+            val chatDetailVm: ChatDetailViewModel = viewModel(
+                key = "chat-detail-$conversationId",
+                factory = chatDetailFactory,
+            )
+            ChatDetailScreen(
+                viewModel = chatDetailVm,
+                onBack = { navController.popBackStack() },
+                onOpenPeerProfile = { externalUserId ->
+                    navController.navigate(DemoRoutes.profileUser(externalUserId))
+                },
+                onStartVideoCall = {
+                    navController.navigate(DemoRoutes.Call)
+                },
+                onOpenStore = { navController.navigate(DemoRoutes.Store) },
+            )
+        }
+        composable(DemoRoutes.Match) {
+            val vm: MatchViewModel = viewModel(factory = factory)
+            MatchScreen(viewModel = vm, onBack = { navController.popBackStack() })
+        }
+        composable(DemoRoutes.Call) {
+            val vm: CallViewModel = viewModel(factory = factory)
+            CallScreen(viewModel = vm, onBack = { navController.popBackStack() })
+        }
+        composable(DemoRoutes.Store) {
+            val vm: StoreViewModel = viewModel(factory = factory)
+            StoreScreen(viewModel = vm, onBack = { navController.popBackStack() })
+        }
+        composable(DemoRoutes.Profile) {
+            val vm: MeViewModel = viewModel(factory = factory)
+            val state by vm.uiState.collectAsStateWithLifecycle()
+            LaunchedEffect(vm) {
+                vm.effects.collect { effect ->
+                    when (effect) {
+                        is MeEffect.OpenPublicProfile -> {
+                            navController.navigate(DemoRoutes.profileUser(effect.externalUserId))
+                        }
+                        MeEffect.OpenStore -> navController.navigate(DemoRoutes.Store)
+                        is MeEffect.ShowMessage -> {
+                            Toast.makeText(context, effect.message, Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                }
+            }
+            MeScreen(
+                state = state,
+                onIntent = vm::onIntent,
+                onNavigateTab = { route -> navigateMainTab(navController, route) },
+            )
+        }
+        composable(
+            route = DemoRoutes.ProfileUser,
+            arguments = listOf(
+                navArgument("userId") { type = NavType.StringType },
+            ),
+        ) { entry ->
+            val userId = URLDecoder.decode(
+                entry.arguments?.getString("userId").orEmpty(),
+                StandardCharsets.UTF_8.toString(),
+            )
+            val userProfileFactory = remember(app, userId) {
+                object : ViewModelProvider.Factory {
+                    @Suppress("UNCHECKED_CAST")
+                    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                        require(modelClass.isAssignableFrom(ProfileViewModel::class.java))
+                        return ProfileViewModel(app, externalUserId = userId) as T
+                    }
+                }
+            }
+            val vm: ProfileViewModel = viewModel(
+                key = "profile-user-$userId",
+                factory = userProfileFactory,
+            )
+            ProfileScreen(
+                viewModel = vm,
+                onBack = { navController.popBackStack() },
+                onOpenStore = { navController.navigate(DemoRoutes.Store) },
+            )
+        }
+    }
+}
+
+private fun navigateMainTab(navController: NavHostController, route: String) {
+    val destination = when (route) {
+        "home" -> DemoRoutes.Home
+        "feed", "call-records" -> DemoRoutes.CallRecords
+        "match" -> DemoRoutes.Match
+        "chat" -> DemoRoutes.Chat
+        "profile" -> DemoRoutes.Profile
+        else -> route
+    }
+    val current = navController.currentDestination?.route
+    if (current == destination) return
+    if (destination == DemoRoutes.Home) {
+        navController.popBackStack(DemoRoutes.Home, inclusive = false)
+        return
+    }
+    navController.navigate(destination) {
+        popUpTo(DemoRoutes.Home) { saveState = true }
+        launchSingleTop = true
+        restoreState = true
+    }
+}
+
+/**
+ * Keep root navigation aligned with [SessionManager]: login → Home, logout → Auth,
+ * clearing the back stack so protected screens are unreachable without a session.
+ */
+private suspend fun observeSessionNavigation(
+    navController: NavHostController,
+    sessionManager: SessionManager,
+) {
+    var previous: Session? = sessionManager.currentSessionSnapshot
+    sessionManager.sessionFlow.collect { session ->
+        if (session == previous) return@collect
+        val wasLoggedIn = previous != null
+        previous = session
+        when {
+            wasLoggedIn && session == null -> {
+                navController.navigate(DemoRoutes.Auth) {
+                    popUpTo(navController.graph.id) { inclusive = true }
+                    launchSingleTop = true
+                }
+            }
+            !wasLoggedIn && session != null -> {
+                navController.navigate(DemoRoutes.Home) {
+                    popUpTo(navController.graph.id) { inclusive = true }
+                    launchSingleTop = true
+                }
+            }
+        }
+    }
+}

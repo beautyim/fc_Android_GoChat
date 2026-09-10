@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="call_title">Call</string>
+    <string name="call_label_coordinator_fmt">coordinator: %1$s</string>
+    <string name="call_media_hint_fmt">CallKit video=%1$s voice=%2$s</string>
+    <string name="call_action_reload_records">Reload Records</string>
+    <string name="call_action_start_video">Start Video Call</string>
+    <string name="call_action_start_voice">Start Voice Call</string>
+    <string name="call_action_hangup">Hangup</string>
+    <string name="call_status_loading_records">Loading call records…</string>
+    <string name="call_status_loaded_fmt">Loaded %1$d (more=%2$s)</string>
+    <string name="call_status_coordinator_missing">CallCoordinator not installed</string>
+    <string name="call_status_resolving_callee">Resolving callee…</string>
+    <string name="call_status_discover_failed_fmt">discover failed: %1$s</string>
+    <string name="call_status_no_peer">No discover peer to call</string>
+    <string name="call_status_creating_fmt">Creating call target=%1$s…</string>
+    <string name="call_status_create_failed_fmt">create failed code=%1$s %2$s</string>
+    <string name="call_status_outgoing_fmt">Outgoing room=%1$s channel=%2$s appIdLen=%3$d</string>
+    <string name="call_status_hangup_fmt">Hangup requested state=%1$s</string>
+    <string name="call_row_fmt">%1$s %2$s/%3$s media=%4$s price=%5$s</string>
+
+    <string name="call_records_title">Call Records</string>
+    <string name="call_records_tab_all">All</string>
+    <string name="call_records_tab_unanswered">Unanswered</string>
+    <string name="call_records_tab_matches">Matches</string>
+    <string name="call_records_empty_title">No video chats yet</string>
+    <string name="call_records_empty_subtitle">Start a chat and make new connections!</string>
+    <string name="call_records_empty_cta">Start Video Chat</string>
+    <string name="call_records_retry">Retry</string>
+    <string name="call_records_cd_video">Video call</string>
+    <string name="call_records_cd_loading">Loading</string>
+    <string name="call_records_nav_match">Match</string>
+    <string name="call_records_status_missed">Missed the match</string>
+    <string name="call_records_status_rejected">Rejected the match</string>
+    <string name="call_records_status_cancelled">Cancelled the match</string>
+    <string name="call_records_status_match_default">Random match</string>
+</resources>

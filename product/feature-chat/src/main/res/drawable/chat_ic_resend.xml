@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Hand-drawn send-failed / resend control (circle + exclamation). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="16dp"
+    android:height="16dp"
+    android:viewportWidth="16"
+    android:viewportHeight="16">
+    <path
+        android:pathData="M8,1.25A6.75,6.75 0,1 0,14.75 8,6.75 6.75,0 0,0 8,1.25z"
+        android:strokeWidth="1.4"
+        android:strokeColor="#FF3535"
+        android:fillColor="#00000000" />
+    <path
+        android:fillColor="#FF3535"
+        android:pathData="M7.35,4.2h1.3v5.1h-1.3z" />
+    <path
+        android:fillColor="#FF3535"
+        android:pathData="M8,11.15m-0.85,0a0.85,0.85 0,1 1,1.7 0a0.85,0.85 0,1 1,-1.7 0" />
+</vector>

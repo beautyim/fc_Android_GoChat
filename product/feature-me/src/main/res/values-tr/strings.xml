@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="me_title">Profilim</string>
+    <string name="me_age_suffix_fmt">, %1$d</string>
+    <string name="me_followers">Takipçi</string>
+    <string name="me_following">Takip</string>
+    <string name="me_balance_label">Bakiyem</string>
+    <string name="me_add_coins">Jeton Ekle</string>
+    <string name="me_vip_title">VIP Üyelik</string>
+    <string name="me_vip_not_member">VIP üye değil</string>
+    <string name="me_vip_expiry">Bitiş tarihi: %1$s</string>
+    <string name="me_menu_profile">Profil</string>
+    <string name="me_menu_gift">Hediye</string>
+    <string name="me_menu_verify">Gerçek Kişi Doğrulaması</string>
+    <string name="me_menu_settings">Ayarlar</string>
+    <string name="me_retry">Yeniden dene</string>
+    <string name="me_nav_match">Eşleşme</string>
+    <string name="me_cd_avatar">Avatar</string>
+    <string name="me_cd_camera">Avatarı düzenle</string>
+    <string name="me_cd_loading">Yükleniyor</string>
+    <string name="me_message_camera_soon">Avatar düzenleme yakında gelecek</string>
+    <string name="me_message_vip_soon">VIP yakında gelecek</string>
+    <string name="me_message_gift_soon">Hediyeler yakında gelecek</string>
+    <string name="me_message_verify_soon">Doğrulama yakında gelecek</string>
+    <string name="me_message_settings_soon">Ayarlar yakında gelecek</string>
+    <string name="me_message_profile_soon">Profil yakında gelecek</string>
+</resources>

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="me_title">My Profile</string>
+    <string name="me_age_suffix_fmt">, %1$d</string>
+    <string name="me_followers">Followers</string>
+    <string name="me_following">Following</string>
+    <string name="me_balance_label">My Balance</string>
+    <string name="me_add_coins">Add Coins</string>
+    <string name="me_vip_title">VIP Membership</string>
+    <string name="me_vip_not_member">Not a VIP Member</string>
+    <string name="me_vip_expiry">Expiry date: %1$s</string>
+    <string name="me_menu_profile">Profile</string>
+    <string name="me_menu_gift">Gift</string>
+    <string name="me_menu_verify">Real Person Verification</string>
+    <string name="me_menu_settings">Settings</string>
+    <string name="me_retry">Retry</string>
+    <string name="me_nav_match">Match</string>
+    <string name="me_cd_avatar">Avatar</string>
+    <string name="me_cd_camera">Edit avatar</string>
+    <string name="me_cd_loading">Loading</string>
+    <string name="me_message_camera_soon">Avatar editing is coming soon</string>
+    <string name="me_message_vip_soon">VIP is coming soon</string>
+    <string name="me_message_gift_soon">Gifts are coming soon</string>
+    <string name="me_message_verify_soon">Verification is coming soon</string>
+    <string name="me_message_settings_soon">Settings are coming soon</string>
+    <string name="me_message_profile_soon">Profile is coming soon</string>
+</resources>

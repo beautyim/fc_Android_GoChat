@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="home_online_title">En línea</string>
+    <string name="home_online_filter_all">Todos</string>
+    <string name="home_online_filter_new">Nuevos</string>
+    <string name="home_online_filter_following">Siguiendo</string>
+    <string name="home_online_filter_popular">Popular</string>
+    <string name="home_online_filter_english">Inglés</string>
+    <string name="home_online_filter_spanish">Español</string>
+    <string name="home_online_filter_portuguese">Portugués</string>
+    <string name="home_online_status_online">En línea</string>
+    <string name="home_online_status_chatting">Chateando…</string>
+    <string name="home_online_status_offline">Desconectado</string>
+    <string name="home_online_free">GRATIS</string>
+    <string name="home_online_empty">Nadie está aquí todavía</string>
+    <string name="home_online_retry">Reintentar</string>
+    <string name="home_online_report_coming_soon">La denuncia llegará pronto</string>
+    <string name="home_online_cd_report">Denunciar</string>
+    <string name="home_online_cd_message">Mensaje</string>
+    <string name="home_online_cd_video">Videollamada</string>
+    <string name="home_nav_match">Match</string>
+    <string name="home_online_cd_loading">Cargando</string>
+</resources>
+

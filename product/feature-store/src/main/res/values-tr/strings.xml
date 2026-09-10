@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="store_title">Mağaza</string>
+    <string name="store_action_reload_catalog">Kataloğu yenile</string>
+    <string name="store_action_create_order_http">Sipariş oluştur (HTTP)</string>
+    <string name="store_action_buy_play">Google Play ile satın al</string>
+    <string name="store_status_loading_catalog">Loading coin page…</string>
+    <string name="store_status_catalog_fmt">Catalog %1$d</string>
+    <string name="store_product_row_fmt">%1$s coins=%2$d sku=%3$s %4$s</string>
+    <string name="store_status_creating_order">Creating order…</string>
+    <string name="store_status_empty_catalog">Katalog boş</string>
+    <string name="store_status_order_created_http">Order created (HTTP only)</string>
+    <string name="store_order_fmt">tranNo=%1$s sku=%2$s</string>
+    <string name="store_status_no_activity">No Activity bound for BillingClient</string>
+    <string name="store_status_launcher_missing">StorePurchaseLauncher not installed</string>
+    <string name="store_status_launching_play">Launching Google Play…</string>
+    <string name="store_status_purchase_verified">Satın alma doğrulandı</string>
+    <string name="store_purchased_fmt">purchasedId=%1$s</string>
+    <string name="store_status_purchase_canceled">Satın alma iptal edildi</string>
+    <string name="store_status_purchase_failed_fmt">Purchase failed: %1$s</string>
+</resources>

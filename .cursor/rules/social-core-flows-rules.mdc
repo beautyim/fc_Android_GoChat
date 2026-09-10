@@ -1,0 +1,34 @@
+---
+description: demoproject 登录、匹配、聊天、支付、举报拉黑与音视频通话规则
+alwaysApply: false
+---
+
+# Social Core Flows Rules
+
+在修改登录态、资料、匹配、聊天、支付、通知、举报拉黑、音视频通话、RTC、MQTT 或 Billing 时使用。
+
+## Feature Map
+
+- 业务入口在 `:product:feature-auth` / `home` / `chat` / `match` / `call` / `store` / `profile`。
+- 数据与领域在 `:platform:data`（Auth / Message / Match / Call / Coin / Vip / Report / Block 等 Repository）。
+- 实时：`:platform:mqtt`、`:platform:callkit`、`:platform:rtc-api`、`:platform:rtc-agora`。
+
+## Core Flows
+
+- 登录态、资料完善、匹配、聊天、支付、通知、举报拉黑、音视频通话是高风险链路；修改须配套测试或在交付说明写清人工验证记录。
+- Session 变化统一经 `SessionManager` / 相关 Repository 处理，避免多 ViewModel 重复加载、旧请求回写或登出后展示旧数据。
+- Terms、Privacy、客服、充值协议等合规链接来自品牌配置或正式资源，不使用示例 URL。
+
+## Billing And Orders
+
+- Store / Match / Chat / Call 等购买入口复用应用级购买 coordinator（见 `app` 的 payment 包）、统一结果回调与订单恢复策略。
+- Billing mapper、支付订单恢复、Store catalog mapping 属于 P0 验证范围。
+- 订单补偿使用后台重试：唯一 work、网络约束、指数退避、最大重试次数。
+- 金币余额与 VIP 展示/更新走全局订阅，详见 `wallet-vip-global-state-rules.mdc`。
+
+## RTC And Messaging
+
+- 音视频通话用独立通话页 / Activity 承载权限、RTC Surface、前台状态与资源释放；主 NavHost 不长期持有 RTC 引擎状态。
+- Match、Chat、Billing、RTC、MQTT 等时序业务优先状态机或协议解析单测。
+- 举报/拉黑使用清晰 subject model，避免语义不清的参数复用。
+- 含输入框的聊天 / 通话页收起键盘只 `hide()`，不用 `clearFocus()`（见 `kotlin-compose-conventions.mdc`）。

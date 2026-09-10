@@ -1,0 +1,29 @@
+---
+description: demoproject 网络、数据缓存、加密、日志与后台重试规则
+alwaysApply: false
+---
+
+# Network Data Security Rules
+
+在修改网络层、Repository、DTO、Room、DataStore、上传、MQTT、签名加密、日志或后台任务时使用。
+
+## Network Boundary
+
+- HTTP 栈在 `:platform:network`；API 接口、DTO、Repository、Session 在 `:platform:data`。
+- 网络层集中处理 envelope、HTTP/业务/解析/网络错误和登录过期。
+- 请求签名、加密、User-Agent、响应解密放在 interceptor / data source，禁止散落到 `product` 或 `app`。
+- Repository 返回 domain model，不把 DTO、envelope 或后端临时字段暴露给 UI。
+- 网络配置来自 `config/network.properties`（+ `network.local.properties`）；密钥不进 git。
+
+## Logs And Secrets
+
+- HTTP 调试日志通过 BuildConfig 或显式 debug 开关控制。
+- Debug 可用 BODY 级日志；Release 必须关闭 BODY / packet 明文日志（见 `config/common/release-log-stripping.pro`）。
+- 日志中脱敏 token、uid、手机号、邮箱、签名密钥、数据库密钥、RTC token 和敏感 payload。
+- MQTT（`:platform:mqtt`）记录连接、重连、订阅、发布、入站 packet、QoS、topic、payload 长度和截断预览；Release 不输出完整明文消息。
+
+## Local Data And Work
+
+- 结构化缓存使用 Room + SQLCipher（`:platform:data` local）；轻量配置与 session 用 DataStore（`SessionManager`）。
+- 敏感偏好、session token、数据库 passphrase 使用 Keystore / Tink 等方案保护，不得明文 SharedPreferences。
+- 上传（`:platform:s3`）、订单补偿、消息同步等不能只依赖前台页面生命周期，使用 WorkManager 或等价后台重试。

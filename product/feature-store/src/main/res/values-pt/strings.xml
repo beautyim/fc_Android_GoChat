@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="store_title">Loja</string>
+    <string name="store_action_reload_catalog">Recarregar catálogo</string>
+    <string name="store_action_create_order_http">Criar pedido (HTTP)</string>
+    <string name="store_action_buy_play">Comprar via Google Play</string>
+    <string name="store_status_loading_catalog">Loading coin page…</string>
+    <string name="store_status_catalog_fmt">Catalog %1$d</string>
+    <string name="store_product_row_fmt">%1$s coins=%2$d sku=%3$s %4$s</string>
+    <string name="store_status_creating_order">Creating order…</string>
+    <string name="store_status_empty_catalog">Catálogo vazio</string>
+    <string name="store_status_order_created_http">Order created (HTTP only)</string>
+    <string name="store_order_fmt">tranNo=%1$s sku=%2$s</string>
+    <string name="store_status_no_activity">No Activity bound for BillingClient</string>
+    <string name="store_status_launcher_missing">StorePurchaseLauncher not installed</string>
+    <string name="store_status_launching_play">Launching Google Play…</string>
+    <string name="store_status_purchase_verified">Compra verificada</string>
+    <string name="store_purchased_fmt">purchasedId=%1$s</string>
+    <string name="store_status_purchase_canceled">Compra cancelada</string>
+    <string name="store_status_purchase_failed_fmt">Purchase failed: %1$s</string>
+</resources>

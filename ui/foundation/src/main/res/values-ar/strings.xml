@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="action_back">رجوع</string>
+    <string name="action_refresh">تحديث</string>
+    <string name="action_reload">إعادة التحميل</string>
+    <string name="action_logout">تسجيل الخروج</string>
+    <string name="action_sync">مزامنة</string>
+    <string name="action_working">جارٍ العمل…</string>
+    <string name="status_ok">تم</string>
+    <string name="status_ready">جاهز</string>
+    <string name="status_signed_in">تم تسجيل الدخول</string>
+    <string name="status_logged_out">تم تسجيل الخروج</string>
+    <string name="status_failed_fmt">فشل: %1$s</string>
+    <string name="label_session_logged_out">غير مسجّل</string>
+    <string name="label_session_uid_fmt">uid=%1$s</string>
+</resources>

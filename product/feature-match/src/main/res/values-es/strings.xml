@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="match_title">Match</string>
+    <string name="match_action_get_info">Obtener info</string>
+    <string name="match_action_start">Iniciar match</string>
+    <string name="match_status_loading_info">Loading match info…</string>
+    <string name="match_status_info_fmt">free=%1$d pay=%2$s vip=%3$s avatars=%4$d</string>
+    <string name="match_status_starting">Starting match…</string>
+    <string name="match_status_started">Iniciado</string>
+    <string name="match_status_start_fmt">session=%1$s action=%2$s free=%3$d</string>
+</resources>

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">DemoProject</string>
+    <string name="brand_label">Demo</string>
+    <string name="push_channel_messages">Mensajes</string>
+    <string name="push_channel_messages_description">Notificaciones de mensajes nuevos</string>
+    <string name="push_new_message_title">Mensaje nuevo</string>
+    <string name="push_new_message_body">Tienes un mensaje nuevo</string>
+    <string name="push_like_title">Nuevo like</string>
+    <string name="push_like_body">Alguien te dio like</string>
+    <string name="payment_generic_error">Algo salió mal. Inténtalo de nuevo.</string>
+</resources>

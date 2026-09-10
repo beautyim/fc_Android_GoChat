@@ -1,0 +1,71 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Android Studio / IntelliJ
+*.iml
+.idea/
+*.ipr
+*.iws
+.navigation/
+captures/
+.fleet/
+
+# Gradle
+.gradle/
+build/
+*/build/
+**/build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# Local machine / SDK
+local.properties
+
+# Build outputs & native
+*.apk
+*.aab
+*.ap_
+*.dex
+*.class
+bin/
+gen/
+out/
+.externalNativeBuild/
+.cxx/
+.kotlin/
+*.so
+
+# Secrets & signing
+*.jks
+*.keystore
+keystore.properties
+signing.properties
+*.pem
+.env
+.env.*
+
+# Project-local config & docs (do not push)
+/config/
+/docs/
+
+# Logs & profiling
+*.log
+*.hprof
+*.trace
+
+# NDK / CMake
+obj/
+
+# Fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots
+fastlane/test_output
+
+# Misc tooling
+*.swp
+*.swo
+*~
+.vscode/

@@ -1,0 +1,150 @@
+package com.example.demoproject.ui.designsystem
+
+import androidx.compose.ui.graphics.Color
+
+/** Semantic colors shared across branded screens (login, legal links, etc.). */
+object DemoColors {
+    val link = Color(0xFF9D41FF)
+    val textPrimary = Color(0xFF333333)
+    val textSecondary = Color(0xFF666666)
+    val textTertiary = Color(0xFF8A8A8E)
+    val textTitle = Color(0xFF111111)
+    val orLabel = Color(0x99666666)
+    val divider = Color(0xFFE0E0E5)
+    val inputBorder = Color(0xFFE0E0E5)
+    /** Input placeholder — #999 @ 60% (Figma auth inputs). */
+    val inputPlaceholder = Color(0x99999999)
+    /** Auxiliary label — #999999 (Figma Online chips / helper). */
+    val textAuxiliary = Color(0xFF999999)
+    val sheet = Color(0xFFFFFFFF)
+    /** Match tab center glow — rgba(183,171,223,0.4) / Figma drop-shadow. */
+    val tabMatchGlow = Color(0x66B7ABDF)
+    /** Match tab button fill — #FDFDFD. */
+    val tabMatchButton = Color(0xFFFDFDFD)
+    /** Light page canvas — #F9F9F9 (forget-password, etc.). */
+    val page = Color(0xFFF9F9F9)
+    /** Top bar title — #15131A. */
+    val navTitle = Color(0xFF15131A)
+    val onPrimaryButton = Color(0xFFFFFFFF)
+    /** Modal scrim — rgba(0,0,0,0.5). */
+    val scrim = Color(0x80000000)
+    /** Secondary dialog button fill — #F3F0FC. */
+    val dialogSecondary = Color(0xFFF3F0FC)
+    /** Destructive confirm primary — #FB4F6F (Figma 80:3781). */
+    val dialogDestructive = Color(0xFFFB4F6F)
+    /** Soft glow behind destructive dialog icon. */
+    val dialogDestructiveGlow = Color(0x33FB4F6F)
+    /** Chip / coin pill fill — #EFEFEF. */
+    val chip = Color(0xFFEFEFEF)
+    /** Field / form validation error text — #FF3535. */
+    val error = Color(0xFFFF3535)
+    val gradientStart = Color(0xFF7722FF)
+    val gradientEnd = Color(0xFF2158FF)
+    /** Online header wash — #E9E5FF. */
+    val onlineHeaderStart = Color(0xFFE9E5FF)
+    /** Online card action — #00D670. */
+    val onlineAction = Color(0xFF00D670)
+    /** FREE badge — #FF6A00. */
+    val freeBadge = Color(0xFFFF6A00)
+    /** Status text on cards — white @ 60%. */
+    val onCardMuted = Color(0x99FFFFFF)
+    /** Card drop shadow — rgba(0,0,0,0.16). */
+    val cardShadow = Color(0x29000000)
+    /** Skeleton base — #E8E8E8. */
+    val skeleton = Color(0xFFE8E8E8)
+    /** Skeleton highlight — #F3F3F3. */
+    val skeletonHighlight = Color(0xFFF3F3F3)
+    /** Gift price / coin accent — #FFC733. */
+    val giftPrice = Color(0xFFFFC733)
+    /** Gift card default border — black @ 5%. */
+    val giftCardBorder = Color(0x0D000000)
+    /** Gift card selected fill — #9D41FF @ 10%. */
+    val giftCardSelected = Color(0x1A9D41FF)
+    /** Gift sheet top glow — soft lavender. */
+    val giftSheetGlow = Color(0x66C9B8FF)
+    /** Gift pager track — black @ 10%. */
+    val giftPagerTrack = Color(0x1A000000)
+    /** Gift balance pill — #F1F1F1. */
+    val giftBalancePill = Color(0xFFF1F1F1)
+    /** Gift card surface — #FEFEFE @ 96%. */
+    val giftCardSurface = Color(0xF5FEFEFE)
+    /** Primary CTA drop shadow — rgba(10,29,240,0.32). */
+    val primaryShadow = Color(0x520A1DF0)
+    /** Secondary CTA drop shadow — rgba(10,29,240,0.12). */
+    val secondaryShadow = Color(0x1F0A1DF0)
+    /** Profile nav circle fill — black @ 30%. */
+    val profileNavScrim = Color(0x4D000000)
+    /** Profile stats divider — #999 @ 20%. */
+    val profileStatsDivider = Color(0x33999999)
+    /** Profile video thumb bottom gradient end. */
+    val profileVideoScrim = Color(0xFF000000)
+    /** Media viewer time labels — #FEFEFE. */
+    val profileMediaTime = Color(0xFFFEFEFE)
+    /** Media viewer scrubber track — #CFCFDD @ 20%. */
+    val profileMediaProgressTrack = Color(0x33CFCFDD)
+    /** Media viewer controls bottom fade end — black @ 30%. */
+    val profileMediaControlsScrimEnd = Color(0x4D000000)
+    /** Profile avatar ring. */
+    val profileAvatarRing = Color(0xFFFFFFFF)
+    /** iOS-style action sheet action text — #007AFF. */
+    val actionSheetAction = Color(0xFF007AFF)
+    /** Action sheet row separator — gray @ 55%. */
+    val actionSheetSeparator = Color(0x8C808080)
+    /** Action sheet frosted surface. */
+    val actionSheetSurface = Color(0xF2F2F2F7)
+    /** Call records missed / rejected status — #E80000. */
+    val callRecordsNegative = Color(0xFFE80000)
+    /** Call records connected / match status — #03B300. */
+    val callRecordsPositive = Color(0xFF03B300)
+    /** iOS segmented control track — #767680 @ 12%. */
+    val segmentTrack = Color(0x1F767680)
+    /** Segmented control selected pill shadow. */
+    val segmentSelectedShadow = Color(0x1A000000)
+    /** Me page VIP card fill (member) — #FFFAF0 → #FFF7E6 mid. */
+    val meVipCardStart = Color(0xFFFFFAF0)
+    val meVipCardEnd = Color(0xFFFFF7E6)
+    /** Me page VIP card fill (non-member) — #F0F0F0. */
+    val meVipCardInactive = Color(0xFFF0F0F0)
+    /** Me page VIP card border — #FFEFD2. */
+    val meVipCardBorder = Color(0xFFFFEFD2)
+    /** Me camera badge fill — #F0E2FF. */
+    val meCameraBadge = Color(0xFFF0E2FF)
+    /** Me menu icon circle — #9D41FF @ 10%. */
+    val meMenuIconBg = Color(0x1A9D41FF)
+    /** Me tab chat unread badge — #FF3838. */
+    val meUnreadBadge = Color(0xFFFF3838)
+    /** Chat list timestamp — #939393. */
+    val chatTimestamp = Color(0xFF939393)
+    /** Chat swipe pin action — #FF9500. */
+    val chatSwipePin = Color(0xFFFF9500)
+    /** Chat swipe delete action — #FF3B30. */
+    val chatSwipeDelete = Color(0xFFFF3B30)
+    /** Chat notification banner shadow — rgba(196,170,255,0.25). */
+    val chatBannerShadow = Color(0x40C4AAFF)
+    /** Chat notification bell circle — soft lavender. */
+    val chatNotifBellBg = Color(0xFFEDE6FF)
+    /** Chat preview text — #666566. */
+    val chatPreview = Color(0xFF666566)
+    /** Chat detail page canvas — #F9F9F9. */
+    val chatDetailPage = Color(0xFFF9F9F9)
+    /** Incoming bubble fill — #F3F0FF. */
+    val chatBubbleIncoming = Color(0xFFF3F0FF)
+    /** Outgoing bubble fill — #9D41FF. */
+    val chatBubbleOutgoing = Color(0xFF9D41FF)
+    /** Composer field / secondary circle — #9D41FF @ 7%. */
+    val chatComposerField = Color(0x129D41FF)
+    /** Translate / action chip — black @ 5%. */
+    val chatActionChip = Color(0x0D000000)
+    /** Online presence dot. */
+    val chatOnlineDot = Color(0xFF00D670)
+    /** Gift bubble wash end — #F0E6FA. */
+    val chatGiftWash = Color(0xFFF0E6FA)
+    /** Gift coin price — #FFA100. */
+    val chatGiftCoin = Color(0xFFFFA100)
+    /** Locked media scrim — black @ 50%. */
+    val chatMediaScrim = Color(0x80000000)
+    /** Locked media icon circle — white @ 10%. */
+    val chatMediaLockCircle = Color(0x1AFFFFFF)
+    /** Call missed label — #FF1010. */
+    val chatCallMissed = Color(0xFFFF1010)
+}

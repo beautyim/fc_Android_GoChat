@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="call_title">Chamada</string>
+    <string name="call_label_coordinator_fmt">coordenador: %1$s</string>
+    <string name="call_media_hint_fmt">CallKit vídeo=%1$s voz=%2$s</string>
+    <string name="call_action_reload_records">Recarregar registros</string>
+    <string name="call_action_start_video">Iniciar videochamada</string>
+    <string name="call_action_start_voice">Iniciar chamada de voz</string>
+    <string name="call_action_hangup">Desligar</string>
+    <string name="call_status_loading_records">Carregando registros de chamadas…</string>
+    <string name="call_status_loaded_fmt">Carregados %1$d (mais=%2$s)</string>
+    <string name="call_status_coordinator_missing">CallCoordinator não instalado</string>
+    <string name="call_status_resolving_callee">Resolvendo destinatário…</string>
+    <string name="call_status_discover_failed_fmt">descoberta falhou: %1$s</string>
+    <string name="call_status_no_peer">Nenhum usuário para chamar</string>
+    <string name="call_status_creating_fmt">Criando chamada destino=%1$s…</string>
+    <string name="call_status_create_failed_fmt">criação falhou código=%1$s %2$s</string>
+    <string name="call_status_outgoing_fmt">Saída sala=%1$s canal=%2$s appIdLen=%3$d</string>
+    <string name="call_status_hangup_fmt">Desligar solicitado estado=%1$s</string>
+    <string name="call_row_fmt">%1$s %2$s/%3$s mídia=%4$s preço=%5$s</string>
+
+    <string name="call_records_title">Registros de chamadas</string>
+    <string name="call_records_tab_all">Todos</string>
+    <string name="call_records_tab_unanswered">Não atendidas</string>
+    <string name="call_records_tab_matches">Matches</string>
+    <string name="call_records_empty_title">Ainda não há videochats</string>
+    <string name="call_records_empty_subtitle">Comece um chat e faça novas conexões!</string>
+    <string name="call_records_empty_cta">Iniciar videochat</string>
+    <string name="call_records_retry">Tentar de novo</string>
+    <string name="call_records_cd_video">Videochamada</string>
+    <string name="call_records_cd_loading">Carregando</string>
+    <string name="call_records_nav_match">Match</string>
+    <string name="call_records_status_missed">Perdeu o match</string>
+    <string name="call_records_status_rejected">Rejeitou o match</string>
+    <string name="call_records_status_cancelled">Cancelou o match</string>
+    <string name="call_records_status_match_default">Match aleatório</string>
+</resources>

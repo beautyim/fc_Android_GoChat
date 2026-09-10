@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="call_title">مكالمة</string>
+    <string name="call_label_coordinator_fmt">المنسّق: %1$s</string>
+    <string name="call_media_hint_fmt">CallKit فيديو=%1$s صوت=%2$s</string>
+    <string name="call_action_reload_records">إعادة تحميل السجلات</string>
+    <string name="call_action_start_video">بدء مكالمة فيديو</string>
+    <string name="call_action_start_voice">بدء مكالمة صوتية</string>
+    <string name="call_action_hangup">إنهاء</string>
+    <string name="call_status_loading_records">جارٍ تحميل سجلات المكالمات…</string>
+    <string name="call_status_loaded_fmt">تم تحميل %1$d (المزيد=%2$s)</string>
+    <string name="call_status_coordinator_missing">CallCoordinator غير مثبت</string>
+    <string name="call_status_resolving_callee">جارٍ تحديد الطرف الآخر…</string>
+    <string name="call_status_discover_failed_fmt">فشل الاكتشاف: %1$s</string>
+    <string name="call_status_no_peer">لا يوجد مستخدم للاتصال</string>
+    <string name="call_status_creating_fmt">جارٍ إنشاء مكالمة الهدف=%1$s…</string>
+    <string name="call_status_create_failed_fmt">فشل الإنشاء الرمز=%1$s %2$s</string>
+    <string name="call_status_outgoing_fmt">صادرة غرفة=%1$s قناة=%2$s appIdLen=%3$d</string>
+    <string name="call_status_hangup_fmt">طُلب الإنهاء الحالة=%1$s</string>
+    <string name="call_row_fmt">%1$s %2$s/%3$s وسائط=%4$s السعر=%5$s</string>
+
+    <string name="call_records_title">سجلات المكالمات</string>
+    <string name="call_records_tab_all">الكل</string>
+    <string name="call_records_tab_unanswered">بلا رد</string>
+    <string name="call_records_tab_matches">المطابقات</string>
+    <string name="call_records_empty_title">لا محادثات فيديو بعد</string>
+    <string name="call_records_empty_subtitle">ابدأ محادثة وابنِ علاقات جديدة!</string>
+    <string name="call_records_empty_cta">بدء محادثة فيديو</string>
+    <string name="call_records_retry">إعادة المحاولة</string>
+    <string name="call_records_cd_video">مكالمة فيديو</string>
+    <string name="call_records_cd_loading">جارٍ التحميل</string>
+    <string name="call_records_nav_match">مطابقة</string>
+    <string name="call_records_status_missed">فاتته المطابقة</string>
+    <string name="call_records_status_rejected">رفض المطابقة</string>
+    <string name="call_records_status_cancelled">ألغى المطابقة</string>
+    <string name="call_records_status_match_default">مطابقة عشوائية</string>
+</resources>

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="action_back">Voltar</string>
+    <string name="action_refresh">Atualizar</string>
+    <string name="action_reload">Recarregar</string>
+    <string name="action_logout">Sair</string>
+    <string name="action_sync">Sincronizar</string>
+    <string name="action_working">A trabalhar…</string>
+    <string name="status_ok">OK</string>
+    <string name="status_ready">Pronto</string>
+    <string name="status_signed_in">Sessão iniciada</string>
+    <string name="status_logged_out">Sessão terminada</string>
+    <string name="status_failed_fmt">Falhou: %1$s</string>
+    <string name="label_session_logged_out">sem sessão</string>
+    <string name="label_session_uid_fmt">uid=%1$s</string>
+</resources>

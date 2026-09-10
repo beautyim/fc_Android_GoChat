@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="home_online_title">متصل</string>
+    <string name="home_online_filter_all">الكل</string>
+    <string name="home_online_filter_new">جديد</string>
+    <string name="home_online_filter_following">المتابَعون</string>
+    <string name="home_online_filter_popular">شائع</string>
+    <string name="home_online_filter_english">الإنجليزية</string>
+    <string name="home_online_filter_spanish">الإسبانية</string>
+    <string name="home_online_filter_portuguese">البرتغالية</string>
+    <string name="home_online_status_online">متصل</string>
+    <string name="home_online_status_chatting">يتحدّث…</string>
+    <string name="home_online_status_offline">غير متصل</string>
+    <string name="home_online_free">مجاني</string>
+    <string name="home_online_empty">لا يوجد أحد هنا بعد</string>
+    <string name="home_online_retry">إعادة المحاولة</string>
+    <string name="home_online_report_coming_soon">الإبلاغ قادم قريبًا</string>
+    <string name="home_online_cd_report">إبلاغ</string>
+    <string name="home_online_cd_message">رسالة</string>
+    <string name="home_online_cd_video">مكالمة فيديو</string>
+    <string name="home_nav_match">مطابقة</string>
+    <string name="home_online_cd_loading">جارٍ التحميل</string>
+</resources>
+

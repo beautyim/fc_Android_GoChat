@@ -1,0 +1,50 @@
+---
+description: demoproject Kotlin 与 Jetpack Compose 架构约定
+globs: **/*.kt
+alwaysApply: false
+---
+
+# Kotlin / Compose Conventions
+
+在修改 Kotlin 源码、Compose 页面、ViewModel、模块结构、包命名或软键盘交互时使用。
+
+## Module Boundaries
+
+- `:app`：Application、Activity、导航组装、应用级 DI、支付 coordinator、推送等壳能力。
+- `:product:feature-*`：业务页面与 ViewModel（`auth` / `home` / `chat` / `match` / `call` / `store` / `profile`）。
+- `:platform:network`：OkHttp/Retrofit、签名加密拦截、`SafeApiCall`、envelope、paging。
+- `:platform:data`：API/DTO、Repository、Session、Room/SQLCipher、domain model、Billing 相关数据层。
+- `:platform:mqtt` / `:platform:callkit` / `:platform:rtc-api` / `:platform:rtc-agora` / `:platform:s3` / `:platform:analytics` / `:platform:common`：对应基础设施，业务层只依赖公开 API。
+- `:ui:foundation`：原子 token 与断点（`Spacing`、`WindowBreakpoints`、`currentWindowSize()`）；`:ui:designsystem`：主题、语义 token、品牌主题（`DemoBrandThemes`）。
+- 缺失 token 或可复用控件时先下沉到 `ui`，再在 feature 使用；不要在 `:app` 复制平台能力。
+
+## Package And Naming
+
+- 根包名 `com.example.demoproject`；platform 用 `…platform.<area>`，feature 用 `…product.<feature>`，ui 用 `…ui.<module>`。
+- 品牌资源放 `app/src/main/res`；应用配置放 `config/`，经 `buildSrc` `BrandConfig` 加载。
+- 页面命名：`<Feature>Screen`、`<Feature>ViewModel`、`<Feature>UiState`、`<Feature>Intent`、`<Feature>Effect`（合同文件 `*Contract.kt`）。
+- `di/`、`repository/`、`model/`、`network/`、`local/` 等包必须与所在模块职责一致。
+
+## State Management
+
+- ViewModel 以 `StateFlow` 暴露 UI 状态；Compose 优先 `collectAsStateWithLifecycle()`。
+- 一次性事件收集 `effect`（或等价 Flow），不要用热通道冒充可重放状态。
+- ViewModel / Repository 来源的数据禁止用 `mutableStateOf` 管理。
+- 页面接收 `state`、`onIntent` 和导航回调；可复用 Composable 不直接接收 ViewModel。
+
+## Compose Quality
+
+- 每个新页面至少提供一个 `@Preview`，并覆盖小屏 / 平板 / `fontScale` 放大（`@PreviewScreenSizes`、`@PreviewFontScale`）。
+- `Modifier` 作为第一个可选参数并向下传递；约 80 行时拆出子 Composable。
+- 禁止裸写 `Color(...)`、`.dp`、`.sp`、`RoundedCornerShape(...)`、`Brush...` 等视觉常量；例外仅限布局逻辑值、权重、索引、动画进度、`0.dp` 等。
+- 新样式先补 token / 共享组件，再由页面引用。
+- 尺寸自适应：宽度靠 `fillMaxWidth()` / `weight()` / `widthIn`，固定 dp 只描述元素自身尺寸；禁止整屏固定高、`offset` 复刻坐标、按屏宽算缩放系数或改写 `LocalDensity`。
+- 边距用 `start` / `end` 与 `WindowInsets`（`statusBarsPadding` / `navigationBarsPadding` / `imePadding`），不写死系统栏高度、不用 `left` / `right`。
+- 断点读 `:ui:foundation` 的 `currentWindowSize()` / `WindowBreakpoints`，组件级自适应用 `BoxWithConstraints`；页面里不散落 `screenWidthDp` 魔法数。
+
+## Soft Keyboard (IME)
+
+- 收起软键盘只用 `LocalSoftwareKeyboardController.hide()`，禁止用 `FocusManager.clearFocus()` 收键盘。
+- `clearFocus()` 可能触发 IME `restartInput()`，造成收起动画半途弹回。
+- 收起后允许输入框保持焦点；未聚焦外观用 IME 可见性（如 `WindowInsets.ime`）驱动，不要为此清焦点。
+- 已聚焦再弹键盘应显式 `show()`；不要用 `stateAlwaysHidden` 绕过闪烁。

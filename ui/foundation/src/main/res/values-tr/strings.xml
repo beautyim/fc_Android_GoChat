@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="action_back">Geri</string>
+    <string name="action_refresh">Yenile</string>
+    <string name="action_reload">Yeniden yükle</string>
+    <string name="action_logout">Çıkış yap</string>
+    <string name="action_sync">Senkronize et</string>
+    <string name="action_working">Çalışıyor…</string>
+    <string name="status_ok">Tamam</string>
+    <string name="status_ready">Hazır</string>
+    <string name="status_signed_in">Oturum açıldı</string>
+    <string name="status_logged_out">Oturum kapatıldı</string>
+    <string name="status_failed_fmt">Başarısız: %1$s</string>
+    <string name="label_session_logged_out">oturum yok</string>
+    <string name="label_session_uid_fmt">uid=%1$s</string>
+</resources>
