@@ -71,8 +71,7 @@ class MessageRepositoryNetworkImpl(
                 ),
             )
         }.map { dto ->
-            val conversations = dto.toDomainConversations()
-            chatStore.upsertConversations(conversations)
+            val conversations = chatStore.upsertConversations(dto.toDomainConversations())
             chatStore.lastSyncMtime = dto.lastSyncMtime
             ConversationListPage(
                 conversations = conversations.excludingBlockedConversations(blockedUsersStore),
@@ -356,8 +355,9 @@ class MessageRepositoryNetworkImpl(
         val existing = chatStore.getConversation(push.conversationId)
         val peer = existing?.peer?.let { p ->
             p.copy(
-                nickname = push.peerNickname ?: p.nickname,
-                avatar = push.peerAvatarUrl ?: p.avatar,
+                nickname = push.peerNickname?.takeIf { it.isNotBlank() } ?: p.nickname,
+                // Never replace a known avatar with blank / unresolved push fields.
+                avatar = push.peerAvatarUrl?.takeIf { it.isNotBlank() } ?: p.avatar,
             )
         } ?: placeholderPeer(push.conversationId, push.peerNickname, push.peerAvatarUrl)
         val unread = (existing?.unreadCount ?: 0) + if (push.fromPeer) 1 else 0
@@ -463,10 +463,17 @@ class MessageRepositoryNetworkImpl(
         }.map { dto ->
             val serverId = dto?.mtime?.toString()
             val serverCreatedAt = dto?.mtime
+            // Never let server mtime pull the bubble earlier than the local Sending
+            // slot — that reorders the row, inserts a fresh TimeSeparator, and breaks
+            // stick-to-bottom scroll after success.
+            val createdAt = maxOf(
+                local.createdAt.toMessageTimelineMicros(),
+                (serverCreatedAt ?: 0L).toMessageTimelineMicros(),
+            ).takeIf { it > 0L } ?: local.createdAt
             val sent = local.copy(
                 id = serverId ?: local.id,
                 status = MessageStatus.Sent,
-                createdAt = serverCreatedAt ?: local.createdAt,
+                createdAt = createdAt,
             )
             // Promote the same outbound bubble: drop the local Sending row when the
             // server assigns a new id/timestamp, then upsert the Sent version so the

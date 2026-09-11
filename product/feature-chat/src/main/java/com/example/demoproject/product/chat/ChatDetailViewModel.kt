@@ -256,6 +256,9 @@ class ChatDetailViewModel(
         // Clear the composer immediately so the caret resets with an empty field.
         _uiState.update { it.copy(draft = "", isSending = true) }
         viewModelScope.launch {
+            // Cap sync at pre-send latest so tips near the outbound mtime are not skipped
+            // when Success advances the success cursor past them.
+            val syncCeiling = latestSuccessCreatedAt()
             when (
                 val result = runtime.messageRepository.sendTextMessage(
                     conversationId = conversationId,
@@ -267,12 +270,24 @@ class ChatDetailViewModel(
                     if (free > 0) {
                         _uiState.update { it.copy(freeMessageCount = (free - 1).coerceAtLeast(0)) }
                     }
-                    // Server may append control tips (e.g. key=107) as separate rows after send.
-                    runtime.messageRepository.syncLatestMessages(conversationId)
+                    runtime.messageRepository.syncLatestMessages(
+                        conversationId = conversationId,
+                        latestMtimeCeiling = syncCeiling,
+                    )
                 }
+                // Failure: keep draft cleared; failed bubble + resend carry the text. No toast.
+                // Limit/VIP tips (e.g. key=107) are written with the BizError — pull twice in
+                // case the tip row lags the HTTP error by a beat.
                 is AppResult.Failure -> {
-                    // Keep draft cleared; failed bubble + resend carry the text. Do not hide IME.
-                    _effects.send(ChatDetailEffect.ShowMessage(result.message))
+                    runtime.messageRepository.syncLatestMessages(
+                        conversationId = conversationId,
+                        latestMtimeCeiling = syncCeiling,
+                    )
+                    delay(POST_SEND_TIP_SYNC_RETRY_MS)
+                    runtime.messageRepository.syncLatestMessages(
+                        conversationId = conversationId,
+                        latestMtimeCeiling = syncCeiling,
+                    )
                 }
             }
             _uiState.update { it.copy(isSending = false) }
@@ -329,6 +344,7 @@ class ChatDetailViewModel(
         if (state.isGiftSending || giftId <= 0L) return
         viewModelScope.launch {
             _uiState.update { it.copy(isGiftSending = true) }
+            val syncCeiling = latestSuccessCreatedAt()
             when (
                 val result = runtime.messageRepository.sendGift(
                     conversationId = conversationId,
@@ -340,7 +356,6 @@ class ChatDetailViewModel(
                     _uiState.update {
                         it.copy(isGiftSending = false, isGiftSheetVisible = false)
                     }
-                    runtime.messageRepository.syncLatestMessages(conversationId)
                     _effects.send(
                         ChatDetailEffect.ShowMessage(str(R.string.chat_detail_gift_send_success)),
                     )
@@ -350,6 +365,10 @@ class ChatDetailViewModel(
                     _effects.send(ChatDetailEffect.ShowMessage(result.message))
                 }
             }
+            runtime.messageRepository.syncLatestMessages(
+                conversationId = conversationId,
+                latestMtimeCeiling = syncCeiling,
+            )
         }
     }
 
@@ -357,6 +376,7 @@ class ChatDetailViewModel(
         val message = cachedMessages.firstOrNull { it.id == messageId } ?: return
         if (message.status != MessageStatus.Failed) return
         viewModelScope.launch {
+            val syncCeiling = latestSuccessCreatedAt()
             val result = when (message.type) {
                 MessageType.Text -> runtime.messageRepository.sendTextMessage(
                     conversationId = conversationId,
@@ -375,11 +395,30 @@ class ChatDetailViewModel(
                     return@launch
                 }
             }
+            // Send failure stays on the bubble with resend; still pull any control tips.
+            runtime.messageRepository.syncLatestMessages(
+                conversationId = conversationId,
+                latestMtimeCeiling = syncCeiling,
+            )
             if (result is AppResult.Failure) {
-                _effects.send(ChatDetailEffect.ShowMessage(result.message))
+                delay(POST_SEND_TIP_SYNC_RETRY_MS)
+                runtime.messageRepository.syncLatestMessages(
+                    conversationId = conversationId,
+                    latestMtimeCeiling = syncCeiling,
+                )
             }
         }
     }
+
+    private fun latestSuccessCreatedAt(): Long? =
+        cachedMessages
+            .asSequence()
+            .filter {
+                it.status == MessageStatus.Sent ||
+                    it.status == MessageStatus.Delivered ||
+                    it.status == MessageStatus.Read
+            }
+            .maxOfOrNull { it.createdAt }
 
     private fun translate(messageId: String) {
         if (_uiState.value.translatingMessageId != null) return
@@ -450,6 +489,7 @@ class ChatDetailViewModel(
 
     private companion object {
         const val FOLLOWED_FLASH_MS = 2_000L
+        const val POST_SEND_TIP_SYNC_RETRY_MS = 400L
     }
 }
 

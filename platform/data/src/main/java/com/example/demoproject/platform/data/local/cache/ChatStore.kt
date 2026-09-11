@@ -11,7 +11,11 @@ interface ChatStore {
     fun observeTotalUnread(includeMuted: Boolean): Flow<Int>
     fun observeMessages(conversationId: String): Flow<List<Message>>
 
-    suspend fun upsertConversations(list: List<Conversation>)
+    /**
+     * Upserts conversations, coalescing blank peer profile fields and preserving
+     * local pin/mute. Returns the merged rows that were written.
+     */
+    suspend fun upsertConversations(list: List<Conversation>): List<Conversation>
     suspend fun upsertMessages(conversationId: String, list: List<Message>)
     suspend fun getMessages(conversationId: String): List<Message>
     /** Latest `createdAt` among Sent/Delivered/Read only (excludes Sending/Failed). */

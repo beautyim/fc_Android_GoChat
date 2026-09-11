@@ -41,7 +41,10 @@ internal object ChatDetailMessageMapper {
             if (index == 0 || millis - previousMillis >= TIME_SEPARATOR_GAP_MS) {
                 rows += ChatDetailListItem.TimeSeparator(
                     label = formatSeparatorLabel(millis, stringResolver),
-                    key = "time_$millis}_${message.id}",
+                    // Key on timestamp only — do not tie to message.id. Send success
+                    // replaces local_* with server mtime; a per-message key would
+                    // remount the separator and break reverseLayout stick-to-bottom.
+                    key = "time_$millis",
                 )
             }
             rows += ChatDetailListItem.MessageRow(

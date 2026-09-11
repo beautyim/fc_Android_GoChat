@@ -240,25 +240,31 @@ object ComponentSize {
     val chatListTopInset = 12.dp
     /** Figma Messages name→avatar gap (72-60). */
     val chatRowTextStartGap = 12.dp
-    /** Figma name center 19.5 → ~12dp top inset for 14sp. */
-    val chatRowTextTopInset = 12.dp
-    /** Figma name→preview centers 19.5→43 ≈ 10dp gap. */
-    val chatRowNamePreviewGap = 10.dp
-    /** Figma timestamp center 15.5 → ~10dp top inset for 11sp. */
-    val chatRowMetaTopInset = 10.dp
-    /** Figma timestamp→badge gap (~8–11dp). */
-    val chatRowMetaGap = 8.dp
+    /** Figma name box top — y=11 (1:1875). */
+    val chatRowTextTopInset = 11.dp
+    /** Figma name→preview gap — 36 − (11+17) = 8 (1:1875/1:1876). */
+    val chatRowNamePreviewGap = 8.dp
+    /** Figma timestamp box top — y=9 (1:1877). */
+    val chatRowMetaTopInset = 9.dp
+    /** Figma timestamp→badge gap — 32 − (9+13) = 10 (1:1877/1:1878). */
+    val chatRowMetaGap = 10.dp
     /** Figma unread badge horizontal padding — 6dp. */
     val chatUnreadBadgeHorizontal = 6.dp
     /** Figma unread badge vertical padding — 3dp. */
     val chatUnreadBadgeVertical = 3.dp
-    /** Figma Messages unread badge min height. */
-    val chatUnreadBadgeMin = 18.dp
-    /** Chat skeleton name / preview bars. */
+    /** Figma Messages unread badge min — 19×19 (1:1878). */
+    val chatUnreadBadgeMin = 19.dp
+    /**
+     * Figma unread badge trailing inset vs row end —
+     * frame 351 − (badge x 320 + w 19) = 12 (1:1878).
+     * Timestamp stays flush end; badge sits 12dp inset.
+     */
+    val chatUnreadBadgeEndInset = 12.dp
+    /** Chat skeleton name / preview bars (match Figma text box heights). */
     val chatSkeletonNameWidth = 120.dp
-    val chatSkeletonNameHeight = 14.dp
+    val chatSkeletonNameHeight = 17.dp
     val chatSkeletonPreviewWidth = 180.dp
-    val chatSkeletonPreviewHeight = 12.dp
+    val chatSkeletonPreviewHeight = 14.dp
     /** Chat detail top bar — 56dp. */
     val chatDetailTopBar = 56.dp
     /** Figma chat detail top bar: back → avatar gap — 12dp. */

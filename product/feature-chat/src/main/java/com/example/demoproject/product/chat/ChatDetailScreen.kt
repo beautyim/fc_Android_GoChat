@@ -569,8 +569,12 @@ private fun ChatDetailMessageList(
     val newestItemKey = state.items.lastOrNull()?.key
     LaunchedEffect(newestItemKey, state.isLoadingMore) {
         if (displayItems.isEmpty() || state.isLoadingMore) return@LaunchedEffect
-        // Visual bottom is index 0; keep pinned when the user is already there.
-        if (listState.firstVisibleItemIndex <= 1) {
+        // reverseLayout: index 0 = visual bottom. A new "Today …" TimeSeparator lands at
+        // index 1; local→server id remount can bump firstVisibleItemIndex past 1 and the
+        // old <=1 gate would skip scrollToItem — outbound bubbles then fail to pin.
+        val newestIsMine =
+            (displayItems.firstOrNull() as? ChatDetailListItem.MessageRow)?.message?.isMine == true
+        if (newestIsMine || listState.firstVisibleItemIndex <= 2) {
             listState.scrollToItem(0)
         }
     }

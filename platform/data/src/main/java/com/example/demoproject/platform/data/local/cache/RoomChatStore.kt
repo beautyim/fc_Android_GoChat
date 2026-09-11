@@ -62,10 +62,15 @@ class RoomChatStore(
             }
         }
 
-    override suspend fun upsertConversations(list: List<Conversation>) {
+    override suspend fun upsertConversations(list: List<Conversation>): List<Conversation> {
         val owner = ownerId()
-        if (owner.isBlank() || list.isEmpty()) return
-        conversationDao.upsertAll(list.map { conversation -> conversation.toEntity(owner) })
+        if (owner.isBlank() || list.isEmpty()) return emptyList()
+        val merged = list.map { incoming ->
+            val existing = conversationDao.getById(owner, incoming.id)?.toDomain()
+            incoming.mergedWithExisting(existing)
+        }
+        conversationDao.upsertAll(merged.map { conversation -> conversation.toEntity(owner) })
+        return merged
     }
 
     override suspend fun upsertMessages(conversationId: String, list: List<Message>) {
@@ -108,7 +113,9 @@ class RoomChatStore(
     override suspend fun putConversation(conversation: Conversation) {
         val owner = ownerId()
         if (owner.isBlank()) return
-        conversationDao.upsert(conversation.toEntity(owner))
+        val existing = conversationDao.getById(owner, conversation.id)?.toDomain()
+        val merged = conversation.mergedPeerWithExisting(existing)
+        conversationDao.upsert(merged.toEntity(owner))
     }
 
     override suspend fun deleteConversation(conversationId: String) {

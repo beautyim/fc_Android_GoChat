@@ -39,9 +39,13 @@ class InMemoryChatStore : ChatStore {
             messages[conversationId].orEmpty().sortedBy { it.createdAt }
         }
 
-    override suspend fun upsertConversations(list: List<Conversation>) {
-        list.forEach { conversations[it.id] = it }
+    override suspend fun upsertConversations(list: List<Conversation>): List<Conversation> {
+        val merged = list.map { incoming ->
+            incoming.mergedWithExisting(conversations[incoming.id])
+        }
+        merged.forEach { conversations[it.id] = it }
         bump()
+        return merged
     }
 
     override suspend fun upsertMessages(conversationId: String, list: List<Message>) {
@@ -78,7 +82,8 @@ class InMemoryChatStore : ChatStore {
         conversations[conversationId]
 
     override suspend fun putConversation(conversation: Conversation) {
-        conversations[conversation.id] = conversation
+        val merged = conversation.mergedPeerWithExisting(conversations[conversation.id])
+        conversations[conversation.id] = merged
         bump()
     }
 

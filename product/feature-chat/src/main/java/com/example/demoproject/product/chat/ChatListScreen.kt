@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -73,7 +74,10 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.PlatformTextStyle
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -98,6 +102,44 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
 import kotlin.math.roundToInt
+
+/** Figma 1:1875 — 14sp / 17sp line box. */
+private val ChatListNameStyle = TextStyle(
+    fontSize = TextSize.sm,
+    lineHeight = TextSize.chatListNameLine,
+    fontWeight = FontWeight.SemiBold,
+    color = DemoColors.textPrimary,
+    platformStyle = PlatformTextStyle(includeFontPadding = false),
+    lineHeightStyle = LineHeightStyle(
+        alignment = LineHeightStyle.Alignment.Center,
+        trim = LineHeightStyle.Trim.Both,
+    ),
+)
+
+/** Figma 1:1876 — 12sp / 14sp line box. */
+private val ChatListPreviewStyle = TextStyle(
+    fontSize = TextSize.xs,
+    lineHeight = TextSize.chatListPreviewLine,
+    fontWeight = FontWeight.Normal,
+    color = DemoColors.chatPreview,
+    platformStyle = PlatformTextStyle(includeFontPadding = false),
+    lineHeightStyle = LineHeightStyle(
+        alignment = LineHeightStyle.Alignment.Center,
+        trim = LineHeightStyle.Trim.Both,
+    ),
+)
+
+/** Figma 1:1877 / 1:1879 — 11sp / 13sp line box. */
+private val ChatListMetaStyle = TextStyle(
+    fontSize = TextSize.meMeta,
+    lineHeight = TextSize.chatListMetaLine,
+    fontWeight = FontWeight.Normal,
+    platformStyle = PlatformTextStyle(includeFontPadding = false),
+    lineHeightStyle = LineHeightStyle(
+        alignment = LineHeightStyle.Alignment.Center,
+        trim = LineHeightStyle.Trim.Both,
+    ),
+)
 
 @Composable
 fun ChatListScreen(
@@ -563,7 +605,7 @@ private fun ChatConversationRow(
                         onClick()
                     }
                 },
-            // Figma row: avatar flush top; name/preview and meta are top-biased in the 68dp cell.
+            // Figma 1:1873 — avatar top; name/preview and meta top-biased in the 68dp cell.
             verticalAlignment = Alignment.Top,
             horizontalArrangement = Arrangement.spacedBy(ComponentSize.chatRowTextStartGap),
         ) {
@@ -590,17 +632,13 @@ private fun ChatConversationRow(
             ) {
                 Text(
                     text = conversation.title,
-                    color = DemoColors.textPrimary,
-                    fontSize = TextSize.sm,
-                    fontWeight = FontWeight.SemiBold,
+                    style = ChatListNameStyle,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
                 Text(
                     text = conversation.preview,
-                    color = DemoColors.chatPreview,
-                    fontSize = TextSize.xs,
-                    fontWeight = FontWeight.Normal,
+                    style = ChatListPreviewStyle,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -624,22 +662,28 @@ private fun ChatConversationRow(
                     }
                     Text(
                         text = conversation.timestampLabel,
-                        color = DemoColors.chatTimestamp,
-                        fontSize = TextSize.meMeta,
-                        fontWeight = FontWeight.Normal,
+                        style = ChatListMetaStyle.copy(color = DemoColors.chatTimestamp),
                         maxLines = 1,
                     )
                 }
                 if (conversation.unreadCount > 0) {
+                    // Figma 1:1878 — 19×19 pill, top 32; trailing inset 12 vs timestamp flush end.
                     Text(
                         text = if (conversation.unreadCount > 99) {
                             "99+"
                         } else {
                             conversation.unreadCount.toString()
                         },
-                        color = DemoColors.onPrimaryButton,
-                        fontSize = TextSize.meMeta,
+                        style = ChatListMetaStyle.copy(
+                            color = DemoColors.onPrimaryButton,
+                            textAlign = TextAlign.Center,
+                        ),
                         modifier = Modifier
+                            .padding(end = ComponentSize.chatUnreadBadgeEndInset)
+                            .defaultMinSize(
+                                minWidth = ComponentSize.chatUnreadBadgeMin,
+                                minHeight = ComponentSize.chatUnreadBadgeMin,
+                            )
                             .clip(RoundedCornerShape(Radius.pill))
                             .background(DemoColors.meUnreadBadge)
                             .padding(

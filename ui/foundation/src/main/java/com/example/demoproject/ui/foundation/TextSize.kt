@@ -13,6 +13,12 @@ object TextSize {
     /** Call Records status line — Figma 11. */
     val callRecordsStatus = 11.sp
     val xs = 12.sp
+    /** Chat list name line box — Figma 1:1875 height 17. */
+    val chatListNameLine = 17.sp
+    /** Chat list preview line box — Figma 1:1876 height 14. */
+    val chatListPreviewLine = 14.sp
+    /** Chat list timestamp / unread digit line box — Figma 1:1877 height 13. */
+    val chatListMetaLine = 13.sp
     /** Me stats / country — Figma 11. */
     val meMeta = 11.sp
     /** Me nickname — Figma 17. */
