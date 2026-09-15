@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="vip_cd_back">Back</string>
+    <string name="vip_cd_loading">Loading</string>
+    <string name="vip_hero_upgrade_prefix">Upgrade\nto\u0020</string>
+    <string name="vip_hero_upgrade_accent">VIP</string>
+    <string name="vip_hero_member_prefix">You\'re\n</string>
+    <string name="vip_hero_member_accent">VIP</string>
+    <string name="vip_expiry_fmt">Expiry date: %1$s</string>
+    <string name="vip_benefit_section">VIP Benefit</string>
+    <string name="vip_choose_plan">Choose Your Plan</string>
+    <string name="vip_cta_get">Get VIP Now</string>
+    <string name="vip_cta_resubscribe">Re-Subscribe</string>
+    <string name="vip_billing_note">Recurring billing. Cancel anytime.</string>
+    <string name="vip_empty">No VIP plans available</string>
+    <string name="vip_retry">Retry</string>
+    <string name="vip_status_no_activity">Unable to start purchase</string>
+    <string name="vip_status_launcher_missing">Purchase is unavailable</string>
+    <string name="vip_status_purchase_verified">Purchase verified</string>
+    <string name="vip_status_purchase_canceled">Purchase canceled</string>
+    <string name="vip_status_purchase_failed_fmt">Purchase failed: %1$s</string>
+    <string name="vip_guide_cd_close">Close</string>
+    <string name="vip_guide_title_line1">You\'ve used all your</string>
+    <string name="vip_guide_title_accent">free messages</string>
+    <string name="vip_guide_title_emoji">\u0020💬</string>
+    <string name="vip_guide_subtitle_prefix">Upgrade to VIP\u0020</string>
+    <string name="vip_guide_subtitle_mid">to keep the chat going</string>
+    <string name="vip_guide_subtitle_with">with %1$s ✨</string>
+    <string name="vip_guide_peer_fallback">them</string>
+    <string name="vip_guide_why_section">Why go VIP?</string>
+    <string name="vip_guide_plan_subtitle">Full access to all VIP features</string>
+    <string name="vip_guide_plan_title_fmt">%1$s VIP</string>
+    <string name="vip_guide_cta">Upgrade to VIP</string>
+</resources>

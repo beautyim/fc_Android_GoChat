@@ -4,6 +4,20 @@ import androidx.compose.ui.unit.sp
 
 object TextSize {
     val caption = 10.sp
+    /** Store price button original — Figma 10. */
+    val storePriceOriginal = 10.sp
+    /** Store discount chip — Figma 11. */
+    val storeDiscount = 11.sp
+    /** Store VIP ribbon / super-discount — Figma 13. */
+    val storeRibbon = 13.sp
+    /** Store VIP ribbon line box — Figma 18. */
+    val storeRibbonLine = 18.sp
+    /** Store VIP title / price line box — Figma 21. */
+    val storeVipTitleLine = 21.sp
+    /** Store VIP benefit value/label line — Figma 34÷2. */
+    val storeVipBenefitLine = 17.sp
+    /** Store VIP original-price line box — Figma 16. */
+    val storeVipOriginalLine = 16.sp
     /** Chat detail send-time line box — Figma 1:1965 height 12. */
     val chatTimestampLine = 12.sp
     /** Chat detail system notice line box — Figma 1:2142 height 14. */
@@ -26,11 +40,41 @@ object TextSize {
     /** Me follower count — Figma 13. */
     val meStat = 13.sp
     val sm = 14.sp
+    /** Standard 14sp list-label line box — Figma "leading normal". */
+    val smLine = 17.sp
+    /** Store price button current — Figma 15. */
+    val storePrice = 15.sp
     val md = 16.sp
+    /** 16sp line box for nav titles / empty-state labels — Figma "leading normal". */
+    val mdLine = 19.sp
     val lg = 18.sp
     /** Me coin balance — Figma 20. */
     val meBalance = 20.sp
     val title = 22.sp
+    /** Store coin package amount — Figma 22. */
+    val storeCoinAmount = 22.sp
+    /** VIP plan price — Figma 24. */
+    val vipPlanPrice = 24.sp
+    /** VIP plan price line box — Figma 29. */
+    val vipPlanPriceLine = 29.sp
+    /** VIP plan title line box — Figma 14. */
+    val vipPlanTitleLine = 14.sp
+    /** VIP benefit label line box — Figma 16. */
+    val vipBenefitLabelLine = 16.sp
+    /** VIP hero title — Figma 32. */
+    val vipHero = 32.sp
+    /** VIP hero line box — Figma 46. */
+    val vipHeroLine = 46.sp
+    /** VIP pay-guide title — Figma 18. */
+    val vipGuideTitle = 18.sp
+    /** VIP pay-guide title line box — Figma leading 26. */
+    val vipGuideTitleLine = 26.sp
+    /** VIP pay-guide title tracking — Figma 0.36. */
+    val vipGuideTitleTracking = 0.36.sp
+    /** VIP pay-guide caption / subtitle line — Figma 10 leading normal. */
+    val vipGuideCaptionLine = 12.sp
+    /** VIP pay-guide plan title / price line — Figma 16 leading normal. */
+    val vipGuidePlanLine = 19.sp
     /** Chat emoji glyph — Figma 26. */
     val chatEmoji = 26.sp
     /** Chat emoji line box — room so glyphs are not clipped. */

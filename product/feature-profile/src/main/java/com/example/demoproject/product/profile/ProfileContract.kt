@@ -1,8 +1,8 @@
 package com.example.demoproject.product.profile
 
 import com.example.demoproject.platform.data.model.AlbumPhoto
-import com.example.demoproject.product.profile.media.MediaViewerItem
 import com.example.demoproject.product.profile.media.toMediaViewerItem
+import com.example.demoproject.ui.designsystem.media.MediaViewerItem
 
 data class ProfileMediaUi(
     val id: Long,
@@ -92,6 +92,7 @@ sealed interface ProfileIntent {
 sealed interface ProfileEffect {
     data object NavigateBack : ProfileEffect
     data object OpenStore : ProfileEffect
+    data class OpenChatDetail(val conversationId: String, val nickname: String) : ProfileEffect
     data class ShowMessage(val message: String) : ProfileEffect
 }
 

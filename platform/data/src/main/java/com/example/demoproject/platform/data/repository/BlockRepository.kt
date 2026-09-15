@@ -12,6 +12,10 @@ interface BlockRepository {
     fun isBlocked(userId: String): Boolean
 
     suspend fun getBlockedUsers(page: Int = 1): AppResult<List<User>>
+
+    /** Same fetch as [getBlockedUsers], but keeps the server's `has_more` for paging UIs. */
+    suspend fun getBlockedUsersPage(page: Int = 1): AppResult<BlockedUsersPage>
+
     suspend fun blockUser(targetUid: Long): AppResult<Unit>
     suspend fun unblockUser(targetUid: Long): AppResult<Unit>
 
@@ -20,3 +24,9 @@ interface BlockRepository {
 
     fun clearLocal()
 }
+
+/** Page from `POST /user/black-list`. */
+data class BlockedUsersPage(
+    val users: List<User>,
+    val hasMore: Boolean,
+)

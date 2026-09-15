@@ -55,7 +55,9 @@
     <string name="chat_detail_notice_generic">System notice</string>
     <string name="chat_detail_resend_unsupported">This message type cannot be resent.</string>
     <string name="chat_detail_soon_gift">لوحة الهدايا قريبًا</string>
-    <string name="chat_detail_soon_plus">المرفقات قريبًا</string>
+    <string name="chat_detail_media_send_image">إرسال صورة</string>
+    <string name="chat_detail_media_send_video">إرسال فيديو</string>
+    <string name="chat_detail_media_cancel">إلغاء</string>
     <string name="chat_detail_cd_emoji">إيموجي</string>
     <string name="chat_detail_cd_keyboard">لوحة المفاتيح</string>
     <string name="chat_detail_cd_emoji_item">إيموجي %1$s</string>
@@ -85,4 +87,8 @@
     <string name="chat_detail_gift_send_success">تم إرسال الهدية</string>
     <string name="chat_detail_gift_cd_balance">رصيد العملات</string>
     <string name="chat_detail_gift_cd_select">اختر هدية</string>
+    <string name="chat_detail_gift_cd_play">تشغيل حركة الهدية</string>
+    <string name="chat_detail_greeting_text">hi～</string>
+    <string name="chat_detail_cd_greeting">إرسال تحية</string>
+    <string name="chat_detail_cd_quick_gift">إرسال هدية %1$s</string>
 </resources>

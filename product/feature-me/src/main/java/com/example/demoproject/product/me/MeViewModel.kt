@@ -48,6 +48,11 @@ class MeViewModel(
                 }
             }
         }
+        viewModelScope.launch {
+            runtime.chatUnreadStore.total.collect { count ->
+                _uiState.update { it.copy(chatUnreadCount = count) }
+            }
+        }
         loadMe(force = false)
     }
 
@@ -55,12 +60,14 @@ class MeViewModel(
         when (intent) {
             MeIntent.Refresh -> loadMe(force = true)
             MeIntent.OpenPublicProfile -> openPublicProfile()
+            MeIntent.OpenFollowers -> openRelationshipList(RelationshipListType.Followers)
+            MeIntent.OpenFollowing -> openRelationshipList(RelationshipListType.Following)
             MeIntent.OpenCamera -> emitComingSoon(R.string.me_message_camera_soon)
             MeIntent.OpenAddCoins -> viewModelScope.launch { _effects.send(MeEffect.OpenStore) }
-            MeIntent.OpenVip -> emitComingSoon(R.string.me_message_vip_soon)
+            MeIntent.OpenVip -> viewModelScope.launch { _effects.send(MeEffect.OpenVip) }
             MeIntent.OpenGift -> emitComingSoon(R.string.me_message_gift_soon)
             MeIntent.OpenVerification -> emitComingSoon(R.string.me_message_verify_soon)
-            MeIntent.OpenSettings -> emitComingSoon(R.string.me_message_settings_soon)
+            MeIntent.OpenSettings -> viewModelScope.launch { _effects.send(MeEffect.OpenSettings) }
         }
     }
 
@@ -71,6 +78,17 @@ class MeViewModel(
             return
         }
         viewModelScope.launch { _effects.send(MeEffect.OpenPublicProfile(id)) }
+    }
+
+    private fun openRelationshipList(type: RelationshipListType) {
+        val state = _uiState.value
+        val count = when (type) {
+            RelationshipListType.Following -> state.followingCount
+            RelationshipListType.Followers -> state.followerCount
+        }
+        viewModelScope.launch {
+            _effects.send(MeEffect.OpenRelationshipList(type = type, count = count))
+        }
     }
 
     private fun loadMe(force: Boolean) {

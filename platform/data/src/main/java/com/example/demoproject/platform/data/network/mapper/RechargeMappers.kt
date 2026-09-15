@@ -5,12 +5,14 @@ import com.example.demoproject.platform.data.network.dto.CoinProductDto
 import com.example.demoproject.platform.data.network.dto.CoinVipPayItemDto
 import com.example.demoproject.platform.data.network.dto.VipAlertCallbackDto
 import com.example.demoproject.platform.data.network.dto.VipAlertFuncDataDto
+import com.example.demoproject.platform.data.network.dto.toVipAlertCallbackDtoOrNull
 import com.example.demoproject.platform.data.network.toAssetUrlOrNull
 import com.example.demoproject.platform.data.repository.RechargePageData
 import com.example.demoproject.platform.data.repository.RechargeProduct
 import com.example.demoproject.platform.data.repository.RechargeSaleItem
 import com.example.demoproject.platform.data.repository.RechargeVipPayItem
 import com.example.demoproject.platform.data.repository.resolveRechargeCoinSpriteIndex
+import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
@@ -28,12 +30,14 @@ fun CoinIndexResponseDto.toRechargePageData(): RechargePageData {
         .mapIndexed { index, item -> item.toRechargeSaleItem(index) }
     val vipCandidates = vipPayItems + (payList + hotList + saleList.orEmpty())
         .mapNotNull { it.toCoinVipPayItemOrNull() }
+    val resolvedVipItems = resolveAllRechargeVipPayItems(vipPayItem, vipCandidates)
     return RechargePageData(
         balance = balance,
         hotProducts = hot,
         products = regular,
         saleItems = sales,
-        vipPayItem = resolveRechargeVipPayItem(vipPayItem, vipCandidates),
+        vipPayItem = resolvedVipItems.firstOrNull(),
+        vipPayItems = resolvedVipItems,
     )
 }
 
@@ -41,6 +45,10 @@ fun VipAlertCallbackDto.toRechargePageData(): RechargePageData? {
     if (funcName != "recharge_alert") return null
     return funcData?.toRechargePageData()?.takeUnless { it.isEmpty }
 }
+
+/** Parses a raw envelope `callback` that carries `recharge_alert` catalog data. */
+fun JsonElement?.toRechargePageDataOrNull(): RechargePageData? =
+    toVipAlertCallbackDtoOrNull()?.toRechargePageData()
 
 fun VipAlertFuncDataDto.toRechargePageData(): RechargePageData {
     val hot = hotList
@@ -52,12 +60,14 @@ fun VipAlertFuncDataDto.toRechargePageData(): RechargePageData {
     val sales = resolveAlertSaleItems()
     val vipCandidates = vipPayItems + (coinPayItems + hotList + saleList.orEmpty())
         .mapNotNull { it.toCoinVipPayItemOrNull() }
+    val resolvedVipItems = resolveAllRechargeVipPayItems(vipPayItem, vipCandidates)
     return RechargePageData(
         balance = balance,
         hotProducts = hot,
         products = regular,
         saleItems = sales,
-        vipPayItem = resolveRechargeVipPayItem(vipPayItem, vipCandidates),
+        vipPayItem = resolvedVipItems.firstOrNull(),
+        vipPayItems = resolvedVipItems,
     )
 }
 
@@ -122,20 +132,37 @@ internal fun CoinProductDto.toRechargeSaleItem(styleIndex: Int): RechargeSaleIte
         matchCount = match,
         // This mapper lives outside Compose and can't resolve string resources, so pass the
         // blank case through as null and let the UI layer localize the fallback text.
-        superDiscountLabel = label.takeIf { it.isNotBlank() },
+        superDiscountLabel = label.toDisplayLabelOrNull(),
     )
 }
 
 internal fun CoinVipPayItemDto.toRechargeVipPayItem(): RechargeVipPayItem? {
     if (hidden == 1 || (id <= 0L && sku.isBlank())) return null
+    val priceResolved = moneyDesc.ifBlank { formatRechargeMoney(money, currencyUnit) }
+    // API may send `original` as "$4.99" (not a bare double).
+    val originalAmount = parseRechargeAmount(original)
+        ?: parseRechargeAmount(originalDesc)
+    val hasNumericDiscount = originalAmount != null && originalAmount > money && originalAmount > 0.0
+    val originalDisplay = original.trim().takeIf { it.isNotBlank() }
+        ?: originalDesc.trim().takeIf { it.isNotBlank() }
+    val resolvedOriginal = when {
+        originalDisplay != null &&
+            !originalDisplay.equals(priceResolved, ignoreCase = true) &&
+            (hasNumericDiscount || originalAmount == null) -> originalDisplay
+        hasNumericDiscount -> formatRechargeMoney(originalAmount!!, currencyUnit)
+        else -> null
+    }
     return RechargeVipPayItem(
         id = id,
         sku = sku,
         productType = productType.takeIf { it > 0 } ?: 2,
         title = title,
-        price = moneyDesc.ifBlank { formatRechargeMoney(money, currencyUnit) },
+        month = month,
+        price = priceResolved,
+        originalPrice = resolvedOriginal,
         giveCoins = resolvedGiveCoins(),
         matchCount = resolvedMatchCount(),
+        badgeLabel = label.toDisplayLabelOrNull(),
     )
 }
 
@@ -184,7 +211,26 @@ internal fun resolveRechargeVipPayItem(
     vipPayItem: CoinVipPayItemDto?,
     vipPayItems: List<CoinVipPayItemDto>,
 ): RechargeVipPayItem? =
-    resolveVipPayItemDto(vipPayItem, vipPayItems)?.toRechargeVipPayItem()
+    resolveAllRechargeVipPayItems(vipPayItem, vipPayItems).firstOrNull()
+
+internal fun resolveAllRechargeVipPayItems(
+    vipPayItem: CoinVipPayItemDto?,
+    vipPayItems: List<CoinVipPayItemDto>,
+): List<RechargeVipPayItem> {
+    val candidates = buildList {
+        resolveVipPayItemDto(vipPayItem, vipPayItems)?.let { add(it) }
+        addAll(vipPayItems.filter { it.isVisibleVipCandidate })
+    }
+    return candidates
+        .mapNotNull { it.toRechargeVipPayItem() }
+        .distinctBy { item ->
+            when {
+                item.id > 0L -> "id:${item.id}"
+                item.sku.isNotBlank() -> "sku:${item.sku}"
+                else -> "title:${item.title}:${item.price}"
+            }
+        }
+}
 
 fun resolveVipPayItemDto(
     vipPayItem: CoinVipPayItemDto?,
@@ -257,6 +303,29 @@ internal fun formatRechargeMoney(amount: Double, currencyUnit: String): String {
         String.format("%.2f", amount)
     }
     return "$unit$normalized"
+}
+
+/**
+ * Ribbon/badge copy arrives shouted ("SUPER DISCOUNTS", "TRY NOW") while the design uses
+ * title case, which also keeps the hugged ribbon at its designed width.
+ */
+internal fun String.toDisplayLabelOrNull(): String? {
+    val trimmed = trim()
+    if (trimmed.isEmpty()) return null
+    if (trimmed.any { it.isLowerCase() }) return trimmed
+    return trimmed.split(' ')
+        .filter { it.isNotBlank() }
+        .joinToString(" ") { word ->
+            word.lowercase().replaceFirstChar { char -> char.titlecase() }
+        }
+}
+
+/** Parses "$4.99", "4.99", or "$4.99/Week" style money strings. */
+internal fun parseRechargeAmount(raw: String): Double? {
+    val trimmed = raw.trim()
+    if (trimmed.isEmpty()) return null
+    trimmed.toDoubleOrNull()?.let { return it }
+    return Regex("""\d+(?:\.\d+)?""").find(trimmed)?.value?.toDoubleOrNull()
 }
 
 internal fun String.currencySymbol(): String = when {

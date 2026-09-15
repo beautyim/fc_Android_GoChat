@@ -68,7 +68,8 @@ data class ProfileHomeDetail(
 
 /**
  * User profile operations, backed by `/home/my`, `/home/info`, `/user/search`,
- * `/user/update-info`, `/focus/list`, `/focus/follow`, `/home/list` and the Room `UserDao` cache.
+ * `/user/update-info`, `/user/disband`, `/focus/list`, `/focus/follow`, `/home/list`
+ * and the Room `UserDao` cache.
  *
  * Caching strategy: network-first, local cache for offline viewing. The
  * cache key is the stringified `uid`.
@@ -110,6 +111,9 @@ interface ProfileRepository {
 
     /** `/user/update-info` — partial edit-profile update. */
     suspend fun updateEditProfile(update: EditProfileUpdate): AppResult<EditProfileUpdateResult>
+
+    /** `user/disband` — deregister and disband the current logged-in account. */
+    suspend fun disbandAccount(): AppResult<Unit>
 
     /**
      * `user/update-info` — edits the current profile. Every argument is
@@ -160,14 +164,14 @@ interface ProfileRepository {
         targetUserId: String,
         page: Int,
         pageSize: Int = OffsetPageRequest.DEFAULT_PAGE_SIZE,
-    ): AppResult<List<User>>
+    ): AppResult<FollowUsersPage>
 
     /** `focus/fans-list` — paged followers of the target user. */
     suspend fun getFollowerUsers(
         targetUserId: String,
         page: Int,
         pageSize: Int = OffsetPageRequest.DEFAULT_PAGE_SIZE,
-    ): AppResult<List<User>>
+    ): AppResult<FollowUsersPage>
 
     /** `focus/fans-list` total follower count (`total_num` from the API). */
     suspend fun getFollowerCount(targetUserId: String): AppResult<Int>
@@ -190,4 +194,17 @@ interface ProfileRepository {
 data class DiscoverUsersPage(
     val users: List<User>,
     val hasMore: Boolean,
+)
+
+/**
+ * Page from `POST focus/list` / `POST focus/fans-list`.
+ *
+ * [FocusListRequestDto][com.example.demoproject.platform.data.network.dto.FocusListRequestDto]
+ * carries no page size, so callers must page off [hasMore] rather than the
+ * returned list length.
+ */
+data class FollowUsersPage(
+    val users: List<User>,
+    val hasMore: Boolean,
+    val total: Int,
 )

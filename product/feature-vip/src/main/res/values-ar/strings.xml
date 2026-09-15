@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="vip_cd_back">رجوع</string>
+    <string name="vip_cd_loading">جارٍ التحميل</string>
+    <string name="vip_hero_upgrade_prefix">الترقية\nإلى\u0020</string>
+    <string name="vip_hero_upgrade_accent">VIP</string>
+    <string name="vip_hero_member_prefix">أنت\n</string>
+    <string name="vip_hero_member_accent">VIP</string>
+    <string name="vip_expiry_fmt">تاريخ الانتهاء: %1$s</string>
+    <string name="vip_benefit_section">ميزة VIP</string>
+    <string name="vip_choose_plan">اختر خطتك</string>
+    <string name="vip_cta_get">احصل على VIP الآن</string>
+    <string name="vip_cta_resubscribe">أعد الاشتراك</string>
+    <string name="vip_billing_note">فوترة متكررة. يمكنك الإلغاء في أي وقت.</string>
+    <string name="vip_empty">لا توجد خطط VIP</string>
+    <string name="vip_retry">إعادة المحاولة</string>
+    <string name="vip_status_no_activity">تعذر بدء الشراء</string>
+    <string name="vip_status_launcher_missing">الشراء غير متاح</string>
+    <string name="vip_status_purchase_verified">تم التحقق من الشراء</string>
+    <string name="vip_status_purchase_canceled">تم إلغاء الشراء</string>
+    <string name="vip_status_purchase_failed_fmt">فشل الشراء: %1$s</string>
+    <string name="vip_guide_cd_close">إغلاق</string>
+    <string name="vip_guide_title_line1">لقد استخدمت كل</string>
+    <string name="vip_guide_title_accent">رسائلك المجانية</string>
+    <string name="vip_guide_title_emoji">\u0020💬</string>
+    <string name="vip_guide_subtitle_prefix">رقِّ إلى VIP\u0020</string>
+    <string name="vip_guide_subtitle_mid">لمتابعة الدردشة</string>
+    <string name="vip_guide_subtitle_with">مع %1$s ✨</string>
+    <string name="vip_guide_peer_fallback">معهم</string>
+    <string name="vip_guide_why_section">لماذا VIP؟</string>
+    <string name="vip_guide_plan_subtitle">وصول كامل إلى جميع ميزات VIP</string>
+    <string name="vip_guide_plan_title_fmt">%1$s VIP</string>
+    <string name="vip_guide_cta">الترقية إلى VIP</string>
+</resources>

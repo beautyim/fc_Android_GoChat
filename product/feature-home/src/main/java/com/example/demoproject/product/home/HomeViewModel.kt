@@ -190,6 +190,7 @@ class HomeViewModel(
                 when (val init = runtime.appSessionRepository.initApp()) {
                     is AppResult.Success -> {
                         runtime.accountBalanceStore.update(init.data.accountMoney)
+                        runtime.chatUnreadStore.update(init.data.messageUnread)
                     }
                     is AppResult.Failure -> Unit
                 }

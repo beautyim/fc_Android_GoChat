@@ -55,7 +55,9 @@
     <string name="chat_detail_notice_generic">System notice</string>
     <string name="chat_detail_resend_unsupported">This message type cannot be resent.</string>
     <string name="chat_detail_soon_gift">Panel de regalos próximamente</string>
-    <string name="chat_detail_soon_plus">Adjuntos próximamente</string>
+    <string name="chat_detail_media_send_image">Enviar imagen</string>
+    <string name="chat_detail_media_send_video">Enviar video</string>
+    <string name="chat_detail_media_cancel">Cancelar</string>
     <string name="chat_detail_cd_emoji">Emoji</string>
     <string name="chat_detail_cd_keyboard">Teclado</string>
     <string name="chat_detail_cd_emoji_item">Emoji %1$s</string>
@@ -85,4 +87,8 @@
     <string name="chat_detail_gift_send_success">Regalo enviado</string>
     <string name="chat_detail_gift_cd_balance">Saldo de monedas</string>
     <string name="chat_detail_gift_cd_select">Seleccionar regalo</string>
+    <string name="chat_detail_gift_cd_play">Reproducir animación del regalo</string>
+    <string name="chat_detail_greeting_text">hi～</string>
+    <string name="chat_detail_cd_greeting">Enviar saludo</string>
+    <string name="chat_detail_cd_quick_gift">Enviar regalo %1$s</string>
 </resources>

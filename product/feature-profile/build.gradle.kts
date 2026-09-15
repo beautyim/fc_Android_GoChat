@@ -32,11 +32,6 @@ dependencies {
     implementation(libs.androidx.compose.material3)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.coil.compose)
-    implementation(libs.telephoto.zoomable.image.coil)
-    implementation(libs.media3.exoplayer)
-    implementation(libs.media3.ui)
-    implementation(libs.media3.database)
-    implementation(libs.media3.datasource)
-    implementation(libs.svga.player)
+    // MediaViewer (telephoto / Media3) comes from :ui:designsystem.
     debugImplementation(libs.androidx.compose.ui.tooling)
 }

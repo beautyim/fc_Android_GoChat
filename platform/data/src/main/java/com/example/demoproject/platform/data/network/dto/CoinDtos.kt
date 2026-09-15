@@ -146,6 +146,9 @@ data class CoinVipPayItemDto(
     @SerialName("vip_alert_remain_time")
     @Serializable(with = LenientLongSerializer::class)
     val vipAlertRemainTime: Long = 0L,
+    /** Present on `msg/send` VIP-guide `vip_list` items; ignored elsewhere. */
+    @SerialName("privilege_infos")
+    val privilegeInfos: List<VipPrivilegeDto> = emptyList(),
 )
 
 @Serializable

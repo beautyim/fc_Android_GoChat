@@ -1,4 +1,4 @@
-package com.example.demoproject.product.profile.media
+package com.example.demoproject.ui.designsystem.media
 
 import android.view.ViewGroup
 import android.widget.Toast
@@ -68,8 +68,7 @@ import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
-import com.example.demoproject.product.profile.ProfileOverlayCloseButton
-import com.example.demoproject.product.profile.R
+import com.example.demoproject.ui.designsystem.R
 import com.example.demoproject.ui.designsystem.DemoColors
 import com.example.demoproject.ui.designsystem.DemoGradients
 import com.example.demoproject.ui.designsystem.DemoTheme
@@ -165,7 +164,7 @@ internal fun MediaViewerContent(
             }
         }
 
-        ProfileOverlayCloseButton(
+        MediaViewerCloseButton(
             onClick = onDismiss,
             modifier = Modifier.align(Alignment.TopStart),
         )
@@ -201,12 +200,12 @@ private fun MediaViewerVideoChatButton(
             horizontalArrangement = Arrangement.spacedBy(Spacing.sm + Spacing.xxs),
         ) {
             Image(
-                painter = painterResource(R.drawable.profile_ic_viewer_video),
+                painter = painterResource(R.drawable.media_viewer_ic_video),
                 contentDescription = null,
                 modifier = Modifier.size(IconSize.sm),
             )
             Text(
-                text = stringResource(R.string.profile_start_video_chat),
+                text = stringResource(R.string.media_viewer_start_video_chat),
                 color = DemoColors.onPrimaryButton,
                 fontSize = TextSize.md,
                 fontWeight = FontWeight.SemiBold,
@@ -357,7 +356,7 @@ private fun MediaViewerVideoPage(
         }
         if (item.videoUrl.isNullOrBlank()) {
             isLoading = false
-            toastPlaybackError(R.string.profile_video_play_failed)
+            toastPlaybackError(R.string.media_viewer_video_play_failed)
             return@LaunchedEffect
         }
         errorToasted.set(false)
@@ -427,7 +426,7 @@ private fun MediaViewerVideoPage(
                         indication = null,
                     ) {
                         if (item.videoUrl.isNullOrBlank()) {
-                            toastPlaybackError(R.string.profile_video_play_failed)
+                            toastPlaybackError(R.string.media_viewer_video_play_failed)
                             return@clickable
                         }
                         // Do not clear the cover here — wait for first frame /
@@ -443,7 +442,7 @@ private fun MediaViewerVideoPage(
         }
 
         if (isLoading) {
-            val loadingCd = stringResource(R.string.profile_cd_loading)
+            val loadingCd = stringResource(R.string.media_viewer_cd_loading)
             CircularProgressIndicator(
                 modifier = Modifier
                     .align(Alignment.Center)
@@ -463,7 +462,7 @@ private fun MediaViewerVideoPage(
                 if (player.isPlaying) {
                     player.pause()
                 } else if (item.videoUrl.isNullOrBlank()) {
-                    toastPlaybackError(R.string.profile_video_play_failed)
+                    toastPlaybackError(R.string.media_viewer_video_play_failed)
                 } else {
                     // Keep cover until first frame; avoid re-prepare while buffering.
                     errorToasted.set(false)
@@ -511,7 +510,7 @@ private fun videoPlaybackErrorMessageRes(error: PlaybackException): Int {
         PlaybackException.ERROR_CODE_DECODING_FORMAT_UNSUPPORTED,
         PlaybackException.ERROR_CODE_PARSING_CONTAINER_UNSUPPORTED,
         PlaybackException.ERROR_CODE_PARSING_MANIFEST_UNSUPPORTED,
-        -> R.string.profile_video_unsupported
+        -> R.string.media_viewer_video_unsupported
         PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_FAILED,
         PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_TIMEOUT,
         PlaybackException.ERROR_CODE_IO_BAD_HTTP_STATUS,
@@ -520,8 +519,8 @@ private fun videoPlaybackErrorMessageRes(error: PlaybackException): Int {
         PlaybackException.ERROR_CODE_IO_CLEARTEXT_NOT_PERMITTED,
         PlaybackException.ERROR_CODE_IO_READ_POSITION_OUT_OF_RANGE,
         PlaybackException.ERROR_CODE_IO_UNSPECIFIED,
-        -> R.string.profile_video_network_failed
-        else -> R.string.profile_video_play_failed
+        -> R.string.media_viewer_video_network_failed
+        else -> R.string.media_viewer_video_play_failed
     }
 }
 
@@ -544,10 +543,10 @@ private fun MediaViewerVideoControls(
     ) {
         Image(
             painter = painterResource(
-                if (isPlaying) R.drawable.profile_ic_viewer_pause else R.drawable.profile_ic_viewer_play,
+                if (isPlaying) R.drawable.media_viewer_ic_pause else R.drawable.media_viewer_ic_play,
             ),
             contentDescription = stringResource(
-                if (isPlaying) R.string.profile_cd_pause else R.string.profile_cd_play,
+                if (isPlaying) R.string.media_viewer_cd_pause else R.string.media_viewer_cd_play,
             ),
             modifier = Modifier
                 .width(ComponentSize.profileMediaPlayWidth)

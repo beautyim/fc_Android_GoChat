@@ -79,14 +79,14 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
-import com.example.demoproject.product.profile.media.MediaViewer
-import com.example.demoproject.product.profile.gift.GiftSvgaOverlay
+import com.example.demoproject.ui.designsystem.media.MediaViewer
 import com.example.demoproject.product.profile.gift.ProfileGiftSheet
 import com.example.demoproject.product.profile.more.ProfileMoreSheet
 import com.example.demoproject.ui.designsystem.DemoColors
 import com.example.demoproject.ui.designsystem.DemoConfirmDialog
 import com.example.demoproject.ui.designsystem.DemoGradients
 import com.example.demoproject.ui.designsystem.DemoTheme
+import com.example.demoproject.ui.designsystem.gift.GiftSvgaOverlay
 import com.example.demoproject.ui.foundation.ComponentSize
 import com.example.demoproject.ui.foundation.IconSize
 import com.example.demoproject.ui.foundation.Radius
@@ -185,6 +185,7 @@ fun ProfileScreen(
     viewModel: ProfileViewModel,
     onBack: () -> Unit = {},
     onOpenStore: () -> Unit = {},
+    onOpenChatDetail: (conversationId: String, nickname: String) -> Unit = { _, _ -> },
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
@@ -194,6 +195,9 @@ fun ProfileScreen(
             when (effect) {
                 ProfileEffect.NavigateBack -> onBack()
                 ProfileEffect.OpenStore -> onOpenStore()
+                is ProfileEffect.OpenChatDetail -> {
+                    onOpenChatDetail(effect.conversationId, effect.nickname)
+                }
                 is ProfileEffect.ShowMessage -> {
                     Toast.makeText(context, effect.message, Toast.LENGTH_SHORT).show()
                 }
@@ -323,6 +327,12 @@ fun ProfileScreenContent(
             GiftSvgaOverlay(
                 svgaUrl = url,
                 onFinished = { onIntent(ProfileIntent.DismissGiftAnimation) },
+                closeButton = { onClose ->
+                    ProfileOverlayCloseButton(
+                        onClick = onClose,
+                        modifier = Modifier.align(Alignment.TopStart),
+                    )
+                },
             )
         }
     }

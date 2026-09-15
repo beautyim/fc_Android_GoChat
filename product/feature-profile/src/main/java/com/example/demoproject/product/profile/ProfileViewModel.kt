@@ -10,7 +10,7 @@ import com.example.demoproject.platform.data.network.NetworkRuntime
 import com.example.demoproject.platform.data.network.dto.TranslationSubmitRequestDto
 import com.example.demoproject.platform.data.repository.ProfileHomeDetail
 import com.example.demoproject.platform.network.result.AppResult
-import com.example.demoproject.product.profile.gift.GiftSvgaPreloader
+import com.example.demoproject.ui.designsystem.gift.GiftSvgaPreloader
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -109,10 +109,7 @@ class ProfileViewModel(
                 it.copy(giftAnimationUrl = null)
             }
             ProfileIntent.OpenCoins -> emit(ProfileEffect.OpenStore)
-            ProfileIntent.Message -> {
-                if (_uiState.value.isBlockedByPeer) return
-                emit(ProfileEffect.ShowMessage(str(R.string.profile_message_chat_soon)))
-            }
+            ProfileIntent.Message -> openChatDetail()
             ProfileIntent.VideoChat -> {
                 if (_uiState.value.isBlockedByPeer) return
                 emit(ProfileEffect.ShowMessage(str(R.string.profile_message_video_soon)))
@@ -125,6 +122,17 @@ class ProfileViewModel(
             }
             ProfileIntent.CloseMedia -> _uiState.update { it.copy(viewerIndex = null) }
         }
+    }
+
+    private fun openChatDetail() {
+        val state = _uiState.value
+        if (state.isSelf || state.isBlockedByPeer || state.userId.isBlank()) return
+        emit(
+            ProfileEffect.OpenChatDetail(
+                conversationId = state.userId,
+                nickname = state.nickname,
+            ),
+        )
     }
 
     private fun openGiftSheet() {

@@ -1,6 +1,10 @@
 package com.example.demoproject.product.chat
 
+import android.app.Activity
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -49,6 +53,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -76,6 +81,8 @@ import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextRange
@@ -92,13 +99,16 @@ import androidx.compose.ui.tooling.preview.PreviewFontScale
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import com.example.demoproject.product.store.CoinPayGuideSheet
+import com.example.demoproject.product.vip.VipPayGuideSheet
 import com.example.demoproject.ui.designsystem.DemoColors
 import com.example.demoproject.ui.designsystem.DemoGradients
 import com.example.demoproject.ui.designsystem.DemoTheme
+import com.example.demoproject.ui.designsystem.gift.GiftSvgaOverlay
+import com.example.demoproject.ui.designsystem.media.MediaViewer
 import com.example.demoproject.ui.foundation.ComponentSize
 import com.example.demoproject.ui.foundation.IconSize
 import com.example.demoproject.ui.foundation.Radius
@@ -108,6 +118,7 @@ import com.example.demoproject.ui.foundation.R as FoundationR
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
+import androidx.compose.ui.unit.sp
 
 @Composable
 fun ChatDetailScreen(
@@ -120,6 +131,23 @@ fun ChatDetailScreen(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val activity = context as? Activity
+    DisposableEffect(activity) {
+        viewModel.bindActivity(activity)
+        onDispose { viewModel.bindActivity(null) }
+    }
+    val pickImageLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia(),
+    ) { uri ->
+        val value = uri?.toString()?.takeIf { it.isNotBlank() } ?: return@rememberLauncherForActivityResult
+        viewModel.onIntent(ChatDetailIntent.SendPickedImage(value))
+    }
+    val pickVideoLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia(),
+    ) { uri ->
+        val value = uri?.toString()?.takeIf { it.isNotBlank() } ?: return@rememberLauncherForActivityResult
+        viewModel.onIntent(ChatDetailIntent.SendPickedVideo(value))
+    }
     LaunchedEffect(viewModel) {
         viewModel.effects.collectLatest { effect ->
             when (effect) {
@@ -128,9 +156,12 @@ fun ChatDetailScreen(
                 is ChatDetailEffect.StartVideoCall -> onStartVideoCall(effect.peerUserId)
                 is ChatDetailEffect.ShowMessage ->
                     Toast.makeText(context, effect.message, Toast.LENGTH_SHORT).show()
-                ChatDetailEffect.OpenPlusMenu -> Toast.makeText(
-                    context, context.getString(R.string.chat_detail_soon_plus), Toast.LENGTH_SHORT,
-                ).show()
+                ChatDetailEffect.PickSendImage -> pickImageLauncher.launch(
+                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),
+                )
+                ChatDetailEffect.PickSendVideo -> pickVideoLauncher.launch(
+                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.VideoOnly),
+                )
                 ChatDetailEffect.OpenMoreMenu -> Toast.makeText(
                     context, context.getString(R.string.chat_detail_soon_more), Toast.LENGTH_SHORT,
                 ).show()
@@ -251,7 +282,23 @@ fun ChatDetailScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(DemoColors.chatDetailPage),
+                .background(DemoColors.chatDetailPage)
+                .then(
+                    if (state.showGreetingGesture) {
+                        Modifier.pointerInput(state.showGreetingGesture) {
+                            awaitPointerEventScope {
+                                while (true) {
+                                    val event = awaitPointerEvent(PointerEventPass.Initial)
+                                    if (event.changes.any { it.changedToDown() }) {
+                                        onIntent(ChatDetailIntent.DismissGreeting)
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        Modifier
+                    },
+                ),
         ) {
             ChatDetailTopBar(
                 state = state,
@@ -316,6 +363,63 @@ fun ChatDetailScreen(
                         modifier = Modifier.fillMaxSize(),
                     )
                 }
+                androidx.compose.animation.AnimatedVisibility(
+                    visible = state.showGreetingGesture,
+                    enter = fadeIn(
+                        animationSpec = tween(
+                            durationMillis = ChatEmojiPanelAnimMillis,
+                            easing = FastOutSlowInEasing,
+                        ),
+                    ),
+                    exit = fadeOut(
+                        animationSpec = tween(
+                            durationMillis = ChatEmojiPanelAnimMillis,
+                            easing = FastOutSlowInEasing,
+                        ),
+                    ),
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(bottom = ComponentSize.chatGreetingAboveGiftBar),
+                ) {
+                    ChatGreetingWave(
+                        enabled = true,
+                        onClick = { onIntent(ChatDetailIntent.SendGreeting) },
+                    )
+                }
+            }
+            androidx.compose.animation.AnimatedVisibility(
+                visible = state.showGiftQuickBar && state.gifts.isNotEmpty(),
+                enter = fadeIn(
+                    animationSpec = tween(
+                        durationMillis = ChatEmojiPanelAnimMillis,
+                        easing = FastOutSlowInEasing,
+                    ),
+                ) + androidx.compose.animation.expandVertically(
+                    animationSpec = tween(
+                        durationMillis = ChatEmojiPanelAnimMillis,
+                        easing = FastOutSlowInEasing,
+                    ),
+                ),
+                exit = fadeOut(
+                    animationSpec = tween(
+                        durationMillis = ChatEmojiPanelAnimMillis,
+                        easing = FastOutSlowInEasing,
+                    ),
+                ) + androidx.compose.animation.shrinkVertically(
+                    animationSpec = tween(
+                        durationMillis = ChatEmojiPanelAnimMillis,
+                        easing = FastOutSlowInEasing,
+                    ),
+                ),
+            ) {
+                ChatGiftQuickBar(
+                    gifts = state.gifts,
+                    enabled = !state.isGiftSending,
+                    onSendGift = { onIntent(ChatDetailIntent.SendQuickGift(it)) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = Spacing.xs),
+                )
             }
             ChatDetailComposer(
                 state = state,
@@ -383,6 +487,42 @@ fun ChatDetailScreen(
                 onSelectGift = { onIntent(ChatDetailIntent.SelectGift(it)) },
                 onSend = { onIntent(ChatDetailIntent.SendGift) },
                 onOpenCoins = { onIntent(ChatDetailIntent.OpenCoins) },
+            )
+        }
+        if (state.isMediaTypeSheetVisible) {
+            ChatMediaTypeSheet(
+                onSendImage = { onIntent(ChatDetailIntent.SelectSendImage) },
+                onSendVideo = { onIntent(ChatDetailIntent.SelectSendVideo) },
+                onDismiss = { onIntent(ChatDetailIntent.DismissMediaTypeSheet) },
+            )
+        }
+        state.vipPayGuide?.let { guide ->
+            VipPayGuideSheet(
+                state = guide,
+                onDismiss = { onIntent(ChatDetailIntent.DismissVipPayGuide) },
+                onUpgrade = { onIntent(ChatDetailIntent.PurchaseVipPayGuide) },
+            )
+        }
+        state.coinPayGuide?.let { guide ->
+            CoinPayGuideSheet(
+                state = guide,
+                onDismiss = { onIntent(ChatDetailIntent.DismissCoinPayGuide) },
+                onPurchaseCoin = { onIntent(ChatDetailIntent.PurchaseCoinPayGuideCoin(it)) },
+                onPurchaseSale = { onIntent(ChatDetailIntent.PurchaseCoinPayGuideSale(it)) },
+            )
+        }
+        state.giftAnimationUrl?.let { url ->
+            GiftSvgaOverlay(
+                svgaUrl = url,
+                onFinished = { onIntent(ChatDetailIntent.DismissGiftAnimation) },
+            )
+        }
+        state.mediaViewerIndex?.let { index ->
+            MediaViewer(
+                items = state.mediaViewerItems,
+                initialIndex = index,
+                onDismiss = { onIntent(ChatDetailIntent.DismissMediaPreview) },
+                showVideoChat = false,
             )
         }
     }
@@ -835,9 +975,11 @@ private fun ChatDetailBubbleContent(
             is ChatDetailMessageBody.Video -> MediaBubble(body.url, body.locked, body.durationLabel) {
                 onIntent(ChatDetailIntent.OpenMedia(message.id))
             }
-            is ChatDetailMessageBody.Gift -> GiftBubble(body) {
-                onIntent(ChatDetailIntent.SendRequestedGift(message.id))
-            }
+            is ChatDetailMessageBody.Gift -> GiftBubble(
+                gift = body,
+                onSendGift = { onIntent(ChatDetailIntent.SendRequestedGift(message.id)) },
+                onPlayAnimation = { onIntent(ChatDetailIntent.PlayGiftAnimation(message.id)) },
+            )
             is ChatDetailMessageBody.Call -> CallBubble(body, isMine)
             is ChatDetailMessageBody.SystemNotice -> Unit
         }
@@ -1002,19 +1144,33 @@ private fun MediaBubble(
 }
 
 @Composable
-private fun GiftBubble(gift: ChatDetailMessageBody.Gift, onSendGift: () -> Unit) {
+private fun GiftBubble(
+    gift: ChatDetailMessageBody.Gift,
+    onSendGift: () -> Unit,
+    onPlayAnimation: () -> Unit,
+) {
     val header = if (gift.isRequest) {
         stringResource(R.string.chat_detail_gift_request, gift.peerName)
     } else {
         stringResource(R.string.chat_detail_gift_sent)
     }
+    val playCd = stringResource(R.string.chat_detail_gift_cd_play)
     Box(
         modifier = Modifier
             .size(
                 width = ComponentSize.chatDetailGiftWidth,
                 height = ComponentSize.chatDetailGiftHeight,
             )
-            .clip(RoundedCornerShape(Radius.chatBubble)),
+            .clip(RoundedCornerShape(Radius.chatBubble))
+            .then(
+                if (gift.canPlayAnimation) {
+                    Modifier
+                        .clickable(role = Role.Button, onClick = onPlayAnimation)
+                        .semantics { contentDescription = playCd }
+                } else {
+                    Modifier
+                },
+            ),
     ) {
         Image(
             painter = painterResource(R.drawable.chat_bg_gift_card),
@@ -1037,10 +1193,9 @@ private fun GiftBubble(gift: ChatDetailMessageBody.Gift, onSendGift: () -> Unit)
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
             ) {
-                ChatAsyncImage(
-                    gift.iconUrl,
-                    Modifier.size(ComponentSize.chatDetailGiftIcon),
-                    contentScale = ContentScale.Fit,
+                GiftBubbleIcon(
+                    iconUrl = gift.iconUrl,
+                    modifier = Modifier.size(ComponentSize.chatDetailGiftIcon),
                 )
                 Column(
                     modifier = Modifier.weight(1f),
@@ -1099,6 +1254,29 @@ private fun GiftBubble(gift: ChatDetailMessageBody.Gift, onSendGift: () -> Unit)
             }
         }
     }
+}
+
+/** Falls back to the local gift glyph while the CDN icon loads, or when the payload has none. */
+@Composable
+private fun GiftBubbleIcon(iconUrl: String, modifier: Modifier = Modifier) {
+    val fallback = painterResource(R.drawable.chat_ic_gift)
+    if (iconUrl.isBlank()) {
+        Image(
+            painter = fallback,
+            contentDescription = null,
+            modifier = modifier,
+            contentScale = ContentScale.Fit,
+        )
+        return
+    }
+    AsyncImage(
+        model = ImageRequest.Builder(LocalContext.current).data(iconUrl).crossfade(true).build(),
+        contentDescription = null,
+        placeholder = fallback,
+        error = fallback,
+        contentScale = ContentScale.Fit,
+        modifier = modifier,
+    )
 }
 
 @Composable
@@ -1179,7 +1357,10 @@ private fun ChatDetailComposer(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.chipGap),
     ) {
-        ComposerCircle(R.drawable.chat_ic_plus) { onIntent(ChatDetailIntent.OpenPlusMenu) }
+        ComposerCircle(R.drawable.chat_ic_plus) {
+            keyboard?.hide()
+            onIntent(ChatDetailIntent.OpenPlusMenu)
+        }
         Row(
             modifier = Modifier
                 .weight(1f)
@@ -1437,6 +1618,35 @@ private fun ChatDetailScreenPreview() {
                 age = 23,
                 isOnline = true,
                 freeMessageCount = 10,
+                items = PreviewDetailItems,
+                isLoading = false,
+                hasLoaded = true,
+                hasMore = false,
+            ),
+            onIntent = {},
+            onBack = {},
+        )
+    }
+}
+
+@Preview(name = "ChatDetail FirstVisit", locale = "en")
+@Composable
+private fun ChatDetailFirstVisitPreview() {
+    DemoTheme {
+        ChatDetailScreen(
+            state = ChatDetailUiState(
+                nickname = "Terry",
+                age = 23,
+                isOnline = true,
+                freeMessageCount = 10,
+                showGiftQuickBar = true,
+                showGreetingGesture = true,
+                gifts = listOf(
+                    ChatGiftUi(id = 1, title = "Lollipop", price = 50, iconUrl = ""),
+                    ChatGiftUi(id = 2, title = "Lips", price = 50, iconUrl = ""),
+                    ChatGiftUi(id = 3, title = "Berry", price = 50, iconUrl = ""),
+                    ChatGiftUi(id = 4, title = "Lipstick", price = 50, iconUrl = ""),
+                ),
                 items = PreviewDetailItems,
                 isLoading = false,
                 hasLoaded = true,

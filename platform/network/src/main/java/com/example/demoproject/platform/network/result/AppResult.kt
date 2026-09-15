@@ -1,5 +1,7 @@
 package com.example.demoproject.platform.network.result
 
+import kotlinx.serialization.json.JsonElement
+
 /**
  * Application-wide, transport-agnostic result surface.
  *
@@ -31,6 +33,11 @@ sealed interface AppResult<out T> {
          * ignore this; it defaults to `null` for every other failure path.
          */
         val fromType: Int? = null,
+        /**
+         * Raw envelope `callback` when the backend attaches a VIP / recharge guide payload
+         * (e.g. `msg/send` `ok = 3` with `vip_list` + `banner_new`). Null for ordinary failures.
+         */
+        val callback: JsonElement? = null,
     ) : Failure
 
     data class NetworkError(

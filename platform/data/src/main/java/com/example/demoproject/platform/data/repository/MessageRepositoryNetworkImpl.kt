@@ -3,6 +3,7 @@ package com.example.demoproject.platform.data.repository
 import com.example.demoproject.platform.data.blocked.BlockedUsersStore
 import com.example.demoproject.platform.data.blocked.excludingBlockedConversations
 import com.example.demoproject.platform.data.local.cache.ChatStore
+import com.example.demoproject.platform.data.message.ChatUnreadStore
 import com.example.demoproject.platform.data.message.IncomingChatPush
 import com.example.demoproject.platform.data.model.Conversation
 import com.example.demoproject.platform.data.model.ConversationDetail
@@ -29,6 +30,7 @@ import com.example.demoproject.platform.data.network.dto.MessageSyncRequestDto
 import com.example.demoproject.platform.data.network.dto.MsgContentDto
 import com.example.demoproject.platform.data.network.dto.MsgSendDataDto
 import com.example.demoproject.platform.data.network.dto.MsgSendRequestDto
+import com.example.demoproject.platform.data.network.dto.MsgUnreadRequestDto
 import com.example.demoproject.platform.data.network.dto.TranslationSubmitRequestDto
 import com.example.demoproject.platform.data.network.mapper.toDomain
 import com.example.demoproject.platform.data.network.mapper.toDomainConversations
@@ -41,7 +43,6 @@ import com.example.demoproject.platform.data.wallet.AccountBalanceStore
 import com.example.demoproject.platform.s3.MediaUploadService
 import com.example.demoproject.platform.network.result.AppResult
 import com.example.demoproject.platform.network.result.map
-import com.example.demoproject.platform.network.result.onSuccess
 import com.example.demoproject.platform.network.result.onSuccessSuspend
 import com.example.demoproject.platform.network.safeApiCall
 import com.example.demoproject.platform.network.safeApiCallNullable
@@ -61,6 +62,7 @@ class MessageRepositoryNetworkImpl(
     private val chatStore: ChatStore,
     private val blockedUsersStore: BlockedUsersStore,
     private val accountBalanceStore: AccountBalanceStore,
+    private val chatUnreadStore: ChatUnreadStore,
 ) : MessageRepository {
 
     override suspend fun getConversations(page: Int): AppResult<ConversationListPage> {
@@ -73,6 +75,8 @@ class MessageRepositoryNetworkImpl(
         }.map { dto ->
             val conversations = chatStore.upsertConversations(dto.toDomainConversations())
             chatStore.lastSyncMtime = dto.lastSyncMtime
+            // `msg/list` always carries total unread; use it as the global snapshot.
+            chatUnreadStore.update(dto.unread)
             ConversationListPage(
                 conversations = conversations.excludingBlockedConversations(blockedUsersStore),
                 hasMore = dto.hasMore,
@@ -85,10 +89,9 @@ class MessageRepositoryNetworkImpl(
         chatStore.observeConversations().map { it.excludingBlockedConversations(blockedUsersStore) }
 
     override fun observeTotalUnreadCount(includeMuted: Boolean): Flow<Int> =
-        chatStore.observeTotalUnread(includeMuted)
+        chatUnreadStore.total
 
     override suspend fun syncConversationList(): AppResult<Unit> {
-        val ownerId = sessionManager.currentUserId.orEmpty()
         return safeApiCall {
             messageApi.syncConversations(
                 MessageSyncRequestDto(lastSyncMtime = chatStore.lastSyncMtime),
@@ -96,6 +99,8 @@ class MessageRepositoryNetworkImpl(
         }.map { dto ->
             chatStore.upsertConversations(dto.toDomainConversations())
             chatStore.lastSyncMtime = dto.lastSyncMtime
+            // Do not write dto.unread here: `msg/sync` often omits it and the DTO default
+            // would incorrectly wipe ChatUnreadStore to 0.
             Unit
         }.also { result ->
             if (result is AppResult.Success) {
@@ -347,6 +352,24 @@ class MessageRepositoryNetworkImpl(
             chatStore.getConversation(conversationId)?.let {
                 chatStore.putConversation(it.copy(unreadCount = 0))
             }
+            // Authoritative total (and confirm session count) from backend — no local subtract.
+            refreshConversationUnread(conversationId)
+        }
+    }
+
+    override suspend fun refreshConversationUnread(conversationId: String): AppResult<Unit> {
+        val chatId = conversationId.toLongOrNull() ?: return AppResult.BizError(
+            AppResult.CODE_EMPTY_PAYLOAD,
+            "Invalid conversation id",
+        )
+        return safeApiCall {
+            messageApi.getUnread(MsgUnreadRequestDto(chatId = chatId))
+        }.map { dto ->
+            chatUnreadStore.update(dto.total)
+            chatStore.getConversation(conversationId)?.let { existing ->
+                chatStore.putConversation(existing.copy(unreadCount = dto.resolvedCount))
+            }
+            Unit
         }
     }
 
@@ -360,23 +383,20 @@ class MessageRepositoryNetworkImpl(
                 avatar = push.peerAvatarUrl?.takeIf { it.isNotBlank() } ?: p.avatar,
             )
         } ?: placeholderPeer(push.conversationId, push.peerNickname, push.peerAvatarUrl)
-        val unread = (existing?.unreadCount ?: 0) + if (push.fromPeer) 1 else 0
+        // Keep cached badge until `/msg/get-unread` overwrites — never local +1.
         chatStore.putConversation(
             Conversation(
                 id = push.conversationId,
                 peer = peer,
                 lastMessage = push.message,
-                unreadCount = unread,
+                unreadCount = existing?.unreadCount ?: 0,
                 updatedAt = push.message.createdAt,
                 isPinned = existing?.isPinned ?: false,
                 isMuted = existing?.isMuted ?: false,
             ),
         )
-    }
-
-    override suspend fun incrementConversationUnread(conversationId: String) {
-        chatStore.getConversation(conversationId)?.let {
-            chatStore.putConversation(it.copy(unreadCount = it.unreadCount + 1))
+        if (push.fromPeer) {
+            refreshConversationUnread(push.conversationId)
         }
     }
 
@@ -501,14 +521,130 @@ class MessageRepositoryNetworkImpl(
         localMessageId: String?,
         durationSec: Int = 0,
     ): AppResult<Message> {
-        when (val uploaded = mediaUploadService.uploadImageIfNeeded(localUriOrPath, flag = "chat")) {
-            is AppResult.Failure -> return uploaded
+        val local = localOutbound(
+            conversationId = conversationId,
+            content = localUriOrPath,
+            type = msgType.toMessageType(),
+            status = MessageStatus.Sending,
+            localMessageId = localMessageId,
+        )
+        chatStore.upsertMessages(conversationId, listOf(local))
+
+        val uploaded = when (msgType) {
+            MsgSendRequestDto.MSG_TYPE_VIDEO ->
+                mediaUploadService.uploadVideoIfNeeded(localUriOrPath, flag = "chat")
+            else ->
+                mediaUploadService.uploadImageIfNeeded(localUriOrPath, flag = "chat")
+        }
+        when (uploaded) {
+            is AppResult.Failure -> {
+                chatStore.upsertMessages(
+                    conversationId,
+                    listOf(local.copy(status = MessageStatus.Failed)),
+                )
+                return uploaded
+            }
             is AppResult.Success -> {
-                val remote = uploaded.data.remotePath.toRelativeMediaPathOrNull() ?: uploaded.data.remotePath
-                return sendSimple(conversationId, remote, msgType, localMessageId)
+                val data = uploaded.data
+                val remote = data.remotePath.toRelativeMediaPathOrNull() ?: data.remotePath
+                val small = data.smallUrl?.let { it.toRelativeMediaPathOrNull() ?: it }
+                val cover = data.coverPath?.let { it.toRelativeMediaPathOrNull() ?: it }
+                val duration = data.durationSec?.takeIf { it > 0 }
+                    ?: durationSec.takeIf { it > 0 }
+                val msgContent = when (msgType) {
+                    MsgSendRequestDto.MSG_TYPE_IMAGE -> MsgContentDto(
+                        imageUrl = remote,
+                        smallUrl = small,
+                        imageWidth = data.width,
+                        imageHeight = data.height,
+                        uploadId = data.uploadId.takeIf { it > 0 },
+                    )
+                    MsgSendRequestDto.MSG_TYPE_VIDEO -> MsgContentDto(
+                        url = remote,
+                        cover = cover ?: small,
+                        duration = duration,
+                        width = data.width,
+                        height = data.height,
+                        uploadId = data.uploadId.takeIf { it > 0 },
+                    )
+                    MsgSendRequestDto.MSG_TYPE_VOICE -> MsgContentDto(
+                        url = remote,
+                        duration = duration,
+                    )
+                    else -> MsgContentDto(content = remote)
+                }
+                val displayContent = when (msgType) {
+                    MsgSendRequestDto.MSG_TYPE_IMAGE -> mediaWireBody(
+                        "image_url" to remote,
+                        "small_url" to small,
+                    )
+                    MsgSendRequestDto.MSG_TYPE_VIDEO -> mediaWireBody(
+                        "url" to remote,
+                        "cover" to (cover ?: small),
+                        "duration" to duration,
+                    )
+                    else -> remote
+                }
+                val pending = local.copy(content = displayContent)
+                chatStore.upsertMessages(conversationId, listOf(pending))
+                val targetUid = conversationId.toLongOrNull() ?: 0L
+                return safeApiCallNullable {
+                    messageApi.sendMessage(
+                        MsgSendRequestDto(
+                            chatId = targetUid,
+                            data = MsgSendDataDto(
+                                msgType = msgType,
+                                msgContent = msgContent,
+                            ),
+                        ),
+                    )
+                }.map { dto ->
+                    val serverId = dto?.mtime?.toString()
+                    val serverCreatedAt = dto?.mtime
+                    val createdAt = maxOf(
+                        pending.createdAt.toMessageTimelineMicros(),
+                        (serverCreatedAt ?: 0L).toMessageTimelineMicros(),
+                    ).takeIf { it > 0L } ?: pending.createdAt
+                    val sent = pending.copy(
+                        id = serverId ?: pending.id,
+                        status = MessageStatus.Sent,
+                        createdAt = createdAt,
+                    )
+                    if (sent.id != pending.id) {
+                        chatStore.deleteMessage(conversationId, pending.id)
+                    }
+                    chatStore.upsertMessages(conversationId, listOf(sent))
+                    sent
+                }.let { result ->
+                    if (result is AppResult.Failure) {
+                        chatStore.upsertMessages(
+                            conversationId,
+                            listOf(pending.copy(status = MessageStatus.Failed)),
+                        )
+                    }
+                    result
+                }
             }
         }
     }
+
+    /** Minimal JSON body so chat bubbles can resolve CDN URLs before sync returns. */
+    private fun mediaWireBody(vararg fields: Pair<String, Any?>): String {
+        val parts = fields.mapNotNull { (key, value) ->
+            when (value) {
+                null -> null
+                is String -> value.takeIf { it.isNotBlank() }?.let {
+                    "\"$key\":\"${it.jsonEscape()}\""
+                }
+                is Number -> "\"$key\":$value"
+                else -> "\"$key\":\"${value.toString().jsonEscape()}\""
+            }
+        }
+        return parts.joinToString(prefix = "{", postfix = "}")
+    }
+
+    private fun String.jsonEscape(): String =
+        replace("\\", "\\\\").replace("\"", "\\\"")
 
     private suspend fun localOutbound(
         conversationId: String,

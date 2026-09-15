@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="vip_cd_back">Geri</string>
+    <string name="vip_cd_loading">Yükleniyor</string>
+    <string name="vip_hero_upgrade_prefix">Yükselt:\n</string>
+    <string name="vip_hero_upgrade_accent">VIP</string>
+    <string name="vip_hero_member_prefix">Sen\n</string>
+    <string name="vip_hero_member_accent">VIP\'sin</string>
+    <string name="vip_expiry_fmt">Bitiş: %1$s</string>
+    <string name="vip_benefit_section">VIP Avantajı</string>
+    <string name="vip_choose_plan">Planını seç</string>
+    <string name="vip_cta_get">Hemen VIP ol</string>
+    <string name="vip_cta_resubscribe">Yeniden abone ol</string>
+    <string name="vip_billing_note">Yenilenen faturalama. İstediğin zaman iptal et.</string>
+    <string name="vip_empty">VIP planı yok</string>
+    <string name="vip_retry">Yeniden dene</string>
+    <string name="vip_status_no_activity">Satın alma başlatılamıyor</string>
+    <string name="vip_status_launcher_missing">Satın alma kullanılamıyor</string>
+    <string name="vip_status_purchase_verified">Satın alma doğrulandı</string>
+    <string name="vip_status_purchase_canceled">Satın alma iptal edildi</string>
+    <string name="vip_status_purchase_failed_fmt">Satın alma başarısız: %1$s</string>
+    <string name="vip_guide_cd_close">Kapat</string>
+    <string name="vip_guide_title_line1">Tüm ücretsiz</string>
+    <string name="vip_guide_title_accent">mesaj haklarınızı</string>
+    <string name="vip_guide_title_emoji">\u0020kullandınız 💬</string>
+    <string name="vip_guide_subtitle_prefix">VIP\'ye yükseltin\u0020</string>
+    <string name="vip_guide_subtitle_mid">sohbete devam etmek için</string>
+    <string name="vip_guide_subtitle_with">%1$s ile ✨</string>
+    <string name="vip_guide_peer_fallback">onlarla</string>
+    <string name="vip_guide_why_section">Neden VIP?</string>
+    <string name="vip_guide_plan_subtitle">Tüm VIP özelliklerine tam erişim</string>
+    <string name="vip_guide_plan_title_fmt">%1$s VIP</string>
+    <string name="vip_guide_cta">VIP\'ye yükselt</string>
+</resources>

@@ -26,6 +26,9 @@ class BlockRepositoryImpl(
     override fun isBlocked(userId: String): Boolean = blockedUsersStore.isBlocked(userId)
 
     override suspend fun getBlockedUsers(page: Int): AppResult<List<User>> =
+        getBlockedUsersPage(page).map(BlockedUsersPage::users)
+
+    override suspend fun getBlockedUsersPage(page: Int): AppResult<BlockedUsersPage> =
         safeApiCall {
             profileApi.getBlackList(BlackListRequestDto(page = page))
         }.map { dto ->
@@ -35,7 +38,7 @@ class BlockRepositoryImpl(
             } else {
                 blockedUsersStore.addAll(users.mapNotNull { it.id.toLongOrNull() })
             }
-            users
+            BlockedUsersPage(users = users, hasMore = dto.hasMore)
         }
 
     override suspend fun blockUser(targetUid: Long): AppResult<Unit> {

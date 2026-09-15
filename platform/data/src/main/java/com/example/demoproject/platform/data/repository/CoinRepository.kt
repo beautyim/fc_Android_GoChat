@@ -8,9 +8,15 @@ data class RechargePageData(
     val products: List<RechargeProduct>,
     val saleItems: List<RechargeSaleItem>,
     val vipPayItem: RechargeVipPayItem? = null,
+    /** VIP offers for the recharge-page carousel (may contain [vipPayItem]). */
+    val vipPayItems: List<RechargeVipPayItem> = emptyList(),
 ) {
     val isEmpty: Boolean
-        get() = hotProducts.isEmpty() && products.isEmpty() && saleItems.isEmpty() && vipPayItem == null
+        get() = hotProducts.isEmpty() &&
+            products.isEmpty() &&
+            saleItems.isEmpty() &&
+            vipPayItem == null &&
+            vipPayItems.isEmpty()
 
     /** Fills missing catalog data from the full coin index when alert payloads are partial. */
     fun withCarouselFrom(fullPage: RechargePageData): RechargePageData = copy(
@@ -19,6 +25,7 @@ data class RechargePageData(
         products = products.ifEmpty { fullPage.products },
         saleItems = saleItems.ifEmpty { fullPage.saleItems },
         vipPayItem = vipPayItem ?: fullPage.vipPayItem,
+        vipPayItems = vipPayItems.ifEmpty { fullPage.vipPayItems },
     )
 }
 
@@ -59,10 +66,15 @@ data class RechargeVipPayItem(
     val id: Long,
     val sku: String,
     val productType: Int = 2,
+    /** API `title` segment (e.g. "Month"); UI composes with [month] + local "VIP". */
     val title: String,
+    val month: Int = 0,
     val price: String,
+    val originalPrice: String? = null,
     val giveCoins: Int,
     val matchCount: Int,
+    /** Corner ribbon from API `label`; UI falls back to localized Try Now when null/blank. */
+    val badgeLabel: String? = null,
 )
 
 interface CoinRepository {

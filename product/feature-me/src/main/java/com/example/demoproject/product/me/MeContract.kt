@@ -25,6 +25,8 @@ data class MeUiState(
 sealed interface MeIntent {
     data object Refresh : MeIntent
     data object OpenPublicProfile : MeIntent
+    data object OpenFollowers : MeIntent
+    data object OpenFollowing : MeIntent
     data object OpenCamera : MeIntent
     data object OpenAddCoins : MeIntent
     data object OpenVip : MeIntent
@@ -35,6 +37,12 @@ sealed interface MeIntent {
 
 sealed interface MeEffect {
     data class OpenPublicProfile(val externalUserId: String) : MeEffect
+    data class OpenRelationshipList(
+        val type: RelationshipListType,
+        val count: Int,
+    ) : MeEffect
     data object OpenStore : MeEffect
+    data object OpenVip : MeEffect
+    data object OpenSettings : MeEffect
     data class ShowMessage(val message: String) : MeEffect
 }

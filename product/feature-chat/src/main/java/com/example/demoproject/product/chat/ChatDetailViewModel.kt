@@ -1,19 +1,38 @@
 package com.example.demoproject.product.chat
 
+import android.app.Activity
 import android.app.Application
 import androidx.annotation.StringRes
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.demoproject.platform.analytics.AnalyticsEvent
 import com.example.demoproject.platform.analytics.AnalyticsHolder
+import com.example.demoproject.platform.data.billing.StorePurchaseLauncherHolder
 import com.example.demoproject.platform.data.model.AlbumPhoto
 import com.example.demoproject.platform.data.model.GiftFromType
 import com.example.demoproject.platform.data.model.Message
 import com.example.demoproject.platform.data.model.MessageStatus
 import com.example.demoproject.platform.data.model.MessageType
 import com.example.demoproject.platform.data.model.User
+import com.example.demoproject.platform.data.model.giftMessageContent
 import com.example.demoproject.platform.data.network.NetworkRuntime
+import com.example.demoproject.platform.data.network.mapper.toRechargePageDataOrNull
+import com.example.demoproject.platform.data.network.mapper.toVipGuidePageDataOrNull
+import com.example.demoproject.platform.data.repository.BillingPaymentType
+import com.example.demoproject.platform.data.repository.BillingProductType
+import com.example.demoproject.platform.data.repository.RechargePageData
+import com.example.demoproject.platform.data.repository.StorePurchaseRequest
+import com.example.demoproject.platform.data.repository.StorePurchaseResult
 import com.example.demoproject.platform.network.result.AppResult
+import com.example.demoproject.platform.network.result.isInsufficientBalance
+import com.example.demoproject.platform.network.result.isMsgSendRequireVip
+import com.example.demoproject.product.store.CoinPayGuideUiState
+import com.example.demoproject.product.store.R as StoreR
+import com.example.demoproject.product.store.toCoinPayGuideUiState
+import com.example.demoproject.product.vip.R as VipR
+import com.example.demoproject.product.vip.VipPayGuideUiState
+import com.example.demoproject.product.vip.toPayGuideUiState
+import com.example.demoproject.ui.designsystem.gift.GiftSvgaPreloader
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.channels.Channel
@@ -23,6 +42,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.yield
 
 class ChatDetailViewModel(
     application: Application,
@@ -46,9 +66,18 @@ class ChatDetailViewModel(
     private var observeJob: Job? = null
     private var loadMoreJob: Job? = null
     private var followFlashJob: Job? = null
+    private var giftCatalogJob: Job? = null
+    private var giftAssets: ChatGiftAssetIndex = ChatGiftAssetIndex.Empty
+    private var giftAssetPrefetchStarted = false
+    private var introResolved = false
+    private var greetingSendInFlight = false
+    private var greetingAutoHideJob: Job? = null
     private var cachedMessages: List<Message> = emptyList()
     private var profilePhotos: List<String> = emptyList()
     private var extraPhotoCount: Int = 0
+
+    @Volatile
+    private var hostActivity: Activity? = null
 
     private val strings = object : ChatDetailStringResolver {
         override val callMissed: String get() = str(R.string.chat_detail_call_missed)
@@ -88,10 +117,19 @@ class ChatDetailViewModel(
         )
         viewModelScope.launch {
             runtime.accountBalanceStore.coins.collect { coins ->
-                _uiState.update { it.copy(coinBalance = coins) }
+                _uiState.update {
+                    it.copy(
+                        coinBalance = coins,
+                        coinPayGuide = it.coinPayGuide?.copy(balance = coins),
+                    )
+                }
             }
         }
         bootstrap()
+    }
+
+    fun bindActivity(activity: Activity?) {
+        hostActivity = activity
     }
 
     fun onIntent(intent: ChatDetailIntent) {
@@ -116,16 +154,45 @@ class ChatDetailViewModel(
             ChatDetailIntent.DismissGiftSheet -> _uiState.update {
                 it.copy(isGiftSheetVisible = false, isGiftSending = false)
             }
-            is ChatDetailIntent.SelectGift -> _uiState.update { it.copy(selectedGiftId = intent.giftId) }
+            is ChatDetailIntent.SelectGift -> {
+                _uiState.update { it.copy(selectedGiftId = intent.giftId) }
+                // Warm the pick so its bubble animation is ready right after sending.
+                val selected = _uiState.value.gifts.firstOrNull { it.id == intent.giftId }
+                GiftSvgaPreloader.prefetch(getApplication(), selected?.svgaUrl)
+            }
             ChatDetailIntent.SendGift -> sendSelectedGift()
+            is ChatDetailIntent.SendQuickGift -> sendQuickGift(intent.giftId)
+            ChatDetailIntent.SendGreeting -> sendGreeting()
+            ChatDetailIntent.DismissGreeting -> dismissGreeting()
             ChatDetailIntent.OpenCoins -> viewModelScope.launch {
                 _effects.send(ChatDetailEffect.OpenStore)
             }
-            ChatDetailIntent.OpenPlusMenu -> viewModelScope.launch {
-                _effects.send(ChatDetailEffect.OpenPlusMenu)
+            ChatDetailIntent.OpenPlusMenu -> _uiState.update {
+                it.copy(
+                    isMediaTypeSheetVisible = true,
+                    isEmojiSheetVisible = false,
+                    isGiftSheetVisible = false,
+                )
             }
+            ChatDetailIntent.DismissMediaTypeSheet -> _uiState.update {
+                it.copy(isMediaTypeSheetVisible = false)
+            }
+            ChatDetailIntent.SelectSendImage -> viewModelScope.launch {
+                _uiState.update { it.copy(isMediaTypeSheetVisible = false) }
+                _effects.send(ChatDetailEffect.PickSendImage)
+            }
+            ChatDetailIntent.SelectSendVideo -> viewModelScope.launch {
+                _uiState.update { it.copy(isMediaTypeSheetVisible = false) }
+                _effects.send(ChatDetailEffect.PickSendVideo)
+            }
+            is ChatDetailIntent.SendPickedImage -> sendImage(intent.localUri)
+            is ChatDetailIntent.SendPickedVideo -> sendVideo(intent.localUri)
             ChatDetailIntent.OpenEmoji -> _uiState.update {
-                it.copy(isEmojiSheetVisible = true, isGiftSheetVisible = false)
+                it.copy(
+                    isEmojiSheetVisible = true,
+                    isGiftSheetVisible = false,
+                    isMediaTypeSheetVisible = false,
+                )
             }
             ChatDetailIntent.DismissEmojiSheet -> _uiState.update {
                 it.copy(isEmojiSheetVisible = false)
@@ -137,7 +204,29 @@ class ChatDetailViewModel(
                 val peer = _uiState.value.peerId.ifBlank { conversationId }
                 _effects.send(ChatDetailEffect.StartVideoCall(peer))
             }
-            is ChatDetailIntent.OpenMedia -> Unit
+            is ChatDetailIntent.OpenMedia -> openMediaPreview(intent.messageId)
+            ChatDetailIntent.DismissMediaPreview -> _uiState.update {
+                it.copy(mediaViewerItems = emptyList(), mediaViewerIndex = null)
+            }
+            is ChatDetailIntent.PlayGiftAnimation -> playGiftAnimation(intent.messageId)
+            ChatDetailIntent.DismissGiftAnimation -> _uiState.update {
+                it.copy(giftAnimationUrl = null)
+            }
+            ChatDetailIntent.DismissVipPayGuide -> _uiState.update {
+                it.copy(vipPayGuide = null)
+            }
+            ChatDetailIntent.PurchaseVipPayGuide -> purchaseVipPayGuide()
+            ChatDetailIntent.DismissCoinPayGuide -> _uiState.update {
+                it.copy(coinPayGuide = null)
+            }
+            is ChatDetailIntent.PurchaseCoinPayGuideCoin -> purchaseCoinPayGuide(
+                offerId = intent.offerId,
+                isSale = false,
+            )
+            is ChatDetailIntent.PurchaseCoinPayGuideSale -> purchaseCoinPayGuide(
+                offerId = intent.offerId,
+                isSale = true,
+            )
         }
     }
 
@@ -150,11 +239,22 @@ class ChatDetailViewModel(
             runtime.messageRepository.failInterruptedSendingMessages()
             // Bind Room first so local Failed/Sending rows stay visible while sync runs.
             observeJob = viewModelScope.launch {
+                var lastMarkedPeerMessageId: String? = null
                 runtime.messageRepository.observeMessages(conversationId).collect { messages ->
                     cachedMessages = messages
                     publishItems()
                     _uiState.update {
                         it.copy(isLoading = false, hasLoaded = true, errorMessage = null)
+                    }
+                    val selfId = runtime.sessionManager.currentUserId.orEmpty()
+                    val latestPeer = messages
+                        .asReversed()
+                        .firstOrNull { it.senderId.isNotBlank() && it.senderId != selfId }
+                    if (latestPeer != null && latestPeer.id != lastMarkedPeerMessageId) {
+                        lastMarkedPeerMessageId = latestPeer.id
+                        // Stay authoritative with backend while this chat is open (MQTT may
+                        // have refreshed unread via /msg/get-unread).
+                        runtime.messageRepository.markConversationRead(conversationId)
                     }
                 }
             }
@@ -208,6 +308,42 @@ class ChatDetailViewModel(
                 currentUserId = runtime.sessionManager.currentUserId.orEmpty(),
             )
         }
+        maybeShowFirstVisitIntro(
+            peerKey = peer.id.ifBlank { peer.externalUserId }.ifBlank { conversationId },
+        )
+    }
+
+    /**
+     * First open of this peer's chat detail shows the gift quick bar + waving greeting once.
+     * Marked seen immediately so a re-entry without interaction does not show them again.
+     */
+    private fun maybeShowFirstVisitIntro(peerKey: String) {
+        if (introResolved || peerKey.isBlank()) return
+        introResolved = true
+        viewModelScope.launch {
+            if (runtime.appPrefs.hasSeenChatDetailIntro(peerKey)) return@launch
+            runtime.appPrefs.markChatDetailIntroSeen(peerKey)
+            _uiState.update {
+                it.copy(showGiftQuickBar = true, showGreetingGesture = true)
+            }
+            scheduleGreetingAutoHide()
+            loadGiftCatalog(notifyFailure = false)
+        }
+    }
+
+    private fun scheduleGreetingAutoHide() {
+        greetingAutoHideJob?.cancel()
+        greetingAutoHideJob = viewModelScope.launch {
+            delay(GREETING_AUTO_HIDE_MS)
+            dismissGreeting()
+        }
+    }
+
+    private fun dismissGreeting() {
+        greetingAutoHideJob?.cancel()
+        greetingAutoHideJob = null
+        if (!_uiState.value.showGreetingGesture) return
+        _uiState.update { it.copy(showGreetingGesture = false) }
     }
 
     private suspend fun loadAlbumPhotos() {
@@ -279,6 +415,8 @@ class ChatDetailViewModel(
                 // Limit/VIP tips (e.g. key=107) are written with the BizError — pull twice in
                 // case the tip row lags the HTTP error by a beat.
                 is AppResult.Failure -> {
+                    maybeShowVipPayGuide(result)
+                    maybeShowCoinPayGuide(result)
                     runtime.messageRepository.syncLatestMessages(
                         conversationId = conversationId,
                         latestMtimeCeiling = syncCeiling,
@@ -294,22 +432,440 @@ class ChatDetailViewModel(
         }
     }
 
+    private fun sendImage(localUri: String) {
+        val uri = localUri.trim()
+        if (uri.isEmpty() || _uiState.value.isSending) return
+        _uiState.update { it.copy(isSending = true) }
+        viewModelScope.launch {
+            val syncCeiling = latestSuccessCreatedAt()
+            when (
+                val result = runtime.messageRepository.sendImageMessage(
+                    conversationId = conversationId,
+                    localUriOrPath = uri,
+                )
+            ) {
+                is AppResult.Success -> {
+                    val free = _uiState.value.freeMessageCount
+                    if (free > 0) {
+                        _uiState.update { it.copy(freeMessageCount = (free - 1).coerceAtLeast(0)) }
+                    }
+                    runtime.messageRepository.syncLatestMessages(
+                        conversationId = conversationId,
+                        latestMtimeCeiling = syncCeiling,
+                    )
+                }
+                is AppResult.Failure -> {
+                    maybeShowVipPayGuide(result)
+                    maybeShowCoinPayGuide(result)
+                    runtime.messageRepository.syncLatestMessages(
+                        conversationId = conversationId,
+                        latestMtimeCeiling = syncCeiling,
+                    )
+                    delay(POST_SEND_TIP_SYNC_RETRY_MS)
+                    runtime.messageRepository.syncLatestMessages(
+                        conversationId = conversationId,
+                        latestMtimeCeiling = syncCeiling,
+                    )
+                }
+            }
+            _uiState.update { it.copy(isSending = false) }
+        }
+    }
+
+    private fun sendVideo(localUri: String) {
+        val uri = localUri.trim()
+        if (uri.isEmpty() || _uiState.value.isSending) return
+        _uiState.update { it.copy(isSending = true) }
+        viewModelScope.launch {
+            val syncCeiling = latestSuccessCreatedAt()
+            when (
+                val result = runtime.messageRepository.sendVideoMessage(
+                    conversationId = conversationId,
+                    localUriOrPath = uri,
+                )
+            ) {
+                is AppResult.Success -> {
+                    val free = _uiState.value.freeMessageCount
+                    if (free > 0) {
+                        _uiState.update { it.copy(freeMessageCount = (free - 1).coerceAtLeast(0)) }
+                    }
+                    runtime.messageRepository.syncLatestMessages(
+                        conversationId = conversationId,
+                        latestMtimeCeiling = syncCeiling,
+                    )
+                }
+                is AppResult.Failure -> {
+                    maybeShowVipPayGuide(result)
+                    maybeShowCoinPayGuide(result)
+                    runtime.messageRepository.syncLatestMessages(
+                        conversationId = conversationId,
+                        latestMtimeCeiling = syncCeiling,
+                    )
+                    delay(POST_SEND_TIP_SYNC_RETRY_MS)
+                    runtime.messageRepository.syncLatestMessages(
+                        conversationId = conversationId,
+                        latestMtimeCeiling = syncCeiling,
+                    )
+                }
+            }
+            _uiState.update { it.copy(isSending = false) }
+        }
+    }
+
+    private fun maybeShowVipPayGuide(failure: AppResult.Failure) {
+        if (!failure.isMsgSendRequireVip()) return
+        val nickname = _uiState.value.nickname
+        // Open the sheet immediately with a skeleton so the ModalBottomSheet entrance
+        // is not an empty flash while the callback payload is mapped.
+        _uiState.update {
+            it.copy(
+                vipPayGuide = VipPayGuideUiState(
+                    isLoading = true,
+                    peerNickname = nickname,
+                ),
+            )
+        }
+        viewModelScope.launch {
+            yield()
+            val biz = failure as? AppResult.BizError
+            val guide = biz?.callback.toVipGuidePageDataOrNull()
+            val ui = guide?.toPayGuideUiState(
+                context = getApplication(),
+                fallbackNickname = nickname,
+            )
+            if (ui?.plan == null) {
+                _uiState.update { state ->
+                    if (state.vipPayGuide?.isLoading == true) {
+                        state.copy(vipPayGuide = null)
+                    } else {
+                        state
+                    }
+                }
+                return@launch
+            }
+            _uiState.update { it.copy(vipPayGuide = ui.copy(isLoading = false)) }
+        }
+    }
+
+    private fun purchaseVipPayGuide() {
+        val guide = _uiState.value.vipPayGuide ?: return
+        if (guide.isPurchasing) return
+        val plan = guide.plan ?: return
+        val activity = hostActivity
+        if (activity == null) {
+            viewModelScope.launch {
+                _effects.send(
+                    ChatDetailEffect.ShowMessage(
+                        strVip(VipR.string.vip_status_no_activity),
+                    ),
+                )
+            }
+            return
+        }
+        val launcher = StorePurchaseLauncherHolder.launcher
+        if (launcher == null) {
+            viewModelScope.launch {
+                _effects.send(
+                    ChatDetailEffect.ShowMessage(
+                        strVip(VipR.string.vip_status_launcher_missing),
+                    ),
+                )
+            }
+            return
+        }
+        val request = StorePurchaseRequest(
+            uiId = "vip-guide-${plan.id}",
+            goodsId = plan.id,
+            productId = plan.sku,
+            productType = BillingProductType.Vip,
+            paymentType = BillingPaymentType.GooglePlay,
+            fromType = guide.fromType,
+        )
+        viewModelScope.launch {
+            _uiState.update {
+                it.copy(vipPayGuide = it.vipPayGuide?.copy(isPurchasing = true))
+            }
+            launcher.launch(activity, request) { result ->
+                when (result) {
+                    is StorePurchaseResult.Success -> {
+                        _uiState.update { it.copy(vipPayGuide = null) }
+                        viewModelScope.launch {
+                            _effects.send(
+                                ChatDetailEffect.ShowMessage(
+                                    strVip(VipR.string.vip_status_purchase_verified),
+                                ),
+                            )
+                        }
+                    }
+                    is StorePurchaseResult.Canceled -> {
+                        _uiState.update {
+                            it.copy(vipPayGuide = it.vipPayGuide?.copy(isPurchasing = false))
+                        }
+                        viewModelScope.launch {
+                            _effects.send(
+                                ChatDetailEffect.ShowMessage(
+                                    strVip(VipR.string.vip_status_purchase_canceled),
+                                ),
+                            )
+                        }
+                    }
+                    is StorePurchaseResult.Failed -> {
+                        _uiState.update {
+                            it.copy(vipPayGuide = it.vipPayGuide?.copy(isPurchasing = false))
+                        }
+                        viewModelScope.launch {
+                            _effects.send(
+                                ChatDetailEffect.ShowMessage(
+                                    strVip(
+                                        VipR.string.vip_status_purchase_failed_fmt,
+                                        result.message,
+                                    ),
+                                ),
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private fun maybeShowCoinPayGuide(failure: AppResult.Failure) {
+        if (!failure.isInsufficientBalance()) return
+        val balance = _uiState.value.coinBalance
+        _uiState.update {
+            it.copy(
+                coinPayGuide = CoinPayGuideUiState(
+                    isLoading = true,
+                    balance = balance,
+                ),
+            )
+        }
+        viewModelScope.launch {
+            yield()
+            val biz = failure as? AppResult.BizError
+            val fromCallback = biz?.callback.toRechargePageDataOrNull()
+            val page = resolveCoinPayGuidePage(fromCallback)
+            val fallbackLabel = strStore(StoreR.string.store_super_discount)
+            val ui = page?.toCoinPayGuideUiState(
+                fallbackSuperDiscountLabel = fallbackLabel,
+                fromType = biz?.fromType,
+            )
+            if (ui == null || ui.isCatalogEmpty) {
+                _uiState.update { state ->
+                    if (state.coinPayGuide?.isLoading == true) {
+                        state.copy(coinPayGuide = null)
+                    } else {
+                        state
+                    }
+                }
+                return@launch
+            }
+            _uiState.update {
+                it.copy(
+                    coinPayGuide = ui.copy(
+                        isLoading = false,
+                        balance = if (ui.balance > 0) ui.balance else balance,
+                    ),
+                )
+            }
+        }
+    }
+
+    private suspend fun resolveCoinPayGuidePage(
+        fromCallback: RechargePageData?,
+    ): RechargePageData? {
+        if (fromCallback != null && !fromCallback.isEmpty) {
+            // Alert payloads can be partial; fill missing carousel/grid from the full index.
+            return when (val full = runtime.coinRepository.getRechargePage()) {
+                is AppResult.Success -> fromCallback.withCarouselFrom(full.data)
+                is AppResult.Failure -> fromCallback
+            }
+        }
+        return when (val full = runtime.coinRepository.getRechargePage()) {
+            is AppResult.Success -> full.data.takeUnless { it.isEmpty }
+            is AppResult.Failure -> null
+        }
+    }
+
+    private fun purchaseCoinPayGuide(offerId: Long, isSale: Boolean) {
+        val guide = _uiState.value.coinPayGuide ?: return
+        if (guide.purchasingOfferId != null) return
+        val sale = guide.saleOffers.firstOrNull { it.id == offerId }
+        val coin = guide.coinOffers.firstOrNull { it.id == offerId }
+        val sku: String
+        val goodsId: Long
+        when {
+            isSale && sale != null -> {
+                sku = sale.sku
+                goodsId = sale.id
+            }
+            !isSale && coin != null -> {
+                sku = coin.sku
+                goodsId = coin.id
+            }
+            else -> return
+        }
+        val activity = hostActivity
+        if (activity == null) {
+            viewModelScope.launch {
+                _effects.send(
+                    ChatDetailEffect.ShowMessage(strStore(StoreR.string.store_status_no_activity)),
+                )
+            }
+            return
+        }
+        val launcher = StorePurchaseLauncherHolder.launcher
+        if (launcher == null) {
+            viewModelScope.launch {
+                _effects.send(
+                    ChatDetailEffect.ShowMessage(
+                        strStore(StoreR.string.store_status_launcher_missing),
+                    ),
+                )
+            }
+            return
+        }
+        val request = StorePurchaseRequest(
+            uiId = "coin-guide-$goodsId",
+            goodsId = goodsId,
+            productId = sku,
+            productType = BillingProductType.Coins,
+            paymentType = BillingPaymentType.GooglePlay,
+            fromType = guide.fromType ?: 0,
+        )
+        viewModelScope.launch {
+            _uiState.update {
+                it.copy(coinPayGuide = it.coinPayGuide?.copy(purchasingOfferId = offerId))
+            }
+            launcher.launch(activity, request) { result ->
+                when (result) {
+                    is StorePurchaseResult.Success -> {
+                        _uiState.update { it.copy(coinPayGuide = null) }
+                        viewModelScope.launch {
+                            _effects.send(
+                                ChatDetailEffect.ShowMessage(
+                                    strStore(StoreR.string.store_status_purchase_verified),
+                                ),
+                            )
+                        }
+                    }
+                    is StorePurchaseResult.Canceled -> {
+                        _uiState.update {
+                            it.copy(
+                                coinPayGuide = it.coinPayGuide?.copy(purchasingOfferId = null),
+                            )
+                        }
+                        viewModelScope.launch {
+                            _effects.send(
+                                ChatDetailEffect.ShowMessage(
+                                    strStore(StoreR.string.store_status_purchase_canceled),
+                                ),
+                            )
+                        }
+                    }
+                    is StorePurchaseResult.Failed -> {
+                        _uiState.update {
+                            it.copy(
+                                coinPayGuide = it.coinPayGuide?.copy(purchasingOfferId = null),
+                            )
+                        }
+                        viewModelScope.launch {
+                            _effects.send(
+                                ChatDetailEffect.ShowMessage(
+                                    strStore(
+                                        StoreR.string.store_status_purchase_failed_fmt,
+                                        result.message,
+                                    ),
+                                ),
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private fun strVip(@StringRes id: Int, vararg args: Any): String =
+        getApplication<Application>().getString(id, *args)
+
+    private fun strStore(@StringRes id: Int, vararg args: Any): String =
+        getApplication<Application>().getString(id, *args)
+
     private fun openGiftSheet() {
         val state = _uiState.value
         _uiState.update {
             it.copy(
                 isGiftSheetVisible = true,
                 isEmojiSheetVisible = false,
+                isMediaTypeSheetVisible = false,
                 isGiftCatalogLoading = it.gifts.isEmpty(),
             )
         }
         if (state.gifts.isEmpty()) {
-            loadGiftCatalog()
+            loadGiftCatalog(notifyFailure = true)
         }
     }
 
-    private fun loadGiftCatalog() {
-        viewModelScope.launch {
+    /**
+     * Gift bubbles that arrive without `icon` / `svga_url` can only be illustrated and animated
+     * from the `gift/config` catalog, so pull it in the background once such a row shows up.
+     */
+    private fun ensureGiftAssetsForBubbles(messages: List<Message>) {
+        // One attempt per screen: a channel without gift assets must not re-request on
+        // every Room emission.
+        if (giftAssetPrefetchStarted || _uiState.value.gifts.isNotEmpty()) return
+        val needsCatalogAsset = messages.any { message ->
+            val gift = message.giftMessageContent() ?: return@any false
+            gift.iconUrl.isBlank() || gift.animationUrl.isBlank()
+        }
+        if (!needsCatalogAsset) return
+        giftAssetPrefetchStarted = true
+        loadGiftCatalog(notifyFailure = false)
+    }
+
+    private fun playGiftAnimation(messageId: String) {
+        val message = cachedMessages.firstOrNull { it.id == messageId } ?: return
+        val url = message.giftAnimationUrl(giftAssets)
+        if (url.isBlank()) return
+        _uiState.update { it.copy(giftAnimationUrl = url) }
+    }
+
+    /** Opens the shared profile-style media viewer on the tapped bubble. */
+    private fun openMediaPreview(messageId: String) {
+        val mediaRows = _uiState.value.items
+            .asSequence()
+            .filterIsInstance<ChatDetailListItem.MessageRow>()
+            .mapNotNull { row ->
+                val item = row.message.toMediaViewerItem() ?: return@mapNotNull null
+                row.message.id to item
+            }
+            .toList()
+        val index = mediaRows.indexOfFirst { it.first == messageId }
+        if (index < 0) return
+        _uiState.update {
+            it.copy(
+                mediaViewerItems = mediaRows.map { pair -> pair.second },
+                mediaViewerIndex = index,
+            )
+        }
+    }
+
+    /**
+     * SVGA archives are large enough that decoding them on tap leaves the overlay waiting, so
+     * warm the newest gift bubbles — those are the ones a user replays.
+     */
+    private fun prefetchGiftAnimations(messages: List<Message>) {
+        messages.asReversed()
+            .asSequence()
+            .mapNotNull { it.giftAnimationUrl(giftAssets).takeIf(String::isNotBlank) }
+            .distinct()
+            .take(GIFT_ANIMATION_PREFETCH_COUNT)
+            .forEach { GiftSvgaPreloader.prefetch(getApplication(), it) }
+    }
+
+    private fun loadGiftCatalog(notifyFailure: Boolean) {
+        if (giftCatalogJob?.isActive == true) return
+        giftCatalogJob = viewModelScope.launch {
             _uiState.update { it.copy(isGiftCatalogLoading = true) }
             when (val result = runtime.messageRepository.getGiftConfig()) {
                 is AppResult.Success -> {
@@ -322,6 +878,7 @@ class ChatDetailViewModel(
                             svgaUrl = gift.svgaUrl,
                         )
                     }
+                    giftAssets = ChatGiftAssetIndex.from(gifts)
                     _uiState.update {
                         it.copy(
                             isGiftCatalogLoading = false,
@@ -329,10 +886,13 @@ class ChatDetailViewModel(
                             selectedGiftId = it.selectedGiftId ?: gifts.firstOrNull()?.id,
                         )
                     }
+                    publishItems()
                 }
                 is AppResult.Failure -> {
                     _uiState.update { it.copy(isGiftCatalogLoading = false) }
-                    _effects.send(ChatDetailEffect.ShowMessage(result.message))
+                    if (notifyFailure) {
+                        _effects.send(ChatDetailEffect.ShowMessage(result.message))
+                    }
                 }
             }
         }
@@ -341,9 +901,20 @@ class ChatDetailViewModel(
     private fun sendSelectedGift() {
         val state = _uiState.value
         val giftId = state.selectedGiftId ?: return
+        sendGiftInternal(giftId = giftId, dismissQuickBarOnSuccess = true)
+    }
+
+    private fun sendQuickGift(giftId: Long) {
+        sendGiftInternal(giftId = giftId, dismissQuickBarOnSuccess = true)
+    }
+
+    private fun sendGiftInternal(giftId: Long, dismissQuickBarOnSuccess: Boolean) {
+        val state = _uiState.value
         if (state.isGiftSending || giftId <= 0L) return
         viewModelScope.launch {
-            _uiState.update { it.copy(isGiftSending = true) }
+            _uiState.update {
+                it.copy(isGiftSending = true, selectedGiftId = giftId)
+            }
             val syncCeiling = latestSuccessCreatedAt()
             when (
                 val result = runtime.messageRepository.sendGift(
@@ -354,7 +925,15 @@ class ChatDetailViewModel(
             ) {
                 is AppResult.Success -> {
                     _uiState.update {
-                        it.copy(isGiftSending = false, isGiftSheetVisible = false)
+                        it.copy(
+                            isGiftSending = false,
+                            isGiftSheetVisible = false,
+                            showGiftQuickBar = if (dismissQuickBarOnSuccess) {
+                                false
+                            } else {
+                                it.showGiftQuickBar
+                            },
+                        )
                     }
                     _effects.send(
                         ChatDetailEffect.ShowMessage(str(R.string.chat_detail_gift_send_success)),
@@ -362,6 +941,7 @@ class ChatDetailViewModel(
                 }
                 is AppResult.Failure -> {
                     _uiState.update { it.copy(isGiftSending = false) }
+                    maybeShowCoinPayGuide(result)
                     _effects.send(ChatDetailEffect.ShowMessage(result.message))
                 }
             }
@@ -369,6 +949,50 @@ class ChatDetailViewModel(
                 conversationId = conversationId,
                 latestMtimeCeiling = syncCeiling,
             )
+        }
+    }
+
+    private fun sendGreeting() {
+        // Hide immediately on tap; send continues regardless of success/failure.
+        dismissGreeting()
+        if (greetingSendInFlight) return
+        greetingSendInFlight = true
+        viewModelScope.launch {
+            val greeting = str(R.string.chat_detail_greeting_text)
+            val syncCeiling = latestSuccessCreatedAt()
+            when (
+                val result = runtime.messageRepository.sendTextMessage(
+                    conversationId = conversationId,
+                    text = greeting,
+                )
+            ) {
+                is AppResult.Success -> {
+                    val free = _uiState.value.freeMessageCount
+                    if (free > 0) {
+                        _uiState.update {
+                            it.copy(freeMessageCount = (free - 1).coerceAtLeast(0))
+                        }
+                    }
+                    runtime.messageRepository.syncLatestMessages(
+                        conversationId = conversationId,
+                        latestMtimeCeiling = syncCeiling,
+                    )
+                }
+                is AppResult.Failure -> {
+                    maybeShowVipPayGuide(result)
+                    maybeShowCoinPayGuide(result)
+                    runtime.messageRepository.syncLatestMessages(
+                        conversationId = conversationId,
+                        latestMtimeCeiling = syncCeiling,
+                    )
+                    delay(POST_SEND_TIP_SYNC_RETRY_MS)
+                    runtime.messageRepository.syncLatestMessages(
+                        conversationId = conversationId,
+                        latestMtimeCeiling = syncCeiling,
+                    )
+                }
+            }
+            greetingSendInFlight = false
         }
     }
 
@@ -388,6 +1012,16 @@ class ChatDetailViewModel(
                     emoji = message.content,
                     localMessageId = message.id,
                 )
+                MessageType.Image -> runtime.messageRepository.sendImageMessage(
+                    conversationId = conversationId,
+                    localUriOrPath = message.content.resendMediaSource(preferImage = true),
+                    localMessageId = message.id,
+                )
+                MessageType.Video -> runtime.messageRepository.sendVideoMessage(
+                    conversationId = conversationId,
+                    localUriOrPath = message.content.resendMediaSource(preferImage = false),
+                    localMessageId = message.id,
+                )
                 else -> {
                     _effects.send(
                         ChatDetailEffect.ShowMessage(str(R.string.chat_detail_resend_unsupported)),
@@ -401,6 +1035,8 @@ class ChatDetailViewModel(
                 latestMtimeCeiling = syncCeiling,
             )
             if (result is AppResult.Failure) {
+                maybeShowVipPayGuide(result)
+                maybeShowCoinPayGuide(result)
                 delay(POST_SEND_TIP_SYNC_RETRY_MS)
                 runtime.messageRepository.syncLatestMessages(
                     conversationId = conversationId,
@@ -480,8 +1116,11 @@ class ChatDetailViewModel(
             hasMore = state.hasMore,
             profileCard = profileCard,
             stringResolver = strings,
+            giftAssets = giftAssets,
         )
         _uiState.update { it.copy(items = items) }
+        ensureGiftAssetsForBubbles(ordered)
+        prefetchGiftAnimations(ordered)
     }
 
     private fun str(@StringRes id: Int, vararg args: Any): String =
@@ -490,6 +1129,11 @@ class ChatDetailViewModel(
     private companion object {
         const val FOLLOWED_FLASH_MS = 2_000L
         const val POST_SEND_TIP_SYNC_RETRY_MS = 400L
+        /** Auto-hide waving greeting if unused after first-visit show. */
+        const val GREETING_AUTO_HIDE_MS = 5_000L
+
+        /** Newest gift bubbles kept warm; bounded so history scrolling doesn't fetch everything. */
+        const val GIFT_ANIMATION_PREFETCH_COUNT = 3
     }
 }
 
@@ -497,3 +1141,28 @@ private val AlbumPhoto.displayUrl: String?
     get() = thumbnailUrl?.takeIf { it.isNotBlank() }
         ?: imageUrl?.takeIf { it.isNotBlank() }
         ?: coverUrl?.takeIf { it.isNotBlank() }
+
+/**
+ * Failed media bubbles may still hold a local URI, a plain remote key, or a wire JSON body.
+ * Prefer the uploadable / sendable path for repository resend.
+ */
+private fun String.resendMediaSource(preferImage: Boolean): String {
+    val trimmed = trim()
+    if (trimmed.isEmpty()) return trimmed
+    if (!trimmed.startsWith("{")) return trimmed
+    return runCatching {
+        val json = org.json.JSONObject(trimmed)
+        fun opt(key: String): String = json.optString(key).trim()
+        if (preferImage) {
+            sequenceOf("image_url", "pic_url", "media_url", "url", "small_url", "thumb_url")
+                .map(::opt)
+                .firstOrNull { it.isNotBlank() }
+                .orEmpty()
+        } else {
+            sequenceOf("url", "video_url", "media_url", "cover", "cover_url", "small_url")
+                .map(::opt)
+                .firstOrNull { it.isNotBlank() }
+                .orEmpty()
+        }
+    }.getOrDefault(trimmed).ifBlank { trimmed }
+}

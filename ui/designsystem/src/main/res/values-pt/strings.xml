@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="media_viewer_start_video_chat">Iniciar videochamada</string>
+    <string name="media_viewer_video_play_failed">Não é possível reproduzir este vídeo</string>
+    <string name="media_viewer_video_unsupported">Este dispositivo não pode reproduzir este vídeo</string>
+    <string name="media_viewer_video_network_failed">Falha ao carregar o vídeo. Verifique sua rede</string>
+    <string name="media_viewer_cd_close">Fechar</string>
+    <string name="media_viewer_cd_play">Reproduzir</string>
+    <string name="media_viewer_cd_pause">Pausar</string>
+    <string name="media_viewer_cd_loading">Carregando</string>
+</resources>

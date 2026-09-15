@@ -71,6 +71,7 @@ fun DemoConfirmDialog(
     positiveContainerColor: Color = DemoColors.link,
     titleFontSize: TextUnit = TextSize.md,
     bodyFontSize: TextUnit = TextSize.sm,
+    textWidth: Dp = ComponentSize.confirmDialogTextWidth,
     minHeight: Dp = ComponentSize.confirmDialogMinHeight,
 ) {
     Box(
@@ -113,7 +114,7 @@ fun DemoConfirmDialog(
                 verticalArrangement = Arrangement.spacedBy(Spacing.md),
             ) {
                 Column(
-                    modifier = Modifier.width(ComponentSize.confirmDialogTextWidth),
+                    modifier = Modifier.width(textWidth),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(Spacing.sm),
                 ) {

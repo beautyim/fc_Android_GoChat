@@ -70,6 +70,7 @@ import com.example.demoproject.platform.s3.MediaUploadService
 import com.example.demoproject.platform.s3.S3Runtime
 import com.example.demoproject.platform.data.local.crypto.TinkAeadSessionCipher
 import com.example.demoproject.platform.data.local.pref.AppPrefs
+import com.example.demoproject.platform.data.message.ChatUnreadStore
 import com.example.demoproject.platform.data.vip.VipStatusStore
 import com.example.demoproject.platform.data.wallet.AccountBalanceStore
 import kotlinx.coroutines.CoroutineScope
@@ -142,6 +143,7 @@ class NetworkRuntime private constructor(
     val appPrefs: AppPrefs,
     val vipStatusStore: VipStatusStore,
     val accountBalanceStore: AccountBalanceStore,
+    val chatUnreadStore: ChatUnreadStore,
     val sessionPrefs: SessionPrefs,
 ) {
     companion object {
@@ -233,6 +235,14 @@ class NetworkRuntime private constructor(
             val appPrefs = AppPrefs.create(appContext)
             val vipStatusStore = VipStatusStore()
             val accountBalanceStore = AccountBalanceStore()
+            val chatUnreadStore = ChatUnreadStore()
+            CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
+                sessionManager.sessionFlow.collect { session ->
+                    if (session == null) {
+                        chatUnreadStore.clear()
+                    }
+                }
+            }
             val blockRepository: BlockRepository = BlockRepositoryImpl(
                 profileApi = profileApi,
                 blockedUsersStore = blockedUsersStore,
@@ -246,17 +256,24 @@ class NetworkRuntime private constructor(
                 chatStore = chatStore,
                 blockedUsersStore = blockedUsersStore,
                 accountBalanceStore = accountBalanceStore,
+                chatUnreadStore = chatUnreadStore,
             )
             val feedRepository: FeedRepository = FeedRepositoryImpl(feedApi)
             val matchRepository: MatchRepository = MatchRepositoryImpl(matchApi)
-            val coinRepository: CoinRepository = CoinRepositoryImpl(coinApi)
+            val coinRepository: CoinRepository = CoinRepositoryImpl(
+                coinApi = coinApi,
+                accountBalanceStore = accountBalanceStore,
+            )
             val callRepository: CallRepository = CallRepositoryImpl(callApi)
             val callSessionRepository: CallSessionRepository = CallSessionRepositoryImpl(
                 callApi = callApi,
                 chatStore = chatStore,
                 sessionManager = sessionManager,
             )
-            val vipRepository: VipRepository = VipRepositoryImpl(retrofit.create(VipApi::class.java))
+            val vipRepository: VipRepository = VipRepositoryImpl(
+                api = retrofit.create(VipApi::class.java),
+                vipStatusStore = vipStatusStore,
+            )
             val notificationRepository: NotificationRepository = NotificationRepositoryImpl(
                 retrofit.create(NotificationApi::class.java),
             )
@@ -317,6 +334,7 @@ class NetworkRuntime private constructor(
                 appPrefs = appPrefs,
                 vipStatusStore = vipStatusStore,
                 accountBalanceStore = accountBalanceStore,
+                chatUnreadStore = chatUnreadStore,
                 sessionPrefs = sessionPrefs,
             )
         }

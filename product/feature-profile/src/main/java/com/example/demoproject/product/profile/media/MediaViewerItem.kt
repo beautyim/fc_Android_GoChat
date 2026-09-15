@@ -1,15 +1,7 @@
 package com.example.demoproject.product.profile.media
 
 import com.example.demoproject.platform.data.model.AlbumPhoto
-
-data class MediaViewerItem(
-    val id: Long,
-    val isVideo: Boolean,
-    val imageUrl: String?,
-    val videoUrl: String?,
-    val coverUrl: String?,
-    val durationSeconds: Int = 0,
-)
+import com.example.demoproject.ui.designsystem.media.MediaViewerItem
 
 fun AlbumPhoto.toMediaViewerItem(): MediaViewerItem {
     val thumb = thumbnailUrl ?: imageUrl

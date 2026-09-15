@@ -1,21 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="store_title">Store</string>
-    <string name="store_action_reload_catalog">Reload Catalog</string>
-    <string name="store_action_create_order_http">Create Order (HTTP)</string>
-    <string name="store_action_buy_play">Buy via Google Play</string>
+    <string name="store_title">Coins</string>
+    <string name="store_choose_coins">Choose coins</string>
+    <string name="store_super_discount">Super Discounts</string>
+    <string name="store_try_now">Try Now</string>
+    <string name="store_vip_offer_title">%1$d %2$s VIP</string>
+    <string name="store_vip_coins_label">coins</string>
+    <string name="store_vip_match_label">match</string>
+    <string name="store_sale_coins_amount">%1$d coins</string>
+    <string name="store_sale_extra">Extra:</string>
+    <string name="store_sale_off">OFF</string>
+    <string name="store_cd_back">Back</string>
+    <string name="store_cd_balance">Coin balance</string>
+    <string name="store_cd_coin_icon">Coin package</string>
+    <string name="store_cd_loading">Loading</string>
+    <string name="store_empty">No coin packages available</string>
+    <string name="store_retry">Retry</string>
     <string name="store_status_loading_catalog">Loading coin page…</string>
-    <string name="store_status_catalog_fmt">Catalog %1$d</string>
-    <string name="store_product_row_fmt">%1$s coins=%2$d sku=%3$s %4$s</string>
-    <string name="store_status_creating_order">Creating order…</string>
     <string name="store_status_empty_catalog">Empty catalog</string>
-    <string name="store_status_order_created_http">Order created (HTTP only)</string>
-    <string name="store_order_fmt">tranNo=%1$s sku=%2$s</string>
-    <string name="store_status_no_activity">No Activity bound for BillingClient</string>
-    <string name="store_status_launcher_missing">StorePurchaseLauncher not installed</string>
-    <string name="store_status_launching_play">Launching Google Play…</string>
+    <string name="store_status_no_activity">Unable to start purchase</string>
+    <string name="store_status_launcher_missing">Purchase is unavailable</string>
+    <string name="store_status_launching_play">Opening Google Play…</string>
     <string name="store_status_purchase_verified">Purchase verified</string>
-    <string name="store_purchased_fmt">purchasedId=%1$s</string>
     <string name="store_status_purchase_canceled">Purchase canceled</string>
     <string name="store_status_purchase_failed_fmt">Purchase failed: %1$s</string>
+    <string name="store_guide_my_coins">My coins: %1$d</string>
+    <string name="store_guide_low_balance">Low balance, please recharge</string>
+    <string name="store_guide_cd_close">Close</string>
 </resources>

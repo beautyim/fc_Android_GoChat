@@ -11,6 +11,8 @@ import com.example.demoproject.platform.data.model.giftMessageContent
 import com.example.demoproject.platform.data.model.giftReturnNoticeText
 import com.example.demoproject.platform.data.model.isChatControlNotice
 import com.example.demoproject.platform.data.model.toMessageTimelineMillis
+import com.example.demoproject.platform.data.network.toChatBinaryUrlOrNull
+import com.example.demoproject.platform.data.network.toPicUrlOrNull
 import org.json.JSONObject
 import java.text.DateFormat
 import java.text.SimpleDateFormat
@@ -29,6 +31,7 @@ internal object ChatDetailMessageMapper {
         hasMore: Boolean,
         profileCard: ChatDetailListItem.ProfileCard?,
         stringResolver: ChatDetailStringResolver,
+        giftAssets: ChatGiftAssetIndex = ChatGiftAssetIndex.Empty,
     ): List<ChatDetailListItem> {
         val rows = ArrayList<ChatDetailListItem>(ordered.size + 4)
         if (!hasMore) {
@@ -48,7 +51,7 @@ internal object ChatDetailMessageMapper {
                 )
             }
             rows += ChatDetailListItem.MessageRow(
-                message = message.toUi(currentUserId, peerName, stringResolver),
+                message = message.toUi(currentUserId, peerName, stringResolver, giftAssets),
             )
             previousMillis = millis
         }
@@ -59,6 +62,7 @@ internal object ChatDetailMessageMapper {
         currentUserId: String,
         peerName: String,
         stringResolver: ChatDetailStringResolver,
+        giftAssets: ChatGiftAssetIndex = ChatGiftAssetIndex.Empty,
     ): ChatDetailMessageUi {
         val millis = createdAt.toMessageTimelineMillis()
         return ChatDetailMessageUi(
@@ -71,6 +75,7 @@ internal object ChatDetailMessageMapper {
                 isMine = senderId == currentUserId,
                 peerName = peerName,
                 stringResolver = stringResolver,
+                giftAssets = giftAssets,
             ),
         )
     }
@@ -79,6 +84,7 @@ internal object ChatDetailMessageMapper {
         isMine: Boolean,
         peerName: String,
         stringResolver: ChatDetailStringResolver,
+        giftAssets: ChatGiftAssetIndex,
     ): ChatDetailMessageBody {
         // Control notices must win over call-bubble heuristics: some tip payloads also
         // carry a numeric `type` that would otherwise be misread as a call type.
@@ -117,32 +123,60 @@ internal object ChatDetailMessageMapper {
                 translatedText = translatedText,
             )
             MessageType.Emoji -> ChatDetailMessageBody.Emoji(text = content)
-            MessageType.Image -> ChatDetailMessageBody.Image(
-                url = extractMediaUrl(content),
-                locked = false,
-            )
-            MessageType.PrivatePhoto -> ChatDetailMessageBody.Image(
-                url = extractMediaUrl(content),
-                locked = !isUnlockedMedia(content),
-            )
-            MessageType.Video -> ChatDetailMessageBody.Video(
-                url = extractMediaUrl(content),
-                durationLabel = extractDurationLabel(content),
-                locked = false,
-            )
-            MessageType.PrivateVideo -> ChatDetailMessageBody.Video(
-                url = extractMediaUrl(content),
-                durationLabel = extractDurationLabel(content),
-                locked = !isUnlockedMedia(content),
-            )
+            MessageType.Image -> {
+                val media = extractImageDisplay(content)
+                ChatDetailMessageBody.Image(
+                    url = media.bubbleUrl,
+                    previewUrl = media.previewUrl,
+                    locked = false,
+                )
+            }
+            MessageType.PrivatePhoto -> {
+                val media = extractImageDisplay(content)
+                ChatDetailMessageBody.Image(
+                    url = media.bubbleUrl,
+                    previewUrl = media.previewUrl,
+                    locked = !isUnlockedMedia(content),
+                )
+            }
+            MessageType.Video -> {
+                val media = extractVideoDisplay(content)
+                ChatDetailMessageBody.Video(
+                    url = media.bubbleUrl,
+                    previewUrl = media.previewUrl,
+                    videoUrl = media.videoUrl,
+                    durationLabel = extractDurationLabel(content),
+                    durationSeconds = media.durationSeconds,
+                    locked = false,
+                )
+            }
+            MessageType.PrivateVideo -> {
+                val media = extractVideoDisplay(content)
+                ChatDetailMessageBody.Video(
+                    url = media.bubbleUrl,
+                    previewUrl = media.previewUrl,
+                    videoUrl = media.videoUrl,
+                    durationLabel = extractDurationLabel(content),
+                    durationSeconds = media.durationSeconds,
+                    locked = !isUnlockedMedia(content),
+                )
+            }
             MessageType.Gift -> {
                 val gift = giftMessageContent()
+                val giftTitle = gift?.title.orEmpty()
+                val giftId = gift?.giftId ?: 0L
+                val animationUrl = gift?.animationUrl.orEmpty().ifBlank {
+                    giftAssets.resolveAnimation(giftId = giftId, title = giftTitle)
+                }
                 ChatDetailMessageBody.Gift(
-                    title = gift?.title.orEmpty().ifBlank { stringResolver.giftFallback },
-                    iconUrl = gift?.iconUrl.orEmpty(),
+                    title = giftTitle.ifBlank { stringResolver.giftFallback },
+                    iconUrl = gift?.iconUrl.orEmpty().ifBlank {
+                        giftAssets.resolveIcon(giftId = giftId, title = giftTitle)
+                    },
                     price = extractGiftPrice(content),
                     isRequest = !isMine,
                     peerName = peerName,
+                    canPlayAnimation = animationUrl.isNotBlank(),
                 )
             }
             MessageType.Voice -> ChatDetailMessageBody.Text(
@@ -216,25 +250,107 @@ internal interface ChatDetailStringResolver {
     fun extraPhotos(count: Int): String
 }
 
-internal fun extractMediaUrl(raw: String): String {
+/** SVGA URL for a gift row: payload first, `gift/config` catalog as fallback. */
+internal fun Message.giftAnimationUrl(giftAssets: ChatGiftAssetIndex): String {
+    val gift = giftMessageContent() ?: return ""
+    return gift.animationUrl.trim().ifBlank {
+        giftAssets.resolveAnimation(giftId = gift.giftId, title = gift.title)
+    }
+}
+
+internal data class ChatMediaDisplay(
+    /** CDN URL for the chat bubble (image or video cover). */
+    val bubbleUrl: String,
+    /** CDN URL for fullscreen image / video cover. */
+    val previewUrl: String,
+    /** Absolute playback URL for videos; blank for images. */
+    val videoUrl: String = "",
+    val durationSeconds: Int = 0,
+)
+
+/**
+ * Image payloads: bubble and preview both prefer `image_url` (清晰大图).
+ * Plain relative keys (outbound send) resolve via the pic CDN.
+ */
+internal fun extractImageDisplay(raw: String): ChatMediaDisplay {
     val trimmed = raw.trim()
-    if (trimmed.isBlank()) return ""
-    if (!trimmed.startsWith("{")) return trimmed
+    if (trimmed.isBlank()) return ChatMediaDisplay("", "")
+    if (!trimmed.startsWith("{")) {
+        val absolute = trimmed.toPicUrlOrNull().orEmpty()
+        return ChatMediaDisplay(bubbleUrl = absolute, previewUrl = absolute)
+    }
     return runCatching {
         val json = JSONObject(trimmed)
-        sequenceOf(
-            "url",
-            "image_url",
-            "pic_url",
-            "thumb_url",
-            "small_url",
-            "video_url",
-            "media_url",
-            "cover_url",
-        ).map { json.optString(it).trim() }
+        fun opt(key: String): String = json.optString(key).trim()
+        val full = sequenceOf("image_url", "pic_url", "media_url", "url")
+            .map(::opt)
+            .firstOrNull { it.isNotBlank() && !it.isLikelyVideoPath() }
+            .orEmpty()
+        val thumb = sequenceOf("small_url", "thumb_url")
+            .map(::opt)
             .firstOrNull { it.isNotBlank() }
             .orEmpty()
-    }.getOrDefault("")
+        val absolute = (full.ifBlank { thumb }).toPicUrlOrNull().orEmpty()
+        ChatMediaDisplay(bubbleUrl = absolute, previewUrl = absolute)
+    }.getOrDefault(ChatMediaDisplay("", ""))
+}
+
+/**
+ * Video payloads: bubble / cover use pic CDN; playback URL uses the asset/binary CDN.
+ */
+internal fun extractVideoDisplay(raw: String): ChatMediaDisplay {
+    val trimmed = raw.trim()
+    if (trimmed.isBlank()) return ChatMediaDisplay("", "")
+    if (!trimmed.startsWith("{")) {
+        val play = trimmed.toChatBinaryUrlOrNull().orEmpty()
+        val cover = trimmed.toPicUrlOrNull().orEmpty()
+        return ChatMediaDisplay(
+            bubbleUrl = cover,
+            previewUrl = cover,
+            videoUrl = play,
+        )
+    }
+    return runCatching {
+        val json = JSONObject(trimmed)
+        fun opt(key: String): String = json.optString(key).trim()
+        val cover = sequenceOf("cover_url", "cover", "small_url", "thumb_url", "image_url")
+            .map(::opt)
+            .firstOrNull { it.isNotBlank() && !it.isLikelyVideoPath() }
+            .orEmpty()
+        val video = sequenceOf("url", "video_url", "media_url")
+            .map(::opt)
+            .firstOrNull { it.isNotBlank() && it.isLikelyVideoPath() }
+            .orEmpty()
+            .ifBlank {
+                sequenceOf("url", "video_url", "media_url")
+                    .map(::opt)
+                    .firstOrNull { it.isNotBlank() }
+                    .orEmpty()
+            }
+        val coverAbsolute = cover.toPicUrlOrNull().orEmpty()
+        val videoAbsolute = video.toChatBinaryUrlOrNull().orEmpty()
+        val seconds = json.optInt("duration", -1).takeIf { it >= 0 }
+            ?: json.optInt("call_duration", -1).takeIf { it >= 0 }
+            ?: 0
+        ChatMediaDisplay(
+            bubbleUrl = coverAbsolute,
+            previewUrl = coverAbsolute,
+            videoUrl = videoAbsolute,
+            durationSeconds = seconds,
+        )
+    }.getOrDefault(ChatMediaDisplay("", ""))
+}
+
+/** @deprecated Prefer [extractImageDisplay] / [extractVideoDisplay]. */
+internal fun extractMediaUrl(raw: String): String = extractImageDisplay(raw).previewUrl
+
+private fun String.isLikelyVideoPath(): Boolean {
+    val lower = lowercase()
+    return lower.endsWith(".mp4") ||
+        lower.endsWith(".mov") ||
+        lower.endsWith(".m4v") ||
+        lower.endsWith(".webm") ||
+        lower.endsWith(".mkv")
 }
 
 internal fun extractDurationLabel(raw: String): String? {
@@ -278,9 +394,13 @@ internal fun isUnlockedMedia(raw: String): Boolean {
     return runCatching {
         val json = JSONObject(trimmed)
         when {
-            json.has("unlocked") -> json.optBoolean("unlocked", false) || json.optInt("unlocked", 0) == 1
+            json.has("is_unlock") ->
+                json.optBoolean("is_unlock", false) || json.optInt("is_unlock", 0) == 1
+            json.has("unlocked") ->
+                json.optBoolean("unlocked", false) || json.optInt("unlocked", 0) == 1
             json.has("is_lock") -> json.optInt("is_lock", 1) == 0
-            json.has("locked") -> !json.optBoolean("locked", true) && json.optInt("locked", 1) == 0
+            json.has("locked") ->
+                !json.optBoolean("locked", true) && json.optInt("locked", 1) == 0
             else -> false
         }
     }.getOrDefault(false)

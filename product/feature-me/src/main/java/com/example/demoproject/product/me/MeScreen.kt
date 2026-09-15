@@ -84,7 +84,10 @@ fun MeScreen(
     viewModel: MeViewModel,
     onNavigateTab: (String) -> Unit,
     onOpenStore: () -> Unit,
+    onOpenVip: () -> Unit,
     onOpenPublicProfile: (String) -> Unit,
+    onOpenRelationshipList: (RelationshipListType, Int) -> Unit,
+    onOpenSettings: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -93,7 +96,11 @@ fun MeScreen(
         viewModel.effects.collectLatest { effect ->
             when (effect) {
                 is MeEffect.OpenPublicProfile -> onOpenPublicProfile(effect.externalUserId)
+                is MeEffect.OpenRelationshipList ->
+                    onOpenRelationshipList(effect.type, effect.count)
                 MeEffect.OpenStore -> onOpenStore()
+                MeEffect.OpenVip -> onOpenVip()
+                MeEffect.OpenSettings -> onOpenSettings()
                 is MeEffect.ShowMessage -> {
                     Toast.makeText(context, effect.message, Toast.LENGTH_SHORT).show()
                 }
@@ -223,6 +230,8 @@ private fun MeScrollContent(
         MeIdentityHeader(
             state = state,
             onOpenProfile = { onIntent(MeIntent.OpenPublicProfile) },
+            onOpenFollowers = { onIntent(MeIntent.OpenFollowers) },
+            onOpenFollowing = { onIntent(MeIntent.OpenFollowing) },
             onOpenCamera = { onIntent(MeIntent.OpenCamera) },
         )
         MeBalanceCard(
@@ -261,6 +270,8 @@ private fun MeScrollContent(
 private fun MeIdentityHeader(
     state: MeUiState,
     onOpenProfile: () -> Unit,
+    onOpenFollowers: () -> Unit,
+    onOpenFollowing: () -> Unit,
     onOpenCamera: () -> Unit,
 ) {
     Row(
@@ -362,6 +373,7 @@ private fun MeIdentityHeader(
                 MeStat(
                     count = state.followerCount,
                     label = stringResource(R.string.me_followers),
+                    onClick = onOpenFollowers,
                 )
                 Text(
                     text = "|",
@@ -371,6 +383,7 @@ private fun MeIdentityHeader(
                 MeStat(
                     count = state.followingCount,
                     label = stringResource(R.string.me_following),
+                    onClick = onOpenFollowing,
                 )
             }
         }
@@ -386,8 +399,14 @@ private fun MeIdentityHeader(
 }
 
 @Composable
-private fun MeStat(count: Int, label: String) {
+private fun MeStat(
+    count: Int,
+    label: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     Row(
+        modifier = modifier.clickable(onClick = onClick),
         verticalAlignment = Alignment.Bottom,
         horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
     ) {

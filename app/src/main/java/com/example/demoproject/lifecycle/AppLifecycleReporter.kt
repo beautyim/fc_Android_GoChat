@@ -72,6 +72,8 @@ class AppLifecycleReporter(
                 when (val init = runtime.appSessionRepository.initApp()) {
                     is AppResult.Success -> {
                         saveMqttConfig(init.data.socket)
+                        runtime.accountBalanceStore.update(init.data.accountMoney)
+                        runtime.chatUnreadStore.update(init.data.messageUnread)
                         AppLogger.i(TAG, "/app/init ok")
                         reportInstallStatIfNeeded()
                     }

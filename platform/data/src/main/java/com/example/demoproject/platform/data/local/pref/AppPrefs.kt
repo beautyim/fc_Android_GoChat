@@ -33,6 +33,8 @@ class AppPrefs(
         val MQTT_DEBUG_LOGGING_ENABLED = booleanPreferencesKey("mqtt_debug_logging_enabled")
         val APP_LANGUAGE_TAG = stringPreferencesKey("app_language_tag")
         val FAKE_PAYMENT_ENABLED = booleanPreferencesKey("fake_payment_enabled")
+        /** Peer ids that already showed chat-detail first-visit gift bar + greeting. */
+        val CHAT_DETAIL_INTRO_SEEN_PEER_IDS = stringSetPreferencesKey("chat_detail_intro_seen_peer_ids")
     }
 
     val onboardingCompleted: Flow<Boolean> =
@@ -138,5 +140,22 @@ class AppPrefs(
 
     suspend fun setFakePaymentEnabled(enabled: Boolean) {
         context.appDataStore.edit { it[Keys.FAKE_PAYMENT_ENABLED] = enabled }
+    }
+
+    suspend fun hasSeenChatDetailIntro(peerId: String): Boolean {
+        val key = peerId.trim()
+        if (key.isEmpty()) return true
+        return context.appDataStore.data.first()[Keys.CHAT_DETAIL_INTRO_SEEN_PEER_IDS]
+            .orEmpty()
+            .contains(key)
+    }
+
+    suspend fun markChatDetailIntroSeen(peerId: String) {
+        val key = peerId.trim()
+        if (key.isEmpty()) return
+        context.appDataStore.edit { prefs ->
+            val current = prefs[Keys.CHAT_DETAIL_INTRO_SEEN_PEER_IDS].orEmpty()
+            prefs[Keys.CHAT_DETAIL_INTRO_SEEN_PEER_IDS] = current + key
+        }
     }
 }

@@ -3,7 +3,9 @@ package com.example.demoproject
 import android.Manifest
 import android.app.Activity
 import android.app.Application
+import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
@@ -59,13 +61,25 @@ import com.example.demoproject.product.home.HomeScreen
 import com.example.demoproject.product.home.HomeViewModel
 import com.example.demoproject.product.match.MatchScreen
 import com.example.demoproject.product.match.MatchViewModel
+import com.example.demoproject.product.me.AboutUsScreen
+import com.example.demoproject.product.me.AboutUsViewModel
+import com.example.demoproject.product.me.BlockedUsersScreen
+import com.example.demoproject.product.me.BlockedUsersViewModel
 import com.example.demoproject.product.me.MeEffect
 import com.example.demoproject.product.me.MeScreen
 import com.example.demoproject.product.me.MeViewModel
+import com.example.demoproject.product.me.RelationshipListEffect
+import com.example.demoproject.product.me.RelationshipListScreen
+import com.example.demoproject.product.me.RelationshipListType
+import com.example.demoproject.product.me.RelationshipListViewModel
+import com.example.demoproject.product.me.SettingsScreen
+import com.example.demoproject.product.me.SettingsViewModel
 import com.example.demoproject.product.profile.ProfileScreen
 import com.example.demoproject.product.profile.ProfileViewModel
 import com.example.demoproject.product.store.StoreScreen
 import com.example.demoproject.product.store.StoreViewModel
+import com.example.demoproject.product.vip.VipPurchaseScreen
+import com.example.demoproject.product.vip.VipPurchaseViewModel
 import com.example.demoproject.ui.designsystem.DemoTheme
 import com.example.demoproject.ui.foundation.DemoWindowSize
 import com.example.demoproject.ui.foundation.ProvideWindowSize
@@ -84,7 +98,12 @@ object DemoRoutes {
     const val Call = "call"
     const val CallRecords = "call-records"
     const val Store = "store"
+    const val Vip = "vip"
     const val Profile = "profile"
+    const val Settings = "settings"
+    const val AboutUs = "settings/about-us"
+    const val BlockedUsers = "settings/blocked-users"
+    const val RelationshipList = "profile/relationships/{type}/{count}"
     const val ProfileUser = "profile/user/{userId}"
 
     fun chatDetail(conversationId: String, nickname: String): String {
@@ -97,6 +116,9 @@ object DemoRoutes {
         val id = URLEncoder.encode(externalUserId, StandardCharsets.UTF_8.toString())
         return "profile/user/$id"
     }
+
+    fun relationshipList(type: RelationshipListType, count: Int): String =
+        "profile/relationships/${type.name}/${count.coerceAtLeast(0)}"
 }
 
 class MainActivity : ComponentActivity() {
@@ -158,7 +180,11 @@ private fun DemoNavHost() {
                     modelClass.isAssignableFrom(CallViewModel::class.java) -> CallViewModel(app) as T
                     modelClass.isAssignableFrom(CallRecordsViewModel::class.java) -> CallRecordsViewModel(app) as T
                     modelClass.isAssignableFrom(StoreViewModel::class.java) -> StoreViewModel(app) as T
+                    modelClass.isAssignableFrom(VipPurchaseViewModel::class.java) -> VipPurchaseViewModel(app) as T
                     modelClass.isAssignableFrom(MeViewModel::class.java) -> MeViewModel(app) as T
+                    modelClass.isAssignableFrom(SettingsViewModel::class.java) -> SettingsViewModel(app) as T
+                    modelClass.isAssignableFrom(AboutUsViewModel::class.java) -> AboutUsViewModel(app) as T
+                    modelClass.isAssignableFrom(BlockedUsersViewModel::class.java) -> BlockedUsersViewModel(app) as T
                     modelClass.isAssignableFrom(ProfileViewModel::class.java) -> ProfileViewModel(app) as T
                     else -> error("Unknown ViewModel: ${modelClass.name}")
                 }
@@ -330,6 +356,10 @@ private fun DemoNavHost() {
             val vm: StoreViewModel = viewModel(factory = factory)
             StoreScreen(viewModel = vm, onBack = { navController.popBackStack() })
         }
+        composable(DemoRoutes.Vip) {
+            val vm: VipPurchaseViewModel = viewModel(factory = factory)
+            VipPurchaseScreen(viewModel = vm, onBack = { navController.popBackStack() })
+        }
         composable(DemoRoutes.Profile) {
             val vm: MeViewModel = viewModel(factory = factory)
             val state by vm.uiState.collectAsStateWithLifecycle()
@@ -339,7 +369,14 @@ private fun DemoNavHost() {
                         is MeEffect.OpenPublicProfile -> {
                             navController.navigate(DemoRoutes.profileUser(effect.externalUserId))
                         }
+                        is MeEffect.OpenRelationshipList -> {
+                            navController.navigate(
+                                DemoRoutes.relationshipList(effect.type, effect.count),
+                            )
+                        }
                         MeEffect.OpenStore -> navController.navigate(DemoRoutes.Store)
+                        MeEffect.OpenVip -> navController.navigate(DemoRoutes.Vip)
+                        MeEffect.OpenSettings -> navController.navigate(DemoRoutes.Settings)
                         is MeEffect.ShowMessage -> {
                             Toast.makeText(context, effect.message, Toast.LENGTH_SHORT).show()
                         }
@@ -351,6 +388,96 @@ private fun DemoNavHost() {
                 onIntent = vm::onIntent,
                 onNavigateTab = { route -> navigateMainTab(navController, route) },
             )
+        }
+        composable(
+            route = DemoRoutes.RelationshipList,
+            arguments = listOf(
+                navArgument("type") { type = NavType.StringType },
+                navArgument("count") { type = NavType.IntType },
+            ),
+        ) { entry ->
+            val type = runCatching {
+                RelationshipListType.valueOf(
+                    entry.arguments?.getString("type").orEmpty(),
+                )
+            }.getOrDefault(RelationshipListType.Following)
+            val count = entry.arguments?.getInt("count") ?: 0
+            val relationshipFactory = remember(app, type, count) {
+                object : ViewModelProvider.Factory {
+                    @Suppress("UNCHECKED_CAST")
+                    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                        require(modelClass.isAssignableFrom(RelationshipListViewModel::class.java))
+                        return RelationshipListViewModel(
+                            application = app,
+                            type = type,
+                            expectedCount = count,
+                        ) as T
+                    }
+                }
+            }
+            val vm: RelationshipListViewModel = viewModel(
+                key = "relationship-${type.name}-$count",
+                factory = relationshipFactory,
+            )
+            val state by vm.uiState.collectAsStateWithLifecycle()
+            LaunchedEffect(vm) {
+                vm.effects.collect { effect ->
+                    when (effect) {
+                        is RelationshipListEffect.OpenProfile -> {
+                            navController.navigate(DemoRoutes.profileUser(effect.externalUserId))
+                        }
+                        is RelationshipListEffect.OpenChat -> {
+                            navController.navigate(
+                                DemoRoutes.chatDetail(effect.conversationId, effect.nickname),
+                            )
+                        }
+                        is RelationshipListEffect.StartVideoCall -> {
+                            navController.navigate(DemoRoutes.Call)
+                        }
+                    }
+                }
+            }
+            RelationshipListScreen(
+                state = state,
+                onIntent = vm::onIntent,
+                onBack = { navController.popBackStack() },
+            )
+        }
+        composable(DemoRoutes.Settings) {
+            val vm: SettingsViewModel = viewModel(factory = factory)
+            SettingsScreen(
+                viewModel = vm,
+                onBack = { navController.popBackStack() },
+                onOpenBlockedUsers = { navController.navigate(DemoRoutes.BlockedUsers) },
+                onOpenAbout = { navController.navigate(DemoRoutes.AboutUs) },
+            )
+        }
+        composable(DemoRoutes.AboutUs) {
+            val vm: AboutUsViewModel = viewModel(factory = factory)
+            val unavailableMessage = context.getString(
+                com.example.demoproject.product.me.R.string.about_link_unavailable,
+            )
+            AboutUsScreen(
+                viewModel = vm,
+                onBack = { navController.popBackStack() },
+                onOpenContact = {
+                    Toast.makeText(context, unavailableMessage, Toast.LENGTH_SHORT).show()
+                },
+                onOpenPrivacy = {
+                    if (!context.openExternalLink(BuildConfig.PRIVACY_URL)) {
+                        Toast.makeText(context, unavailableMessage, Toast.LENGTH_SHORT).show()
+                    }
+                },
+                onOpenTerms = {
+                    if (!context.openExternalLink(BuildConfig.TERMS_URL)) {
+                        Toast.makeText(context, unavailableMessage, Toast.LENGTH_SHORT).show()
+                    }
+                },
+            )
+        }
+        composable(DemoRoutes.BlockedUsers) {
+            val vm: BlockedUsersViewModel = viewModel(factory = factory)
+            BlockedUsersScreen(viewModel = vm, onBack = { navController.popBackStack() })
         }
         composable(
             route = DemoRoutes.ProfileUser,
@@ -379,9 +506,19 @@ private fun DemoNavHost() {
                 viewModel = vm,
                 onBack = { navController.popBackStack() },
                 onOpenStore = { navController.navigate(DemoRoutes.Store) },
+                onOpenChatDetail = { conversationId, nickname ->
+                    navController.navigate(DemoRoutes.chatDetail(conversationId, nickname))
+                },
             )
         }
     }
+}
+
+private fun Context.openExternalLink(url: String): Boolean {
+    if (url.isBlank()) return false
+    return runCatching {
+        startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+    }.isSuccess
 }
 
 private fun navigateMainTab(navController: NavHostController, route: String) {

@@ -1,21 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="store_title">المتجر</string>
-    <string name="store_action_reload_catalog">إعادة تحميل الكتالوج</string>
-    <string name="store_action_create_order_http">إنشاء طلب (HTTP)</string>
-    <string name="store_action_buy_play">الشراء عبر Google Play</string>
-    <string name="store_status_loading_catalog">Loading coin page…</string>
-    <string name="store_status_catalog_fmt">Catalog %1$d</string>
-    <string name="store_product_row_fmt">%1$s coins=%2$d sku=%3$s %4$s</string>
-    <string name="store_status_creating_order">Creating order…</string>
+    <string name="store_title">العملات</string>
+    <string name="store_choose_coins">اختر العملات</string>
+    <string name="store_super_discount">خصومات كبيرة</string>
+    <string name="store_try_now">جرّب الآن</string>
+    <string name="store_vip_offer_title">%1$d %2$s VIP</string>
+    <string name="store_vip_coins_label">عملات</string>
+    <string name="store_vip_match_label">مطابقة</string>
+    <string name="store_sale_coins_amount">%1$d عملات</string>
+    <string name="store_sale_extra">إضافي:</string>
+    <string name="store_sale_off">خصم</string>
+    <string name="store_cd_back">رجوع</string>
+    <string name="store_cd_balance">رصيد العملات</string>
+    <string name="store_cd_coin_icon">باقة عملات</string>
+    <string name="store_cd_loading">جارٍ التحميل</string>
+    <string name="store_empty">لا توجد باقات عملات</string>
+    <string name="store_retry">إعادة المحاولة</string>
+    <string name="store_status_loading_catalog">جاري تحميل صفحة العملات…</string>
     <string name="store_status_empty_catalog">الكتالوج فارغ</string>
-    <string name="store_status_order_created_http">Order created (HTTP only)</string>
-    <string name="store_order_fmt">tranNo=%1$s sku=%2$s</string>
-    <string name="store_status_no_activity">No Activity bound for BillingClient</string>
-    <string name="store_status_launcher_missing">StorePurchaseLauncher not installed</string>
-    <string name="store_status_launching_play">Launching Google Play…</string>
+    <string name="store_status_no_activity">تعذر بدء الشراء</string>
+    <string name="store_status_launcher_missing">الشراء غير متاح</string>
+    <string name="store_status_launching_play">جارٍ فتح Google Play…</string>
     <string name="store_status_purchase_verified">تم التحقق من الشراء</string>
-    <string name="store_purchased_fmt">purchasedId=%1$s</string>
     <string name="store_status_purchase_canceled">تم إلغاء الشراء</string>
-    <string name="store_status_purchase_failed_fmt">Purchase failed: %1$s</string>
+    <string name="store_status_purchase_failed_fmt">فشل الشراء: %1$s</string>
+    <string name="store_guide_my_coins">عملاتي: %1$d</string>
+    <string name="store_guide_low_balance">رصيد منخفض، يرجى إعادة الشحن</string>
+    <string name="store_guide_cd_close">إغلاق</string>
 </resources>

@@ -19,5 +19,19 @@ object Radius {
     val card = 22.dp
     val lg = 24.dp
     val chip = 38.dp
+    /** Store coin package card — Figma 18dp. */
+    val storeCoinCard = 18.dp
+    /** Store Super Discounts ribbon top-start — Figma 11dp. */
+    val storeRibbonTopStart = 11.dp
+    /** Store Super Discounts ribbon bottom-end — Figma 17dp. */
+    val storeRibbonBottomEnd = 17.dp
+    /** VIP benefit card — Figma 9dp. */
+    val vipBenefitCard = 9.dp
+    /** VIP plan card — Figma 16dp. */
+    val vipPlanCard = 16.dp
+    /** VIP pay-guide sheet top corners — Figma 32dp. */
+    val vipPayGuideSheet = 32.dp
+    /** Coin pay-guide sheet top corners — Figma 24dp. */
+    val coinPayGuideSheet = 24.dp
     val pill = 333.dp
 }

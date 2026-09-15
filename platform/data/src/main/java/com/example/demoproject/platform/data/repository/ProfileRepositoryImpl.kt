@@ -362,6 +362,9 @@ class ProfileRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun disbandAccount(): AppResult<Unit> =
+        safeApiCallUnit { profileApi.disbandAccount() }
+
     override suspend fun followUser(id: String): AppResult<Unit> {
         val uid = id.toLongOrNull() ?: return AppResult.BizError(
             code = AppResult.CODE_EMPTY_PAYLOAD,
@@ -396,7 +399,7 @@ class ProfileRepositoryImpl @Inject constructor(
         targetUserId: String,
         page: Int,
         pageSize: Int,
-    ): AppResult<List<User>> {
+    ): AppResult<FollowUsersPage> {
         val uid = targetUserId.toLongOrNull() ?: 0L
         return safeApiCall {
             profileApi.getFocusList(
@@ -405,15 +408,20 @@ class ProfileRepositoryImpl @Inject constructor(
                     targetUid = uid.takeIf { it > 0L },
                 ),
             )
-        }.map { dto -> dto.list.map(UserDto::toDomain) }
-            .onSuccessSuspend { users -> userDao.upsertAll(users.map { it }) }
+        }.map { dto ->
+            FollowUsersPage(
+                users = dto.list.map(UserDto::toDomain),
+                hasMore = dto.hasMore,
+                total = dto.resolvedTotal,
+            )
+        }.onSuccessSuspend { pageData -> userDao.upsertAll(pageData.users) }
     }
 
     override suspend fun getFollowerUsers(
         targetUserId: String,
         page: Int,
         pageSize: Int,
-    ): AppResult<List<User>> {
+    ): AppResult<FollowUsersPage> {
         val uid = targetUserId.toLongOrNull() ?: 0L
         return safeApiCall {
             profileApi.getFocusFansList(
@@ -422,8 +430,13 @@ class ProfileRepositoryImpl @Inject constructor(
                     targetUid = uid.takeIf { it > 0L },
                 ),
             )
-        }.map { dto -> dto.list.map(UserDto::toDomain) }
-            .onSuccessSuspend { users -> userDao.upsertAll(users.map { it }) }
+        }.map { dto ->
+            FollowUsersPage(
+                users = dto.list.map(UserDto::toDomain),
+                hasMore = dto.hasMore,
+                total = dto.resolvedTotal,
+            )
+        }.onSuccessSuspend { pageData -> userDao.upsertAll(pageData.users) }
     }
 
     override suspend fun getFollowerCount(targetUserId: String): AppResult<Int> {

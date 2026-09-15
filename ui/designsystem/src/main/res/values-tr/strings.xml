@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="media_viewer_start_video_chat">Görüntülü sohbet başlat</string>
+    <string name="media_viewer_video_play_failed">Bu video oynatılamıyor</string>
+    <string name="media_viewer_video_unsupported">Bu cihaz bu videoyu oynatamıyor</string>
+    <string name="media_viewer_video_network_failed">Video yüklenemedi. Ağ bağlantınızı kontrol edin</string>
+    <string name="media_viewer_cd_close">Kapat</string>
+    <string name="media_viewer_cd_play">Oynat</string>
+    <string name="media_viewer_cd_pause">Duraklat</string>
+    <string name="media_viewer_cd_loading">Yükleniyor</string>
+</resources>

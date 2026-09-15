@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="media_viewer_start_video_chat">Start Video Chat</string>
+    <string name="media_viewer_video_play_failed">Unable to play this video</string>
+    <string name="media_viewer_video_unsupported">This device cannot play this video</string>
+    <string name="media_viewer_video_network_failed">Failed to load video. Check your network</string>
+    <string name="media_viewer_cd_close">Close</string>
+    <string name="media_viewer_cd_play">Play</string>
+    <string name="media_viewer_cd_pause">Pause</string>
+    <string name="media_viewer_cd_loading">Loading</string>
+</resources>

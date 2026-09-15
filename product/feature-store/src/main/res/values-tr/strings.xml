@@ -1,21 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="store_title">Mağaza</string>
-    <string name="store_action_reload_catalog">Kataloğu yenile</string>
-    <string name="store_action_create_order_http">Sipariş oluştur (HTTP)</string>
-    <string name="store_action_buy_play">Google Play ile satın al</string>
-    <string name="store_status_loading_catalog">Loading coin page…</string>
-    <string name="store_status_catalog_fmt">Catalog %1$d</string>
-    <string name="store_product_row_fmt">%1$s coins=%2$d sku=%3$s %4$s</string>
-    <string name="store_status_creating_order">Creating order…</string>
+    <string name="store_title">Jetonlar</string>
+    <string name="store_choose_coins">Jeton seçin</string>
+    <string name="store_super_discount">Süper indirimler</string>
+    <string name="store_try_now">Şimdi dene</string>
+    <string name="store_vip_offer_title">%1$d %2$s VIP</string>
+    <string name="store_vip_coins_label">jeton</string>
+    <string name="store_vip_match_label">eşleşme</string>
+    <string name="store_sale_coins_amount">%1$d jeton</string>
+    <string name="store_sale_extra">Ekstra:</string>
+    <string name="store_sale_off">İNDİRİM</string>
+    <string name="store_cd_back">Geri</string>
+    <string name="store_cd_balance">Jeton bakiyesi</string>
+    <string name="store_cd_coin_icon">Jeton paketi</string>
+    <string name="store_cd_loading">Yükleniyor</string>
+    <string name="store_empty">Jeton paketi yok</string>
+    <string name="store_retry">Yeniden dene</string>
+    <string name="store_status_loading_catalog">Jeton sayfası yükleniyor…</string>
     <string name="store_status_empty_catalog">Katalog boş</string>
-    <string name="store_status_order_created_http">Order created (HTTP only)</string>
-    <string name="store_order_fmt">tranNo=%1$s sku=%2$s</string>
-    <string name="store_status_no_activity">No Activity bound for BillingClient</string>
-    <string name="store_status_launcher_missing">StorePurchaseLauncher not installed</string>
-    <string name="store_status_launching_play">Launching Google Play…</string>
+    <string name="store_status_no_activity">Satın alma başlatılamıyor</string>
+    <string name="store_status_launcher_missing">Satın alma kullanılamıyor</string>
+    <string name="store_status_launching_play">Google Play açılıyor…</string>
     <string name="store_status_purchase_verified">Satın alma doğrulandı</string>
-    <string name="store_purchased_fmt">purchasedId=%1$s</string>
     <string name="store_status_purchase_canceled">Satın alma iptal edildi</string>
-    <string name="store_status_purchase_failed_fmt">Purchase failed: %1$s</string>
+    <string name="store_status_purchase_failed_fmt">Satın alma başarısız: %1$s</string>
+    <string name="store_guide_my_coins">Jetonlarım: %1$d</string>
+    <string name="store_guide_low_balance">Bakiyeniz düşük, lütfen yükleme yapın</string>
+    <string name="store_guide_cd_close">Kapat</string>
 </resources>

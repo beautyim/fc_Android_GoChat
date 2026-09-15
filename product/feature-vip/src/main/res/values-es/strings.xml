@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="vip_cd_back">Atrás</string>
+    <string name="vip_cd_loading">Cargando</string>
+    <string name="vip_hero_upgrade_prefix">Mejora\na\u0020</string>
+    <string name="vip_hero_upgrade_accent">VIP</string>
+    <string name="vip_hero_member_prefix">Eres\n</string>
+    <string name="vip_hero_member_accent">VIP</string>
+    <string name="vip_expiry_fmt">Vence: %1$s</string>
+    <string name="vip_benefit_section">Beneficio VIP</string>
+    <string name="vip_choose_plan">Elige tu plan</string>
+    <string name="vip_cta_get">Obtener VIP ahora</string>
+    <string name="vip_cta_resubscribe">Volver a suscribirse</string>
+    <string name="vip_billing_note">Facturación recurrente. Cancela cuando quieras.</string>
+    <string name="vip_empty">No hay planes VIP</string>
+    <string name="vip_retry">Reintentar</string>
+    <string name="vip_status_no_activity">No se puede iniciar la compra</string>
+    <string name="vip_status_launcher_missing">La compra no está disponible</string>
+    <string name="vip_status_purchase_verified">Compra verificada</string>
+    <string name="vip_status_purchase_canceled">Compra cancelada</string>
+    <string name="vip_status_purchase_failed_fmt">Error de compra: %1$s</string>
+    <string name="vip_guide_cd_close">Cerrar</string>
+    <string name="vip_guide_title_line1">Has usado todos tus</string>
+    <string name="vip_guide_title_accent">mensajes gratis</string>
+    <string name="vip_guide_title_emoji">\u0020💬</string>
+    <string name="vip_guide_subtitle_prefix">Mejora a VIP\u0020</string>
+    <string name="vip_guide_subtitle_mid">para seguir chateando</string>
+    <string name="vip_guide_subtitle_with">con %1$s ✨</string>
+    <string name="vip_guide_peer_fallback">ellos</string>
+    <string name="vip_guide_why_section">¿Por qué VIP?</string>
+    <string name="vip_guide_plan_subtitle">Acceso completo a todas las funciones VIP</string>
+    <string name="vip_guide_plan_title_fmt">%1$s VIP</string>
+    <string name="vip_guide_cta">Mejorar a VIP</string>
+</resources>

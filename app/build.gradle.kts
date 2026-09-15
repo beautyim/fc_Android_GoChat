@@ -66,6 +66,7 @@ dependencies {
     implementation(project(":product:feature-match"))
     implementation(project(":product:feature-call"))
     implementation(project(":product:feature-store"))
+    implementation(project(":product:feature-vip"))
     implementation(project(":product:feature-profile"))
     implementation(project(":product:feature-me"))
 

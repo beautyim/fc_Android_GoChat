@@ -1,4 +1,4 @@
-package com.example.demoproject.product.profile.media
+package com.example.demoproject.ui.designsystem.media
 
 import android.content.Context
 import androidx.annotation.OptIn

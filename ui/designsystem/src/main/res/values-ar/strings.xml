@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="media_viewer_start_video_chat">بدء محادثة فيديو</string>
+    <string name="media_viewer_video_play_failed">تعذر تشغيل هذا الفيديو</string>
+    <string name="media_viewer_video_unsupported">هذا الجهاز لا يدعم تشغيل هذا الفيديو</string>
+    <string name="media_viewer_video_network_failed">فشل تحميل الفيديو. تحقق من الشبكة</string>
+    <string name="media_viewer_cd_close">إغلاق</string>
+    <string name="media_viewer_cd_play">تشغيل</string>
+    <string name="media_viewer_cd_pause">إيقاف مؤقت</string>
+    <string name="media_viewer_cd_loading">جارٍ التحميل</string>
+</resources>

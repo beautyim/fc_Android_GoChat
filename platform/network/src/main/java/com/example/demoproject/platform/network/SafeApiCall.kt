@@ -54,6 +54,7 @@ suspend fun <T> safeApiCall(block: suspend () -> ApiResponse<T>): AppResult<T> {
                     response.failureCode,
                     response.failureMessage(),
                     fromType = response.callback.callbackFromType(),
+                    callback = response.callback,
                 )
 
             payload == null ->
@@ -93,6 +94,7 @@ suspend fun <T> safeApiCallNullable(block: suspend () -> ApiResponse<T?>): AppRe
                 response.failureCode,
                 response.failureMessage(),
                 fromType = response.callback.callbackFromType(),
+                callback = response.callback,
             )
         } else {
             AppResult.Success(payload)

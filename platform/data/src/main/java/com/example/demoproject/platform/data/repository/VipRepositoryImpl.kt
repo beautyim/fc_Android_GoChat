@@ -4,8 +4,10 @@ import com.example.demoproject.platform.data.network.api.VipApi
 import com.example.demoproject.platform.data.network.dto.VipListResponseDto
 import com.example.demoproject.platform.data.network.dto.VipPrivilegeDto
 import com.example.demoproject.platform.data.network.dto.VipProductDto
+import com.example.demoproject.platform.data.network.mapper.toDisplayLabelOrNull
 import com.example.demoproject.platform.data.network.toAssetUrlOrNull
 import com.example.demoproject.platform.data.network.toPicUrlOrNull
+import com.example.demoproject.platform.data.vip.VipStatusStore
 import com.example.demoproject.platform.network.result.AppResult
 import com.example.demoproject.platform.network.result.map
 import com.example.demoproject.platform.network.safeApiCall
@@ -24,11 +26,19 @@ import javax.inject.Singleton
 @Singleton
 class VipRepositoryImpl @Inject constructor(
     private val api: VipApi,
+    private val vipStatusStore: VipStatusStore,
 ) : VipRepository {
 
     override suspend fun getVipPage(): AppResult<VipPageData> =
         safeApiCall { api.getVipList() }
-            .map(VipListResponseDto::toDomain)
+            .map { dto ->
+                val page = dto.toDomain()
+                vipStatusStore.update(
+                    isVip = page.user.isVip,
+                    expiryText = page.user.expiryText,
+                )
+                page
+            }
 }
 
 internal fun VipListResponseDto.toDomain(): VipPageData =
@@ -47,42 +57,50 @@ internal fun VipListResponseDto.toDomain(): VipPageData =
         benefits = privilegeList.map(VipPrivilegeDto::toDomain),
     )
 
-private fun VipProductDto.toDomain(): VipPlan =
-    VipPlan(
+private fun VipProductDto.toDomain(): VipPlan {
+    val resolvedBenefits = when {
+        privilegeInfos.isNotEmpty() -> privilegeInfos
+        else -> privilegeList?.list.orEmpty()
+    }
+    val originalResolved = originPrice.takeIf { it.isNotBlank() }
+        ?: original.takeIf { it.isNotBlank() }
+    val priceResolved = moneyDesc.ifBlank { money }
+    return VipPlan(
         id = id,
         sku = sku,
         productType = productType.takeIf { it > 0 } ?: 2,
-        title = displayTitle(),
+        title = title.trim(),
         days = days,
         month = month,
         dayDesc = dayDesc,
-        price = moneyDesc.ifBlank { money },
-        saleText = saleDesc.ifBlank { saveRate },
-        label = label.displayLabel(),
+        price = priceResolved,
+        originalPrice = originalResolved?.takeUnless { it == priceResolved },
+        saleText = saleDesc.ifBlank {
+            when {
+                sale > 0 -> "$sale% OFF"
+                saveRate.isNotBlank() -> {
+                    val rate = saveRate.trim()
+                    if (rate.contains('%', ignoreCase = true) ||
+                        rate.contains("off", ignoreCase = true)
+                    ) {
+                        rate
+                    } else {
+                        val pct = rate.toDoubleOrNull()?.let { value ->
+                            if (value in 0.0..1.0) (value * 100).toInt() else value.toInt()
+                        }
+                        pct?.let { "$it% OFF" }.orEmpty()
+                    }
+                }
+                else -> ""
+            }
+        },
+        label = label.toDisplayLabelOrNull().orEmpty(),
         hidden = hidden == 1,
         iconUrl = icon.toAssetUrlOrNull(),
-        benefits = privilegeInfos.map(VipPrivilegeDto::toDomain),
+        giveCoins = giveCoins,
+        matchCount = match,
+        benefits = resolvedBenefits.map(VipPrivilegeDto::toDomain),
     )
-
-private fun VipProductDto.displayTitle(): String =
-    when {
-        title.isNotBlank() -> title
-        days == 7 -> "1 Week"
-        days in 1..13 -> if (days == 1) "1 Day" else "$days Days"
-        month > 1 -> "$month Months"
-        month == 1 -> "1 Month"
-        days > 1 -> "$days Days"
-        else -> dayDesc
-    }
-
-private fun String.displayLabel(): String {
-    val lower = trim().lowercase()
-    if (lower.isBlank()) return ""
-    return lower.split(" ").joinToString(" ") { word ->
-        word.replaceFirstChar { char ->
-            if (char.isLowerCase()) char.titlecase() else char.toString()
-        }
-    }
 }
 
 private fun VipPlan.durationDays(): Int =

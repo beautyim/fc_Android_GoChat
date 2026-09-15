@@ -36,7 +36,10 @@ interface MessageRepository {
     /** Room-backed conversation list for the UI (MQTT/HTTP only write into Room). */
     fun observeConversations(): Flow<List<Conversation>>
 
-    /** Room-backed total unread count. Defaults to excluding muted conversations. */
+    /**
+     * Server-authoritative total unread (`ChatUnreadStore`).
+     * [includeMuted] is unused — mute filtering is applied by the backend unread口径.
+     */
     fun observeTotalUnreadCount(includeMuted: Boolean = false): Flow<Int>
 
     /**
@@ -160,20 +163,28 @@ interface MessageRepository {
         messageId: String,
     ): AppResult<Unit>
 
-    /** `/msg/clear-unread` — zero server and local unread counters. */
+    /**
+     * `/msg/clear-unread` — gateway currently no-ops; kept for API parity.
+     * Prefer [markConversationRead] / [refreshConversationUnread] for real unread updates.
+     */
     suspend fun clearUnread(lastSyncMtime: Long): AppResult<Unit>
 
-    /** `/msg/read` — mark one conversation as read and clear its local unread badge. */
+    /**
+     * `/msg/read` then `/msg/get-unread` — clear the session on the server and overwrite
+     * local badge + global total from the response (no local arithmetic).
+     */
     suspend fun markConversationRead(conversationId: String): AppResult<Unit>
 
     /**
-     * Local-only ingest of a private-chat MQTT push: upsert the message row and refresh the
-     * conversation list preview immediately. HTTP `/msg/sync` remains compensation.
+     * `/msg/get-unread` — overwrite one conversation badge and the global total from the server.
+     */
+    suspend fun refreshConversationUnread(conversationId: String): AppResult<Unit>
+
+    /**
+     * Ingest a private-chat MQTT push: upsert the message + list preview, then refresh unread
+     * from `/msg/get-unread` when the peer sent the row (no local +1).
      */
     suspend fun applyIncomingChatPush(push: IncomingChatPush)
-
-    /** Local-only unread increment used by MQTT push before HTTP compensation. */
-    suspend fun incrementConversationUnread(conversationId: String)
 
     /** Local-only state: backend contract for private chat pinning is not available yet. */
     suspend fun setConversationPinned(conversationId: String, pinned: Boolean): AppResult<Unit>

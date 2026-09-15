@@ -55,7 +55,9 @@
     <string name="chat_detail_notice_generic">System notice</string>
     <string name="chat_detail_resend_unsupported">This message type cannot be resent.</string>
     <string name="chat_detail_soon_gift">Hediye paneli yakında</string>
-    <string name="chat_detail_soon_plus">Ekler yakında</string>
+    <string name="chat_detail_media_send_image">Fotoğraf Gönder</string>
+    <string name="chat_detail_media_send_video">Video Gönder</string>
+    <string name="chat_detail_media_cancel">İptal</string>
     <string name="chat_detail_cd_emoji">Emoji</string>
     <string name="chat_detail_cd_keyboard">Klavye</string>
     <string name="chat_detail_cd_emoji_item">Emoji %1$s</string>
@@ -85,4 +87,8 @@
     <string name="chat_detail_gift_send_success">Hediye gönderildi</string>
     <string name="chat_detail_gift_cd_balance">Jeton bakiyesi</string>
     <string name="chat_detail_gift_cd_select">Hediye seç</string>
+    <string name="chat_detail_gift_cd_play">Hediye animasyonunu oynat</string>
+    <string name="chat_detail_greeting_text">hi～</string>
+    <string name="chat_detail_cd_greeting">Selam gönder</string>
+    <string name="chat_detail_cd_quick_gift">Hediye gönder %1$s</string>
 </resources>

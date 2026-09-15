@@ -1,21 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="store_title">Tienda</string>
-    <string name="store_action_reload_catalog">Recargar catálogo</string>
-    <string name="store_action_create_order_http">Crear pedido (HTTP)</string>
-    <string name="store_action_buy_play">Comprar con Google Play</string>
-    <string name="store_status_loading_catalog">Loading coin page…</string>
-    <string name="store_status_catalog_fmt">Catalog %1$d</string>
-    <string name="store_product_row_fmt">%1$s coins=%2$d sku=%3$s %4$s</string>
-    <string name="store_status_creating_order">Creating order…</string>
+    <string name="store_title">Monedas</string>
+    <string name="store_choose_coins">Elige monedas</string>
+    <string name="store_super_discount">Súper descuentos</string>
+    <string name="store_try_now">Probar ahora</string>
+    <string name="store_vip_offer_title">%1$d %2$s VIP</string>
+    <string name="store_vip_coins_label">monedas</string>
+    <string name="store_vip_match_label">match</string>
+    <string name="store_sale_coins_amount">%1$d monedas</string>
+    <string name="store_sale_extra">Extra:</string>
+    <string name="store_sale_off">DTO</string>
+    <string name="store_cd_back">Atrás</string>
+    <string name="store_cd_balance">Saldo de monedas</string>
+    <string name="store_cd_coin_icon">Paquete de monedas</string>
+    <string name="store_cd_loading">Cargando</string>
+    <string name="store_empty">No hay paquetes de monedas</string>
+    <string name="store_retry">Reintentar</string>
+    <string name="store_status_loading_catalog">Cargando página de monedas…</string>
     <string name="store_status_empty_catalog">Catálogo vacío</string>
-    <string name="store_status_order_created_http">Order created (HTTP only)</string>
-    <string name="store_order_fmt">tranNo=%1$s sku=%2$s</string>
-    <string name="store_status_no_activity">No Activity bound for BillingClient</string>
-    <string name="store_status_launcher_missing">StorePurchaseLauncher not installed</string>
-    <string name="store_status_launching_play">Launching Google Play…</string>
+    <string name="store_status_no_activity">No se puede iniciar la compra</string>
+    <string name="store_status_launcher_missing">La compra no está disponible</string>
+    <string name="store_status_launching_play">Abriendo Google Play…</string>
     <string name="store_status_purchase_verified">Compra verificada</string>
-    <string name="store_purchased_fmt">purchasedId=%1$s</string>
     <string name="store_status_purchase_canceled">Compra cancelada</string>
-    <string name="store_status_purchase_failed_fmt">Purchase failed: %1$s</string>
+    <string name="store_status_purchase_failed_fmt">Error de compra: %1$s</string>
+    <string name="store_guide_my_coins">Mis monedas: %1$d</string>
+    <string name="store_guide_low_balance">Saldo bajo, por favor recarga</string>
+    <string name="store_guide_cd_close">Cerrar</string>
 </resources>

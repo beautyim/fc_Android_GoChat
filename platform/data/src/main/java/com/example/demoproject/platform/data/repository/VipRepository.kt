@@ -66,15 +66,19 @@ data class VipPlan(
     val id: Long,
     val sku: String,
     val productType: Int = 2,
+    /** Raw API `title` segment (e.g. "Month"); UI composes with [month]. */
     val title: String,
     val days: Int,
     val month: Int,
     val dayDesc: String,
     val price: String,
+    val originalPrice: String?,
     val saleText: String,
     val label: String,
     val hidden: Boolean,
     val iconUrl: String?,
+    val giveCoins: Int = 0,
+    val matchCount: Int = 0,
     val benefits: List<VipBenefit> = emptyList(),
 )
 

@@ -2,6 +2,7 @@ package com.example.demoproject.platform.data.model
 
 import com.example.demoproject.platform.data.message.CallConversationIds
 import com.example.demoproject.platform.data.message.callBubbleContent
+import com.example.demoproject.platform.data.network.toAssetUrlOrNull
 import org.json.JSONObject
 
 /**
@@ -228,17 +229,19 @@ object GiftMessageContentCodec {
             GiftMessageContent(
                 giftId = source.optLong("gift_id", json.optLong("gift_id", 0L)),
                 title = title.ifBlank { source.optLong("gift_id", 0L).toString() },
+                // Gift payloads carry the same relative asset keys as `gift/config`
+                // (e.g. `s/gift/xxx.png`), so they need the CDN host to be loadable.
                 iconUrl = sequenceOf(
                     source.optString("icon"),
                     source.optString("icon_url"),
                     json.optString("icon"),
-                ).firstOrNull { it.isNotBlank() }.orEmpty(),
+                ).firstOrNull { it.isNotBlank() }.toAssetUrlOrNull().orEmpty(),
                 animationUrl = sequenceOf(
                     source.optString("svga_url"),
                     source.optString("animation_url"),
                     source.optString("lottie_url"),
                     json.optString("svga_url"),
-                ).firstOrNull { it.isNotBlank() }.orEmpty(),
+                ).firstOrNull { it.isNotBlank() }.toAssetUrlOrNull().orEmpty(),
                 count = sequenceOf(
                     source.optInt("number", 0),
                     source.optInt("count", 0),

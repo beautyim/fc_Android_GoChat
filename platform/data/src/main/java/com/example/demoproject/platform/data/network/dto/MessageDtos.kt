@@ -17,7 +17,10 @@ data class ConversationListResponseDto(
     val userInfos: Map<String, UserDto> = emptyMap(),
     @SerialName("has_more") val hasMoreRaw: Int = 0,
     @SerialName("last_sync_mtime") val lastSyncMtime: Long = 0,
+    /** Total unread — reliable on `msg/list`; often omitted on `msg/sync`. */
+    @Serializable(with = LenientIntSerializer::class)
     val unread: Int = 0,
+    @Serializable(with = LenientIntSerializer::class)
     @SerialName("follow_unread") val followUnread: Int = 0,
 ) {
     val hasMore: Boolean get() = hasMoreRaw == 1
