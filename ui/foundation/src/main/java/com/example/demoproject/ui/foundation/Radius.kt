@@ -33,5 +33,7 @@ object Radius {
     val vipPayGuideSheet = 32.dp
     /** In-call gift-sent tip end corners — Figma ~32dp. */
     val callInCallGiftSentTipEnd = 32.dp
+    /** Call hangup speech bubble — Figma 13dp. */
+    val callHangupSpeech = 13.dp
     val pill = 333.dp
 }

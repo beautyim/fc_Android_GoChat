@@ -52,7 +52,10 @@ sealed interface AppResult<out T> {
 
     companion object {
         const val DEFAULT_NETWORK_MESSAGE: String = "Network connection failed. Please check your settings."
-        const val DEFAULT_REQUEST_FAILED_MESSAGE: String = "Request failed"
+        /** English last resort when [NetworkUserMessages] is not bound (tests). */
+        const val DEFAULT_REQUEST_FAILED_MESSAGE: String = "Something went wrong. Please try again."
+
+        fun requestFailedMessage(): String = NetworkUserMessages.requestFailed()
         const val DEFAULT_EMPTY_PAYLOAD_MESSAGE: String = "No data available"
         const val DEFAULT_PARSING_MESSAGE: String = "Parsing error"
         /**
@@ -106,7 +109,7 @@ fun mapHttpStatus(code: Int): String = when (code) {
     422 -> "Request parameters are invalid."
     429 -> "Too many requests. Please try again later."
     in 500..599 -> "Server error. Please try again later."
-    else -> "Request failed ($code)"
+    else -> AppResult.requestFailedMessage()
 }
 
 private val REL_LOGIN_EXPIRED_HINTS = listOf("session expired", "sign in again")

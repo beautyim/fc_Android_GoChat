@@ -150,7 +150,7 @@ class CallSessionRepositoryImpl @Inject constructor(
                 response.isSuccess -> {
                     val token = response.payload?.effectiveToken.orEmpty()
                     if (token.isBlank()) {
-                        CallRenewTokenResult.Retryable(AppResult.DEFAULT_REQUEST_FAILED_MESSAGE)
+                        CallRenewTokenResult.Retryable(AppResult.requestFailedMessage())
                     } else {
                         CallRenewTokenResult.Renewed(
                             token = token,
@@ -162,7 +162,7 @@ class CallSessionRepositoryImpl @Inject constructor(
                 }
                 response.failureCode == 2 -> CallRenewTokenResult.StopRenewal
                 else -> CallRenewTokenResult.Retryable(
-                    response.businessMessage.ifBlank { AppResult.DEFAULT_REQUEST_FAILED_MESSAGE },
+                    response.businessMessage.ifBlank { AppResult.requestFailedMessage() },
                 )
             }
         } catch (e: CancellationException) {
@@ -250,7 +250,7 @@ class CallSessionRepositoryImpl @Inject constructor(
         }.ifBlank {
             callbackDto?.funcData?.title.orEmpty()
         }.ifBlank {
-            AppResult.DEFAULT_REQUEST_FAILED_MESSAGE
+            AppResult.requestFailedMessage()
         }
         return CallCreateResult.Failure(
             message = message,

@@ -9,4 +9,7 @@
     <string name="push_like_title">New like</string>
     <string name="push_like_body">Someone liked you</string>
     <string name="payment_generic_error">Something went wrong. Please try again.</string>
+    <string name="payment_method_google_play">Google Play</string>
+    <string name="payment_method_other">Other payment method</string>
+    <string name="payment_method_cancel">Cancel</string>
 </resources>

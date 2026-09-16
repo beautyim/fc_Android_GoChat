@@ -9,4 +9,7 @@
     <string name="push_like_title">Novo gosto</string>
     <string name="push_like_body">Alguém gostou de si</string>
     <string name="payment_generic_error">Algo correu mal. Tente novamente.</string>
+    <string name="payment_method_google_play">Google Play</string>
+    <string name="payment_method_other">Outro método de pagamento</string>
+    <string name="payment_method_cancel">Cancelar</string>
 </resources>

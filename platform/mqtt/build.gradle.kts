@@ -40,4 +40,5 @@ dependencies {
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.datastore.preferences)
     implementation(libs.paho.mqttv3)
+    testImplementation(libs.junit)
 }

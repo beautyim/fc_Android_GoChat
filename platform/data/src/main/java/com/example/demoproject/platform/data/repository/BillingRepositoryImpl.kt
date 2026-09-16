@@ -4,8 +4,10 @@ import com.example.demoproject.platform.common.log.AppLogger
 import com.example.demoproject.platform.data.network.api.GooglePayApi
 import com.example.demoproject.platform.data.network.dto.GooglePayCancelRequestDto
 import com.example.demoproject.platform.data.network.dto.GooglePayCheckRequestDto
+import com.example.demoproject.platform.data.network.dto.GooglePayCheckResponseDto
 import com.example.demoproject.platform.data.network.dto.GooglePayCreateRequestDto
 import com.example.demoproject.platform.data.network.dto.GooglePayCreateResponseDto
+import com.example.demoproject.platform.data.network.dto.GooglePayEventAckRequestDto
 import com.example.demoproject.platform.data.network.dto.GooglePayVerifyRequestDto
 import com.example.demoproject.platform.network.dto.ApiResponse
 import com.example.demoproject.platform.network.result.AppResult
@@ -14,13 +16,17 @@ import com.example.demoproject.platform.network.safeApiCallUnit
 import kotlinx.coroutines.CancellationException
 import retrofit2.HttpException
 import java.io.IOException
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.contentOrNull
 
 class BillingRepositoryImpl(
     private val api: GooglePayApi,
 ) : BillingRepository {
 
-    override suspend fun checkPaymentType(request: StorePurchaseRequest): AppResult<Unit> =
-        callUnitAcceptingOk1 {
+    override suspend fun checkPaymentType(request: StorePurchaseRequest): AppResult<BillingPaymentCheck> =
+        safeApiCall {
             api.check(
                 GooglePayCheckRequestDto(
                     goodsId = request.goodsId,
@@ -28,6 +34,11 @@ class BillingRepositoryImpl(
                     type = request.paymentType.apiValue,
                 ),
             )
+        }.let { result ->
+            when (result) {
+                is AppResult.Success -> AppResult.Success(result.data.toDomain())
+                is AppResult.Failure -> result
+            }
         }
 
     override suspend fun createOrder(request: StorePurchaseRequest): AppResult<GooglePayOrder> =
@@ -80,51 +91,69 @@ class BillingRepositoryImpl(
                 ),
             )
         }
+
+    override suspend fun acknowledgePayEvent(eventId: Long): AppResult<Unit> =
+        safeApiCallUnit {
+            api.acknowledgeEvent(GooglePayEventAckRequestDto(eventId))
+        }
+}
+
+private fun GooglePayCheckResponseDto.toDomain(): BillingPaymentCheck {
+    if (popType != 2) return BillingPaymentCheck(title = null, methods = emptyList())
+    return BillingPaymentCheck(
+        title = pop?.title?.takeIf { it.isNotBlank() },
+        methods = pop?.list.orEmpty().mapNotNull { method ->
+            val paymentType = BillingPaymentType.entries.firstOrNull {
+                it.apiValue == method.type
+            } ?: return@mapNotNull null
+            BillingPaymentMethod(
+                title = method.title,
+                iconUrl = method.icon.takeIf { it.isNotBlank() },
+                type = paymentType,
+            )
+        },
+    )
 }
 
 private fun GooglePayCreateResponseDto.toDomain(request: StorePurchaseRequest): AppResult<GooglePayOrder> {
-    if (callback != null) {
-        return AppResult.Success(
-            GooglePayOrder(
-                tranNo = "",
-                productId = request.productId,
-                productType = request.productType,
-                payType = request.payType,
-                goodsId = request.goodsId,
-                price = "",
-                currency = "",
-                callback = callback,
-            ),
-        )
-    }
     if (tranNo.isBlank()) {
-        return AppResult.BizError(AppResult.CODE_EMPTY_PAYLOAD, AppResult.DEFAULT_REQUEST_FAILED_MESSAGE)
+        return AppResult.BizError(AppResult.CODE_EMPTY_PAYLOAD, AppResult.requestFailedMessage())
     }
     val resolvedProductType = BillingProductType.fromApi(productType.takeIf { it > 0 } ?: request.productType.apiValue)
     val item = payItem
-    val sku = item?.productId?.takeIf { it.isNotBlank() }
+    val sku = productId.takeIf { it.isNotBlank() }
+        ?: item?.productId?.takeIf { it.isNotBlank() }
         ?: item?.sku?.takeIf { it.isNotBlank() }
         ?: request.productId
-    if (sku.isBlank()) {
-        return AppResult.BizError(AppResult.CODE_EMPTY_PAYLOAD, AppResult.DEFAULT_REQUEST_FAILED_MESSAGE)
+    val externalUrl = sequenceOf(payUrl, url, link)
+        .firstOrNull { it.isNotBlank() }
+        ?: callback.findFirstString(EXTERNAL_URL_KEYS)
+    if (sku.isBlank() && externalUrl == null) {
+        return AppResult.BizError(AppResult.CODE_EMPTY_PAYLOAD, AppResult.requestFailedMessage())
     }
     return AppResult.Success(
         GooglePayOrder(
             tranNo = tranNo,
             productId = sku,
             productType = resolvedProductType,
-            payType = BillingPayType.forProduct(resolvedProductType),
-            goodsId = item?.goodsId?.takeIf { it > 0L } ?: item?.id?.takeIf { it > 0L } ?: request.goodsId,
-            price = item?.moneyDesc.orEmpty(),
-            currency = item?.currency?.takeIf { it.isNotBlank() } ?: item?.currencyUnit.orEmpty(),
+            payType = BillingPayType.entries.firstOrNull { it.apiValue == payType }
+                ?: BillingPayType.forProduct(resolvedProductType),
+            goodsId = goodsId.takeIf { it > 0L }
+                ?: item?.goodsId?.takeIf { it > 0L }
+                ?: item?.id?.takeIf { it > 0L }
+                ?: request.goodsId,
+            price = price.takeIf { it.isNotBlank() }
+                ?: item?.money?.takeIf { it > 0.0 }?.toString()
+                ?: item?.moneyDesc.orEmpty(),
+            currency = currency.takeIf { it.isNotBlank() }
+                ?: item?.currency?.takeIf { it.isNotBlank() }
+                ?: item?.currencyUnit.orEmpty(),
+            externalPaymentUrl = externalUrl,
         ),
     )
 }
 
-private suspend fun callUnitAcceptingOk1(
-    block: suspend () -> ApiResponse<*>,
-): AppResult<Unit> =
-    callUnitWithAcceptedOk(setOf(1), block)
+private val EXTERNAL_URL_KEYS = setOf("redirect_url", "pay_url", "url", "link")
 
 private suspend fun callUnitAcceptingOk1OrOk2(
     block: suspend () -> ApiResponse<*>,
@@ -141,7 +170,7 @@ private suspend fun callUnitWithAcceptedOk(
         if (response.status == 1 || code in acceptedOk) {
             AppResult.Success(Unit)
         } else {
-            AppResult.BizError(code, response.msg.ifBlank { AppResult.DEFAULT_REQUEST_FAILED_MESSAGE })
+            AppResult.BizError(code, response.msg.ifBlank { AppResult.requestFailedMessage() })
         }
     } catch (e: CancellationException) {
         throw e
@@ -153,3 +182,15 @@ private suspend fun callUnitWithAcceptedOk(
         AppLogger.e("BillingRepository", "payment api failed: ${e.javaClass.simpleName}: ${e.message}", e)
         AppResult.UnknownError(cause = e)
     }
+
+private fun JsonElement?.findFirstString(keys: Set<String>): String? {
+    val element = this ?: return null
+    return when (element) {
+        is JsonObject -> {
+            keys.firstNotNullOfOrNull { key ->
+                (element[key] as? JsonPrimitive)?.contentOrNull?.takeIf { it.isNotBlank() }
+            } ?: element.values.firstNotNullOfOrNull { child -> child.findFirstString(keys) }
+        }
+        else -> null
+    }
+}

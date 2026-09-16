@@ -11,6 +11,7 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
+import com.example.demoproject.platform.analytics.AnalyticsHolder
 import com.example.demoproject.platform.data.network.NetworkRuntime
 import java.util.concurrent.TimeUnit
 
@@ -27,6 +28,11 @@ class BillingOrderRetryWorker(
             orderStore = runtime.billingOrderStore,
             vipStatusStore = runtime.vipStatusStore,
             isFakePaymentEnabled = { runtime.appPrefs.isFakePaymentEnabled() },
+            analyticsTracker = AnalyticsHolder.tracker,
+            onPaymentSucceeded = {
+                runtime.coinRepository.getRechargePage()
+                runtime.vipRepository.getVipPage()
+            },
         )
         return runCatching {
             coordinator.retryPendingOrders()

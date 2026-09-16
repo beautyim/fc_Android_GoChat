@@ -27,4 +27,15 @@
     <string name="store_guide_my_coins">Jetonlarım: %1$d</string>
     <string name="store_guide_low_balance">Bakiyeniz düşük, lütfen yükleme yapın</string>
     <string name="store_guide_cd_close">Kapat</string>
+    <string name="call_balance_offer_will_end_prefix">!!! Görüşme</string>
+    <string name="call_balance_offer_seconds">%1$dsn</string>
+    <string name="call_balance_offer_will_end_suffix">sonra sonlanacak. Bağlantıyı sürdürmek için jeton alın...</string>
+    <string name="call_balance_offer_continue_cta">Jeton al ve görüşmeye devam et</string>
+    <string name="call_balance_offer_more_options">Daha fazla seçenek</string>
+    <string name="call_hangup_recharge_speech">Seninle konuşmaya devam etmek istiyorum—olur mu?</string>
+    <string name="call_hangup_recharge_title">Görüşmeye devam etmek için yükleme yap</string>
+    <string name="call_hangup_continue_waiting">Hâlâ seni bekliyor</string>
+    <string name="call_hangup_continue_subtitle">Hemen onunla görüntülü sohbet et, onu fazla bekletme</string>
+    <string name="call_hangup_continue_video_cta">Onunla görüntülü görüşmeye devam et</string>
+    <string name="call_hangup_continue_chat_cta">Şimdi onunla sohbet et</string>
 </resources>

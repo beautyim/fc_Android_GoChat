@@ -4,6 +4,8 @@ import android.app.Application
 import com.example.demoproject.chat.ChatMqttInbox
 import com.example.demoproject.lifecycle.AppLifecycleReporter
 import com.example.demoproject.payment.BillingOrderRetryWorker
+import com.example.demoproject.payment.PaymentMethodSheetController
+import com.example.demoproject.payment.PayEventMqttCoordinator
 import com.example.demoproject.payment.StorePurchaseCoordinator
 import com.example.demoproject.platform.analytics.AnalyticsHolder
 import com.example.demoproject.platform.analytics.DefaultAnalytics
@@ -21,6 +23,7 @@ import com.example.demoproject.platform.mqtt.MqttRuntime
 import com.example.demoproject.platform.rtc.agora.AgoraRtcClient
 import com.example.demoproject.push.PushClient
 import com.example.demoproject.push.PushGateway
+import com.example.demoproject.wallet.AccountMqttInbox
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -35,6 +38,7 @@ class DemoApplication : Application() {
     private lateinit var appLifecycleReporter: AppLifecycleReporter
 
     val pushGateway: PushGateway by lazy { PushClient(this) }
+    val paymentMethodSheetController = PaymentMethodSheetController()
 
     val storePurchaseCoordinator: StorePurchaseCoordinator by lazy {
         val runtime = NetworkRuntime.get(this)
@@ -45,6 +49,11 @@ class DemoApplication : Application() {
             vipStatusStore = runtime.vipStatusStore,
             isFakePaymentEnabled = { runtime.appPrefs.isFakePaymentEnabled() },
             analyticsTracker = analytics.tracker,
+            selectPaymentMethod = paymentMethodSheetController::select,
+            onPaymentSucceeded = {
+                runtime.coinRepository.getRechargePage()
+                runtime.vipRepository.getVipPage()
+            },
         )
     }
 
@@ -98,6 +107,24 @@ class DemoApplication : Application() {
             mqttManager = mqtt.manager,
             messageRepository = runtime.messageRepository,
             sessionManager = runtime.sessionManager,
+            json = runtime.json,
+            scope = appScope,
+        ).start()
+        AccountMqttInbox(
+            mqttManager = mqtt.manager,
+            accountBalanceStore = runtime.accountBalanceStore,
+            matchQuotaStore = runtime.matchQuotaStore,
+            vipStatusStore = runtime.vipStatusStore,
+            json = runtime.json,
+            scope = appScope,
+        ).start()
+        PayEventMqttCoordinator(
+            mqttManager = mqtt.manager,
+            payEventStore = runtime.payEventStore,
+            billingRepository = runtime.billingRepository,
+            coinRepository = runtime.coinRepository,
+            vipRepository = runtime.vipRepository,
+            analyticsTracker = analytics.tracker,
             json = runtime.json,
             scope = appScope,
         ).start()

@@ -27,4 +27,15 @@
     <string name="store_guide_my_coins">عملاتي: %1$d</string>
     <string name="store_guide_low_balance">رصيد منخفض، يرجى إعادة الشحن</string>
     <string name="store_guide_cd_close">إغلاق</string>
+    <string name="call_balance_offer_will_end_prefix">!!! ستنتهي المكالمة بعد</string>
+    <string name="call_balance_offer_seconds">%1$dث</string>
+    <string name="call_balance_offer_will_end_suffix">. احصل على عملات لمواصلة المكالمة...</string>
+    <string name="call_balance_offer_continue_cta">احصل على عملات وواصل المكالمة</string>
+    <string name="call_balance_offer_more_options">المزيد من الخيارات</string>
+    <string name="call_hangup_recharge_speech">أود مواصلة الحديث معك—هل هذا مناسب؟</string>
+    <string name="call_hangup_recharge_title">اشحن لمتابعة المكالمة</string>
+    <string name="call_hangup_continue_waiting">ما زالت بانتظارك</string>
+    <string name="call_hangup_continue_subtitle">تحدث معها بالفيديو الآن، لا تتركها تنتظر طويلاً</string>
+    <string name="call_hangup_continue_video_cta">متابعة مكالمة الفيديو معها</string>
+    <string name="call_hangup_continue_chat_cta">الدردشة معها الآن</string>
 </resources>

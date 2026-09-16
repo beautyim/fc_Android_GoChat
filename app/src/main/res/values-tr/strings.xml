@@ -9,4 +9,7 @@
     <string name="push_like_title">Yeni beğeni</string>
     <string name="push_like_body">Birisi sizi beğendi</string>
     <string name="payment_generic_error">Bir sorun oluştu. Lütfen tekrar deneyin.</string>
+    <string name="payment_method_google_play">Google Play</string>
+    <string name="payment_method_other">Diğer ödeme yöntemi</string>
+    <string name="payment_method_cancel">İptal</string>
 </resources>

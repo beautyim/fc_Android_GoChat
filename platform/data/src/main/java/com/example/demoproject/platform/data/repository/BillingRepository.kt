@@ -1,8 +1,6 @@
 package com.example.demoproject.platform.data.repository
 
 import com.example.demoproject.platform.network.result.AppResult
-import kotlinx.serialization.json.JsonObject
-
 enum class BillingProductType(val apiValue: Int, val uiPrefix: String) {
     Coins(apiValue = 1, uiPrefix = "stars"),
     Vip(apiValue = 2, uiPrefix = "vip"),
@@ -39,7 +37,7 @@ data class StorePurchaseRequest(
     val productId: String,
     val productType: BillingProductType,
     val paymentType: BillingPaymentType = BillingPaymentType.GooglePlay,
-    val fromType: Int = 0,
+    val fromType: Int = 1,
     val fromId: Long = 0L,
     val orderFrom: Int = 0,
 ) {
@@ -60,11 +58,24 @@ data class GooglePayOrder(
     val goodsId: Long,
     val price: String,
     val currency: String,
-    val callback: JsonObject? = null,
+    val externalPaymentUrl: String? = null,
 )
 
+data class BillingPaymentMethod(
+    val title: String,
+    val iconUrl: String?,
+    val type: BillingPaymentType,
+)
+
+data class BillingPaymentCheck(
+    val title: String?,
+    val methods: List<BillingPaymentMethod>,
+) {
+    val requiresSelection: Boolean get() = methods.isNotEmpty()
+}
+
 interface BillingRepository {
-    suspend fun checkPaymentType(request: StorePurchaseRequest): AppResult<Unit>
+    suspend fun checkPaymentType(request: StorePurchaseRequest): AppResult<BillingPaymentCheck>
     suspend fun createOrder(request: StorePurchaseRequest): AppResult<GooglePayOrder>
     suspend fun cancelOrder(
         tranNo: String,
@@ -78,6 +89,8 @@ interface BillingRepository {
         packageName: String,
         purchaseToken: String,
     ): AppResult<Unit>
+
+    suspend fun acknowledgePayEvent(eventId: Long): AppResult<Unit>
 }
 
 fun StorePurchaseRequest.storedUiId(): String =

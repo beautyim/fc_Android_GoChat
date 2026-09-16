@@ -43,6 +43,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.demoproject.ui.designsystem.DemoColors
 import com.example.demoproject.ui.designsystem.DemoConfirmDialog
+import com.example.demoproject.ui.designsystem.DemoNavIconButton
 import com.example.demoproject.ui.designsystem.DemoTheme
 import com.example.demoproject.ui.foundation.ComponentSize
 import com.example.demoproject.ui.foundation.IconSize
@@ -160,7 +161,6 @@ private fun AboutUsTopBar(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val isRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -168,14 +168,12 @@ private fun AboutUsTopBar(
             .background(DemoColors.sheet)
             .padding(horizontal = Spacing.md),
     ) {
-        Image(
-            painter = painterResource(R.drawable.about_ic_back),
+        DemoNavIconButton(
+            icon = painterResource(R.drawable.about_ic_back),
             contentDescription = stringResource(R.string.about_back),
-            modifier = Modifier
-                .align(Alignment.CenterStart)
-                .size(IconSize.md)
-                .graphicsLayer { scaleX = if (isRtl) -1f else 1f }
-                .clickable(role = Role.Button, onClick = onBack),
+            onClick = onBack,
+            modifier = Modifier.align(Alignment.CenterStart),
+            mirrorInRtl = true,
         )
         Text(
             text = stringResource(R.string.about_title),

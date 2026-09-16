@@ -1,11 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="match_title">Eşleşme</string>
-    <string name="match_action_get_info">Eşleşme bilgisini al</string>
-    <string name="match_action_start">Eşleşmeyi başlat</string>
-    <string name="match_status_loading_info">Loading match info…</string>
-    <string name="match_status_info_fmt">free=%1$d pay=%2$s vip=%3$s avatars=%4$d</string>
-    <string name="match_status_starting">Starting match…</string>
-    <string name="match_status_started">Başladı</string>
-    <string name="match_status_start_fmt">session=%1$s action=%2$s free=%3$d</string>
+    <string name="match_nav_match">Eşleşme</string>
+    <string name="match_action_video">Video Eşleşme</string>
+    <string name="match_price_per_time">/kez</string>
+    <string name="match_vip_off">%50 İndirim</string>
+    <string name="match_free_badge">ÜCRETSİZ</string>
+    <string name="match_filter_title">Filtre</string>
+    <string name="match_filter_subtitle">Eşleşmeni hassaslaştır</string>
+    <string name="match_filter_gender">Cinsiyet</string>
+    <string name="match_filter_all">Tümü</string>
+    <string name="match_filter_female">Kadın</string>
+    <string name="match_filter_male">Erkek</string>
+    <string name="match_filter_apply">Filtreleri Uygula</string>
+    <string name="match_filter_reset">Sıfırla</string>
+    <string name="match_cd_filter">Filtre</string>
+    <string name="match_cd_close_filter">Filtreyi kapat</string>
+    <string name="match_cd_coins">Jeton</string>
+    <string name="match_status_starting">Eşleşme başlatılıyor…</string>
+    <string name="match_status_started">Eşleşme başladı</string>
+    <string name="match_status_no_result">Şu anda uygun kimse yok</string>
+    <string name="match_status_ended">Eşleşme sona erdi</string>
+    <string name="match_searching_title">Eşleşiliyor...</string>
+    <string name="match_searching_caption">Sana özel birini\narıyoruz 💜</string>
+    <string name="match_searching_cancel">İptal</string>
 </resources>

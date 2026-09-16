@@ -21,6 +21,7 @@ interface RtcClient {
         uid: Int = 0,
         token: String = "",
         enableVideo: Boolean = true,
+        receiveOnly: Boolean = false,
     )
 
     fun leave()

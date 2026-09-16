@@ -124,10 +124,28 @@ object DemoColors {
     val callRingingOnVideo = Color(0xFFFFFFFF)
     /** Call ringing text shadow. */
     val callRingingTextShadow = Color(0x80000000)
+    /** Match-call connecting canvas — Figma 1:1520. */
+    val callConnectingBackground = Color(0xFF08040E)
+    /** Match-call connecting avatar border — Figma #CB9AE1. */
+    val callConnectingAvatarBorder = Color(0xFFCB9AE1)
+    /** Match-call connecting avatar glow — Figma #C54CFF. */
+    val callConnectingAvatarGlow = Color(0xFFC54CFF)
+    /** Match-call connecting subtitle — Figma #EED9FF. */
+    val callConnectingSubtitle = Color(0xFFEED9FF)
+    /** Match-call connecting status — white @ 70%. */
+    val callConnectingStatus = Color(0xB3FFFFFF)
+    /** Match-call connecting toast text — Figma semantic black. */
+    val callConnectingNoticeText = Color(0xFF333333)
+    /** Match-call title gradient stops — Figma 1:1529. */
+    val callConnectingTitleStart = Color(0xFFF9ECFF)
+    val callConnectingTitleMiddle = Color(0xFFD4A5FE)
+    val callConnectingTitleEnd = Color(0xFFE27FF6)
     /** In-call overlay chip / bubble — black @ 20%. */
     val callInCallOverlay = Color(0x33000000)
     /** In-call composer placeholder — white @ 70%. */
     val callInCallPlaceholder = Color(0xB3FFFFFF)
+    /** Match-call Next pill — black @ 30%; disabled state dims the whole control to 50%. */
+    val callMatchNextEnabled = Color(0x4D000000)
     /** In-call gift quick price — white @ 90%. */
     val callInCallGiftQuickPrice = Color(0xE6FFFFFF)
     /** In-call Like / accent fill — #9D41FF. */
@@ -286,4 +304,82 @@ object DemoColors {
     val vipGuidePlanEnd = Color(0xFFF5E1FF)
     /** VIP pay-guide plan card shadow — black @ 10%. */
     val vipGuidePlanShadow = Color(0x1A000000)
+    /** Call balance float card fill — #DBDCFF → #A3B4F2 → #A181FA. */
+    val callBalanceFloatStart = Color(0xFFDBDCFF)
+    val callBalanceFloatMid = Color(0xFFA3B4F2)
+    val callBalanceFloatEnd = Color(0xFFA181FA)
+    /** Call balance float border — #616CFF. */
+    val callBalanceFloatBorder = Color(0xFF616CFF)
+    /** Call balance float timer ribbon — soft purple placeholder until asset lands. */
+    val callBalanceFloatTimerRibbon = Color(0xFF6B3AC9)
+    /** Call balance float OFF badge — soft lilac placeholder until asset lands. */
+    val callBalanceFloatOffBadge = Color(0xFFB89BFF)
+    /** Call balance float VIP title gold gradient. */
+    val callBalanceFloatVipGoldStart = Color(0xFFFFF200)
+    val callBalanceFloatVipGoldEnd = Color(0xFFFFA17C)
+    /** Call balance float product mini-card fill — same family as store VIP card. */
+    val callBalanceFloatProductStart = Color(0xFFFFE6F8)
+    val callBalanceFloatProductMid = Color(0xFFEDE1FF)
+    val callBalanceFloatProductEnd = Color(0xFFF5E1FF)
+    /** Call balance float OFF percent gold gradient. */
+    val callBalanceFloatOffPercentStart = Color(0xFFFDFDC8)
+    val callBalanceFloatOffPercentEnd = Color(0xFFFDEE64)
+    /** Call balance offer-guide hangup seconds — #FF3B30. */
+    val callBalanceOfferHangupSeconds = Color(0xFFFF3B30)
+    /** Call balance offer-guide more-options — #999999. */
+    val callBalanceOfferMoreOptions = Color(0xFF999999)
+    /**
+     * Call hangup-recharge / continue sheet bottom under system nav —
+     * Figma `#EADFF2` (node 1:5167 / 193:6512).
+     */
+    val callHangupSheetBottom = Color(0xFFEADFF2)
+    /** Call hangup peer avatar ring — Figma `#7722FF`. */
+    val callHangupAvatarBorder = Color(0xFF7722FF)
+    /** Call hangup speech-bubble body — Figma `#8D7E86`. */
+    val callHangupSpeechText = Color(0xFF8D7E86)
+    /** Call hangup speech-bubble shadow — pink @ 20%. */
+    val callHangupSpeechShadow = Color(0x33FBA4B4)
+    /** Call hangup continue secondary border — Figma `#7722FF`. */
+    val callHangupSecondaryBorder = Color(0xFF7722FF)
+    /** Match hero card scrim — black @ 30% (Figma 1:1328). */
+    val matchHeroScrim = Color(0x4D000000)
+    /** Match hero placeholder wash — Figma #FF8181 (1:1326). */
+    val matchHeroFallback = Color(0xFFFF8181)
+    /** Match price /time chip fill — white @ 10% (Figma 1:1353). */
+    val matchPriceChip = Color(0x1AFFFFFF)
+    /** Match VIP 50% Off badge fill — #FFEA32 @ 10% (Figma 328:5409). */
+    val matchVipOffBadge = Color(0x1AFFEA32)
+    /** Match radar ripple stroke — soft lilac. */
+    val matchRipple = Color(0xFFC9B8FF)
+    /** Match filter option fill — Figma #F5F5F5. */
+    val matchFilterOption = Color(0xFFF5F5F5)
+    /** Match filter option hairline — black @ 5%. */
+    val matchFilterOptionBorder = Color(0x0D000000)
+    /** Match filter selected fill — primary purple @ 10%. */
+    val matchFilterSelected = Color(0x1A9D41FF)
+    /** Matching-in-progress full-bleed scrim — black @ 30% (Figma 1:1463). */
+    val matchSearchingScrim = Color(0x4D000000)
+    /** Matching ripple wave body — #9046FF @ 10% (Figma Ellipse 22/23). */
+    val matchSearchingWaveFill = Color(0x1A9046FF)
+    /** Matching ripple wave hairline — #9046FF @ 20%. */
+    val matchSearchingWaveStroke = Color(0x339046FF)
+    /** Matching core disc, outer band — #140033 @ 60% (Figma Ellipse 24). */
+    val matchSearchingCoreOuter = Color(0x99140033)
+    /** Matching core disc, middle band — #140033 @ 50% (Figma Ellipse 25). */
+    val matchSearchingCoreMiddle = Color(0x80140033)
+    /** Matching core disc, inner band — #140033 @ 10% (Figma Ellipse 26). */
+    val matchSearchingCoreInner = Color(0x1A140033)
+    /** Matching core band hairline — #B98AFF @ 50%. */
+    val matchSearchingCoreStroke = Color(0x80B98AFF)
+    /** Matching innermost band hairline — #B56CD8. */
+    val matchSearchingInnerStroke = Color(0xFFB56CD8)
+    /** Matching rotating arc gradient — #F1DCFE → #BD88FC (Figma Ellipse 27). */
+    val matchSearchingArcStart = Color(0xFFF1DCFE)
+    val matchSearchingArcEnd = Color(0xFFBD88FC)
+    /** Matching status title — #E5CEFB. */
+    val matchSearchingTitle = Color(0xFFE5CEFB)
+    /** Matching status caption — #E2D1F7. */
+    val matchSearchingCaption = Color(0xFFE2D1F7)
+    /** Matching Cancel link — white @ 40%. */
+    val matchSearchingCancel = Color(0x66FFFFFF)
 }

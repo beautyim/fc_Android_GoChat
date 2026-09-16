@@ -731,7 +731,7 @@ class ChatDetailViewModel(
             productId = sku,
             productType = BillingProductType.Coins,
             paymentType = BillingPaymentType.GooglePlay,
-            fromType = guide.fromType ?: 0,
+            fromType = guide.fromType ?: CHAT_UPSELL_FROM_TYPE,
         )
         viewModelScope.launch {
             _uiState.update {
@@ -1136,6 +1136,8 @@ class ChatDetailViewModel(
         const val GIFT_ANIMATION_PREFETCH_COUNT = 3
     }
 }
+
+private const val CHAT_UPSELL_FROM_TYPE = 2
 
 private val AlbumPhoto.displayUrl: String?
     get() = thumbnailUrl?.takeIf { it.isNotBlank() }

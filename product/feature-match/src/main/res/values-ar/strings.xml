@@ -1,11 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="match_title">المطابقة</string>
-    <string name="match_action_get_info">جلب معلومات المطابقة</string>
-    <string name="match_action_start">بدء المطابقة</string>
-    <string name="match_status_loading_info">Loading match info…</string>
-    <string name="match_status_info_fmt">free=%1$d pay=%2$s vip=%3$s avatars=%4$d</string>
-    <string name="match_status_starting">Starting match…</string>
-    <string name="match_status_started">بدأت</string>
-    <string name="match_status_start_fmt">session=%1$s action=%2$s free=%3$d</string>
+    <string name="match_nav_match">المطابقة</string>
+    <string name="match_action_video">مطابقة فيديو</string>
+    <string name="match_price_per_time">/مرة</string>
+    <string name="match_vip_off">خصم 50%</string>
+    <string name="match_free_badge">مجاني</string>
+    <string name="match_filter_title">تصفية</string>
+    <string name="match_filter_subtitle">حسّن نتائج المطابقة</string>
+    <string name="match_filter_gender">الجنس</string>
+    <string name="match_filter_all">الكل</string>
+    <string name="match_filter_female">أنثى</string>
+    <string name="match_filter_male">ذكر</string>
+    <string name="match_filter_apply">تطبيق عوامل التصفية</string>
+    <string name="match_filter_reset">إعادة تعيين</string>
+    <string name="match_cd_filter">تصفية</string>
+    <string name="match_cd_close_filter">إغلاق التصفية</string>
+    <string name="match_cd_coins">عملات</string>
+    <string name="match_status_starting">جارٍ بدء المطابقة…</string>
+    <string name="match_status_started">بدأت المطابقة</string>
+    <string name="match_status_no_result">لا يوجد أحد متاح الآن</string>
+    <string name="match_status_ended">انتهت المطابقة</string>
+    <string name="match_searching_title">جارٍ المطابقة...</string>
+    <string name="match_searching_caption">نبحث عن شخص\nمميز من أجلك 💜</string>
+    <string name="match_searching_cancel">إلغاء</string>
 </resources>

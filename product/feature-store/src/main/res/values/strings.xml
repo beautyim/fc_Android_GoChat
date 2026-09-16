@@ -27,4 +27,15 @@
     <string name="store_guide_my_coins">My coins: %1$d</string>
     <string name="store_guide_low_balance">Low balance, please recharge</string>
     <string name="store_guide_cd_close">Close</string>
+    <string name="call_balance_offer_will_end_prefix">!!! The call is about to hang up after</string>
+    <string name="call_balance_offer_seconds">%1$ds</string>
+    <string name="call_balance_offer_will_end_suffix">. Getting coins to keep call connecting...</string>
+    <string name="call_balance_offer_continue_cta">Get coins and continue call</string>
+    <string name="call_balance_offer_more_options">More options</string>
+    <string name="call_hangup_recharge_speech">I’d like to keep talking to you—is that okay?</string>
+    <string name="call_hangup_recharge_title">Top up to continue the call</string>
+    <string name="call_hangup_continue_waiting">She is still waiting for you</string>
+    <string name="call_hangup_continue_subtitle">Have a video chat with her right away, don’t keep her waiting too long</string>
+    <string name="call_hangup_continue_video_cta">Continue video call with her</string>
+    <string name="call_hangup_continue_chat_cta">Chat with her now</string>
 </resources>

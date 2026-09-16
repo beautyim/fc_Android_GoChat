@@ -13,6 +13,7 @@
     <string name="call_status_resolving_callee">Resolviendo destinatario…</string>
     <string name="call_status_discover_failed_fmt">descubrimiento fallido: %1$s</string>
     <string name="call_status_no_peer">No hay usuario para llamar</string>
+    <string name="call_status_match_rooms_unavailable">No se pudo conectar a las salas de emparejamiento. Inténtalo de nuevo.</string>
     <string name="call_status_creating_fmt">Creando llamada destino=%1$s…</string>
     <string name="call_status_create_failed_fmt">creación fallida código=%1$s %2$s</string>
     <string name="call_status_outgoing_fmt">Saliente sala=%1$s canal=%2$s appIdLen=%3$d</string>
@@ -74,6 +75,8 @@
     <string name="call_incall_cd_more">Más</string>
     <string name="call_incall_cd_gift">Regalos</string>
     <string name="call_incall_cd_send">Enviar</string>
+    <string name="call_match_next">Siguiente</string>
+    <string name="call_match_next_countdown">%1$d s</string>
     <string name="call_incall_cd_flip_camera">Cambiar cámara</string>
     <string name="call_incall_cd_translate">Traducir</string>
     <string name="call_incall_cd_quick_gift">Enviar regalo %1$s</string>
@@ -88,4 +91,22 @@
     <string name="call_report_title">Reportar</string>
     <string name="call_report_submit">Enviar</string>
     <string name="call_report_success">Reporte enviado</string>
+
+    <string name="call_balance_offer_cd_float">Oferta de recarga</string>
+    <string name="call_balance_offer_upgrade">Mejorar</string>
+    <string name="call_balance_offer_vip">VIP</string>
+    <string name="call_balance_offer_more">Más</string>
+    <string name="call_balance_offer_coins">Monedas</string>
+    <string name="call_balance_offer_off_percent">%1$s OFF</string>
+    <string name="call_balance_offer_off_label">OFF</string>
+    <string name="call_balance_offer_plus">+</string>
+    <string name="call_balance_offer_plus_coins">+%1$d</string>
+    <string name="call_balance_offer_match_x">Match x%1$d</string>
+    <string name="call_connecting_lead">Es un</string>
+    <string name="call_connecting_title">¡Match!</string>
+    <string name="call_connecting_liked_fmt">Tú y %1$s se gustan</string>
+    <string name="call_connecting_status">Conectando...</string>
+    <string name="call_connecting_peer_left">¡Vaya! La otra persona se fue.\nBuscando otro match...</string>
+    <string name="call_connecting_poor_network">Mala conexión de red.\nEspera, intentando conectar...</string>
+    <string name="call_connecting_cd_close">Cerrar pantalla de conexión</string>
 </resources>

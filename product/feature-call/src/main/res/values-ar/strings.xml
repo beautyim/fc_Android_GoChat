@@ -13,6 +13,7 @@
     <string name="call_status_resolving_callee">جارٍ تحديد الطرف الآخر…</string>
     <string name="call_status_discover_failed_fmt">فشل الاكتشاف: %1$s</string>
     <string name="call_status_no_peer">لا يوجد مستخدم للاتصال</string>
+    <string name="call_status_match_rooms_unavailable">تعذّر الاتصال بغرف المطابقة. يرجى المحاولة مرة أخرى.</string>
     <string name="call_status_creating_fmt">جارٍ إنشاء مكالمة الهدف=%1$s…</string>
     <string name="call_status_create_failed_fmt">فشل الإنشاء الرمز=%1$s %2$s</string>
     <string name="call_status_outgoing_fmt">صادرة غرفة=%1$s قناة=%2$s appIdLen=%3$d</string>
@@ -74,6 +75,8 @@
     <string name="call_incall_cd_more">المزيد</string>
     <string name="call_incall_cd_gift">الهدايا</string>
     <string name="call_incall_cd_send">إرسال</string>
+    <string name="call_match_next">التالي</string>
+    <string name="call_match_next_countdown">%1$d ث</string>
     <string name="call_incall_cd_flip_camera">قلب الكاميرا</string>
     <string name="call_incall_cd_translate">ترجمة</string>
     <string name="call_incall_cd_quick_gift">إرسال هدية %1$s</string>
@@ -88,4 +91,22 @@
     <string name="call_report_title">إبلاغ</string>
     <string name="call_report_submit">إرسال</string>
     <string name="call_report_success">تم إرسال البلاغ</string>
+
+    <string name="call_balance_offer_cd_float">عرض الشحن</string>
+    <string name="call_balance_offer_upgrade">ترقية</string>
+    <string name="call_balance_offer_vip">VIP</string>
+    <string name="call_balance_offer_more">المزيد</string>
+    <string name="call_balance_offer_coins">عملات</string>
+    <string name="call_balance_offer_off_percent">%1$s OFF</string>
+    <string name="call_balance_offer_off_label">OFF</string>
+    <string name="call_balance_offer_plus">+</string>
+    <string name="call_balance_offer_plus_coins">+%1$d</string>
+    <string name="call_balance_offer_match_x">تطابق x%1$d</string>
+    <string name="call_connecting_lead">إنها</string>
+    <string name="call_connecting_title">مطابقة!</string>
+    <string name="call_connecting_liked_fmt">أنت و%1$s معجبان ببعضكما</string>
+    <string name="call_connecting_status">جارٍ الاتصال...</string>
+    <string name="call_connecting_peer_left">عذرًا! غادر الشخص الآخر.\nنعيد البحث لك...</string>
+    <string name="call_connecting_poor_network">اتصال الشبكة ضعيف.\nانتظر، نحاول الاتصال...</string>
+    <string name="call_connecting_cd_close">إغلاق شاشة الاتصال</string>
 </resources>

@@ -41,9 +41,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -53,12 +51,12 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewFontScale
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
-import androidx.compose.ui.unit.LayoutDirection
 import coil.compose.AsyncImage
 import com.example.demoproject.platform.data.model.Gender
 import com.example.demoproject.platform.data.model.OnlinePresence
 import com.example.demoproject.platform.data.model.User
 import com.example.demoproject.ui.designsystem.DemoColors
+import com.example.demoproject.ui.designsystem.DemoNavIconButton
 import com.example.demoproject.ui.designsystem.DemoTheme
 import com.example.demoproject.ui.foundation.ComponentSize
 import com.example.demoproject.ui.foundation.Radius
@@ -270,7 +268,6 @@ private fun RelationshipTopBar(
     state: RelationshipListUiState,
     onBack: () -> Unit,
 ) {
-    val layoutDirection = LocalLayoutDirection.current
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -293,18 +290,15 @@ private fun RelationshipTopBar(
         Box(
             modifier = Modifier
                 .width(ComponentSize.relationshipTopBar)
-                .fillMaxHeight()
-                .clickable(onClick = onBack),
+                .fillMaxHeight(),
             contentAlignment = Alignment.Center,
         ) {
-            Image(
-                painter = painterResource(R.drawable.relationship_ic_back),
+            DemoNavIconButton(
+                icon = painterResource(R.drawable.relationship_ic_back),
                 contentDescription = stringResource(R.string.relationship_back),
-                modifier = Modifier
-                    .size(ComponentSize.relationshipBackIcon)
-                    .graphicsLayer {
-                        scaleX = if (layoutDirection == LayoutDirection.Rtl) -1f else 1f
-                    },
+                onClick = onBack,
+                iconSize = ComponentSize.relationshipBackIcon,
+                mirrorInRtl = true,
             )
         }
     }

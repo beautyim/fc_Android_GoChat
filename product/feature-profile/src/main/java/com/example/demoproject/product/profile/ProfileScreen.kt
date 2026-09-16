@@ -45,7 +45,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -85,6 +84,7 @@ import com.example.demoproject.product.profile.more.ProfileMoreSheet
 import com.example.demoproject.ui.designsystem.DemoColors
 import com.example.demoproject.ui.designsystem.DemoConfirmDialog
 import com.example.demoproject.ui.designsystem.DemoGradients
+import com.example.demoproject.ui.designsystem.DemoNavIconButton
 import com.example.demoproject.ui.designsystem.DemoTheme
 import com.example.demoproject.ui.designsystem.gift.GiftSvgaOverlay
 import com.example.demoproject.ui.foundation.ComponentSize
@@ -186,6 +186,12 @@ fun ProfileScreen(
     onBack: () -> Unit = {},
     onOpenStore: () -> Unit = {},
     onOpenChatDetail: (conversationId: String, nickname: String) -> Unit = { _, _ -> },
+    onStartVideoCall: (
+        userId: String,
+        nickname: String,
+        age: Int,
+        avatarUrl: String,
+    ) -> Unit = { _, _, _, _ -> },
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
@@ -197,6 +203,14 @@ fun ProfileScreen(
                 ProfileEffect.OpenStore -> onOpenStore()
                 is ProfileEffect.OpenChatDetail -> {
                     onOpenChatDetail(effect.conversationId, effect.nickname)
+                }
+                is ProfileEffect.StartVideoCall -> {
+                    onStartVideoCall(
+                        effect.userId,
+                        effect.nickname,
+                        effect.age,
+                        effect.avatarUrl,
+                    )
                 }
                 is ProfileEffect.ShowMessage -> {
                     Toast.makeText(context, effect.message, Toast.LENGTH_SHORT).show()
@@ -823,25 +837,14 @@ private fun ProfileNavButton(
     contentDescription: String,
     onClick: () -> Unit,
 ) {
-    Box(
-        modifier = Modifier
-            .size(ComponentSize.profileNavButton)
-            .clip(CircleShape)
-            .background(DemoColors.profileNavScrim)
-            .clickable(
-                role = Role.Button,
-                interactionSource = remember { MutableInteractionSource() },
-                indication = ripple(bounded = true),
-                onClick = onClick,
-            ),
-        contentAlignment = Alignment.Center,
-    ) {
-        Image(
-            painter = painterResource(iconRes),
-            contentDescription = contentDescription,
-            modifier = Modifier.size(IconSize.sm),
-        )
-    }
+    DemoNavIconButton(
+        icon = painterResource(iconRes),
+        contentDescription = contentDescription,
+        onClick = onClick,
+        iconSize = IconSize.sm,
+        size = ComponentSize.profileNavButton,
+        containerColor = DemoColors.profileNavScrim,
+    )
 }
 
 @Composable

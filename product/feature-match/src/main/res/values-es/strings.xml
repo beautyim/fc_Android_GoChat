@@ -1,11 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="match_title">Match</string>
-    <string name="match_action_get_info">Obtener info</string>
-    <string name="match_action_start">Iniciar match</string>
-    <string name="match_status_loading_info">Loading match info…</string>
-    <string name="match_status_info_fmt">free=%1$d pay=%2$s vip=%3$s avatars=%4$d</string>
-    <string name="match_status_starting">Starting match…</string>
-    <string name="match_status_started">Iniciado</string>
-    <string name="match_status_start_fmt">session=%1$s action=%2$s free=%3$d</string>
+    <string name="match_nav_match">Match</string>
+    <string name="match_action_video">Video Match</string>
+    <string name="match_price_per_time">/vez</string>
+    <string name="match_vip_off">50% dto</string>
+    <string name="match_free_badge">GRATIS</string>
+    <string name="match_filter_title">Filtro</string>
+    <string name="match_filter_subtitle">Refina tu búsqueda</string>
+    <string name="match_filter_gender">Género</string>
+    <string name="match_filter_all">Todos</string>
+    <string name="match_filter_female">Mujer</string>
+    <string name="match_filter_male">Hombre</string>
+    <string name="match_filter_apply">Aplicar filtros</string>
+    <string name="match_filter_reset">Restablecer</string>
+    <string name="match_cd_filter">Filtro</string>
+    <string name="match_cd_close_filter">Cerrar filtro</string>
+    <string name="match_cd_coins">Monedas</string>
+    <string name="match_status_starting">Iniciando match…</string>
+    <string name="match_status_started">Match iniciado</string>
+    <string name="match_status_no_result">No hay nadie disponible ahora</string>
+    <string name="match_status_ended">La búsqueda terminó</string>
+    <string name="match_searching_title">Emparejando...</string>
+    <string name="match_searching_caption">Buscando a alguien\nespecial para ti 💜</string>
+    <string name="match_searching_cancel">Cancelar</string>
 </resources>

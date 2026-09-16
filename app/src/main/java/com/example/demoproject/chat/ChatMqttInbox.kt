@@ -24,8 +24,8 @@ import kotlinx.serialization.json.jsonPrimitive
 
 /**
  * Ingests private-chat MQTT envelopes (including control notices `key` 101–108) into
- * [MessageRepository]. Call signaling already consumes the same [MqttManager.messageFlow]
- * for invite/end packets; non-call rows are ignored there and handled here.
+ * [MessageRepository]. Call signaling (`type=3`) is handled by [MqttCallSignalingClient];
+ * account VIP / balance / match-quota pushes (`type=7`) by [com.example.demoproject.wallet.AccountMqttInbox].
  */
 class ChatMqttInbox(
     private val mqttManager: MqttManager,

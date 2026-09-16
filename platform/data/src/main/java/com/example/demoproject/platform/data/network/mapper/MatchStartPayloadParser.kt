@@ -17,11 +17,24 @@ import kotlinx.serialization.json.longOrNull
 object MatchStartPayloadParser {
 
     fun parse(payload: JsonElement?, rawPayload: String? = null): MatchStartInfo {
+        return parse(payload = payload, rawPayload = rawPayload, includeMatchedUser = true)
+    }
+
+    fun parseNext(payload: JsonElement?, rawPayload: String? = null): MatchStartInfo {
+        return parse(payload = payload, rawPayload = rawPayload, includeMatchedUser = false)
+    }
+
+    private fun parse(
+        payload: JsonElement?,
+        rawPayload: String?,
+        includeMatchedUser: Boolean,
+    ): MatchStartInfo {
         val root = payload.asObjectOrNull() ?: return emptyInfo(rawPayload)
         val sessionId = findLong(root, SESSION_ID_KEYS)
         val matchId = findLong(root, MATCH_ID_KEYS)
         val matchFreeCount = findInt(root, MATCH_FREE_COUNT_KEYS)
-        val matchedUser = findMatchedUser(root)
+        val heartIntervalSeconds = findInt(root, HEART_INTERVAL_KEYS)?.takeIf { it > 0 }
+        val matchedUser = if (includeMatchedUser) findMatchedUser(root) else null
         val nextAction = if (matchedUser != null) {
             MatchStartAction.UserProfile
         } else {
@@ -34,6 +47,7 @@ object MatchStartPayloadParser {
             nextAction = nextAction,
             rawPayload = rawPayload,
             matchFreeCount = matchFreeCount,
+            heartIntervalSeconds = heartIntervalSeconds,
         )
     }
 
@@ -79,7 +93,7 @@ object MatchStartPayloadParser {
             gender = gender,
             age = age,
             bio = bio,
-            profileUserId = findString(this, PROFILE_USER_ID_KEYS),
+            profileUserId = findString(this, PROFILE_USER_ID_KEYS) ?: id.toString(),
             videoCallGold = findInt(this, VIDEO_CALL_GOLD_KEYS) ?: 0,
         )
     }
@@ -137,6 +151,12 @@ object MatchStartPayloadParser {
     private val MATCH_FREE_COUNT_KEYS = listOf(
         "match_free_count",
         "matchFreeCount",
+    )
+
+    private val HEART_INTERVAL_KEYS = listOf(
+        "heart_interval",
+        "heartInterval",
+        "heart_interval_sec",
     )
 
     private val USER_OBJECT_KEYS = listOf(

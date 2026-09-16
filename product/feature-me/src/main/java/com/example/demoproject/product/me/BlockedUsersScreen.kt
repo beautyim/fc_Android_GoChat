@@ -41,10 +41,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -59,13 +57,13 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewFontScale
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import com.example.demoproject.platform.data.model.Gender
 import com.example.demoproject.platform.data.model.User
 import com.example.demoproject.ui.designsystem.DemoColors
 import com.example.demoproject.ui.designsystem.DemoGradients
+import com.example.demoproject.ui.designsystem.DemoNavIconButton
 import com.example.demoproject.ui.designsystem.DemoTheme
 import com.example.demoproject.ui.foundation.ComponentSize
 import com.example.demoproject.ui.foundation.IconSize
@@ -199,7 +197,6 @@ private fun BlockedUsersTopBar(
     modifier: Modifier = Modifier,
 ) {
     val backCd = stringResource(R.string.blocked_back)
-    val isRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -207,15 +204,12 @@ private fun BlockedUsersTopBar(
             .background(DemoColors.sheet)
             .padding(horizontal = Spacing.md),
     ) {
-        Image(
-            painter = painterResource(R.drawable.settings_ic_back),
+        DemoNavIconButton(
+            icon = painterResource(R.drawable.settings_ic_back),
             contentDescription = backCd,
-            modifier = Modifier
-                .align(Alignment.CenterStart)
-                .size(IconSize.md)
-                .graphicsLayer { scaleX = if (isRtl) -1f else 1f }
-                .clickable(onClick = onBack)
-                .semantics { contentDescription = backCd },
+            onClick = onBack,
+            modifier = Modifier.align(Alignment.CenterStart),
+            mirrorInRtl = true,
         )
         Text(
             text = stringResource(R.string.blocked_title),

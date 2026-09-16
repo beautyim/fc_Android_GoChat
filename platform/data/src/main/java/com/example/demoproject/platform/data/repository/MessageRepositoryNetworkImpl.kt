@@ -2,6 +2,8 @@ package com.example.demoproject.platform.data.repository
 
 import com.example.demoproject.platform.data.blocked.BlockedUsersStore
 import com.example.demoproject.platform.data.blocked.excludingBlockedConversations
+import com.example.demoproject.platform.data.billing.PayEvent
+import com.example.demoproject.platform.data.billing.PayEventStore
 import com.example.demoproject.platform.data.local.cache.ChatStore
 import com.example.demoproject.platform.data.message.ChatUnreadStore
 import com.example.demoproject.platform.data.message.IncomingChatPush
@@ -31,6 +33,7 @@ import com.example.demoproject.platform.data.network.dto.MsgContentDto
 import com.example.demoproject.platform.data.network.dto.MsgSendDataDto
 import com.example.demoproject.platform.data.network.dto.MsgSendRequestDto
 import com.example.demoproject.platform.data.network.dto.MsgUnreadRequestDto
+import com.example.demoproject.platform.data.network.dto.PayEventDto
 import com.example.demoproject.platform.data.network.dto.TranslationSubmitRequestDto
 import com.example.demoproject.platform.data.network.mapper.toDomain
 import com.example.demoproject.platform.data.network.mapper.toDomainConversations
@@ -63,6 +66,7 @@ class MessageRepositoryNetworkImpl(
     private val blockedUsersStore: BlockedUsersStore,
     private val accountBalanceStore: AccountBalanceStore,
     private val chatUnreadStore: ChatUnreadStore,
+    private val payEventStore: PayEventStore,
 ) : MessageRepository {
 
     override suspend fun getConversations(page: Int): AppResult<ConversationListPage> {
@@ -73,6 +77,7 @@ class MessageRepositoryNetworkImpl(
                 ),
             )
         }.map { dto ->
+            payEventStore.publish(dto.payEventList.mapNotNull(PayEventDto::toDomain))
             val conversations = chatStore.upsertConversations(dto.toDomainConversations())
             chatStore.lastSyncMtime = dto.lastSyncMtime
             // `msg/list` always carries total unread; use it as the global snapshot.
@@ -97,6 +102,7 @@ class MessageRepositoryNetworkImpl(
                 MessageSyncRequestDto(lastSyncMtime = chatStore.lastSyncMtime),
             )
         }.map { dto ->
+            payEventStore.publish(dto.payEventList.mapNotNull(PayEventDto::toDomain))
             chatStore.upsertConversations(dto.toDomainConversations())
             chatStore.lastSyncMtime = dto.lastSyncMtime
             // Do not write dto.unread here: `msg/sync` often omits it and the DTO default
@@ -695,4 +701,16 @@ class MessageRepositoryNetworkImpl(
         MsgSendRequestDto.MSG_TYPE_GIFT -> MessageType.Gift
         else -> MessageType.Text
     }
+}
+
+private fun PayEventDto.toDomain(): PayEvent? {
+    if (eventId <= 0L) return null
+    return PayEvent(
+        eventId = eventId,
+        transactionId = transactionId,
+        currency = currency.takeIf { it.isNotBlank() },
+        value = value.toDoubleOrNull() ?: money.toDoubleOrNull(),
+        goodsId = goodsId,
+        itemId = items?.itemId.orEmpty(),
+    )
 }

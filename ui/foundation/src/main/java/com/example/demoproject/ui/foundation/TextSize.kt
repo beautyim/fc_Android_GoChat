@@ -52,6 +52,11 @@ object TextSize {
     val meBalance = 20.sp
     /** Call ringing peer name — Figma 20. */
     val callRingingName = 20.sp
+    /** Match-call connecting title stack — Figma 1:1529 / 1:1530. */
+    val callConnectingLead = 30.sp
+    val callConnectingTitle = 64.sp
+    val callConnectingSubtitle = 11.sp
+    val callConnectingStatusTracking = 0.14.sp
     /** In-call Like chip — Figma 14/15. */
     val callInCallLike = 14.sp
     /** In-call chat body — Figma 12sp. */
@@ -68,6 +73,39 @@ object TextSize {
     val callInCallGiftSentTipName = 10.sp
     /** In-call gift-sent tip count — Figma 22sp. */
     val callInCallGiftSentTipCount = 22.sp
+    /** Call balance float Upgrade / More — Figma 12sp. */
+    val callBalanceFloatTitle = 12.sp
+    /** Call balance float Upgrade / More line box — Figma text h=14. */
+    val callBalanceFloatTitleLine = 14.sp
+    /** Call balance float VIP / Coins title — Figma 20sp. */
+    val callBalanceFloatVip = 20.sp
+    /** Call balance float VIP / Coins line box — Figma text / row h=24. */
+    val callBalanceFloatVipLine = 24.sp
+    /** Call balance float "Coins" tracking — Figma 1. */
+    val callBalanceFloatCoinsTracking = 1.sp
+    /** Call balance float benefit / price — Figma 12sp. */
+    val callBalanceFloatBody = 12.sp
+    /** Call balance float body line box — Figma text h=14. */
+    val callBalanceFloatBodyLine = 14.sp
+    /** Call balance float timer / OFF — Figma 10sp. */
+    val callBalanceFloatMeta = 10.sp
+    /** Call balance float meta line box — Figma text h=12. */
+    val callBalanceFloatMetaLine = 12.sp
+    /** Call hangup peer name — Figma 20sp. */
+    val callHangupPeerName = 20.sp
+    /** Call hangup speech bubble — Figma 12sp / tracking 0.066. */
+    val callHangupSpeech = 12.sp
+    val callHangupSpeechTracking = 0.066.sp
+    /** Call hangup speech line box — Figma leading 11. */
+    val callHangupSpeechLine = 14.sp
+    /** Call hangup continue waiting title — Figma 15sp. */
+    val callHangupContinueTitle = 15.sp
+    /** Call hangup continue subtitle — Figma 14 / 20. */
+    val callHangupContinueSubtitleLine = 20.sp
+    /** Match VIP 50% Off — Figma 11sp. */
+    val matchVipOff = 11.sp
+    /** Match filter sheet title — Figma 20sp. */
+    val matchFilterTitle = 20.sp
     val title = 22.sp
     /** Store coin package amount — Figma 22. */
     val storeCoinAmount = 22.sp
@@ -97,5 +135,9 @@ object TextSize {
     val chatEmoji = 26.sp
     /** Chat emoji line box — room so glyphs are not clipped. */
     val chatEmojiLine = 32.sp
+    /** Matching status title — Figma 20. */
+    val matchSearchingTitle = 20.sp
+    /** Matching status caption line box — Figma leading 16. */
+    val matchSearchingCaptionLine = 16.sp
     val xl = 28.sp
 }

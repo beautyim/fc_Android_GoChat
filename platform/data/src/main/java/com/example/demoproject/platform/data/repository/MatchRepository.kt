@@ -38,6 +38,8 @@ data class MatchStartInfo(
     val rawPayload: String?,
     /** Remaining free match count when returned by `/match/start` or `/match/next`. */
     val matchFreeCount: Int? = null,
+    /** Positive server heartbeat cadence in seconds; null means no match heartbeat. */
+    val heartIntervalSeconds: Int? = null,
 )
 
 interface MatchRepository {
@@ -51,6 +53,8 @@ interface MatchRepository {
     ): MatchStartResult
 
     suspend fun endMatch(matchSessionId: Long, source: String = "unknown"): AppResult<Unit>
+
+    suspend fun heartMatch(matchSessionId: Long, source: String = "unknown"): AppResult<Unit>
 
     suspend fun closeMatch(source: String = "unknown"): AppResult<Unit>
 

@@ -9,4 +9,7 @@
     <string name="push_like_title">إعجاب جديد</string>
     <string name="push_like_body">أعجب بك شخص ما</string>
     <string name="payment_generic_error">حدث خطأ ما. يُرجى المحاولة مرة أخرى.</string>
+    <string name="payment_method_google_play">Google Play</string>
+    <string name="payment_method_other">طريقة دفع أخرى</string>
+    <string name="payment_method_cancel">إلغاء</string>
 </resources>

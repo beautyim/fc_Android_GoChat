@@ -10,6 +10,7 @@ import com.example.demoproject.platform.analytics.adjust.AdjustAttributionProvid
 import com.example.demoproject.platform.common.log.AppLogger
 import com.example.demoproject.platform.data.device.DefaultDeviceFingerprint
 import com.example.demoproject.platform.data.local.pref.AppPrefs
+import com.example.demoproject.platform.data.model.Session
 import com.example.demoproject.platform.data.network.NetworkRuntime
 import com.example.demoproject.platform.data.repository.AdjustAttributionPayload
 import com.example.demoproject.platform.data.repository.AppSocketInfo
@@ -27,6 +28,10 @@ import com.example.demoproject.platform.analytics.adjust.AdjustAttributionPayloa
 
 /**
  * Reports app open/init/close, first-install Adjust `active`, and `/adjust/add` on conversion events.
+ *
+ * MQTT broker credentials come from `/app/init` (`socket_info`). They must track the
+ * signed-in user, not only process foreground: delete-account / logout + re-login in the
+ * same process never re-enters [onStart], so session transitions clear and re-bind MQTT.
  */
 class AppLifecycleReporter(
     private val application: Application,
@@ -44,6 +49,7 @@ class AppLifecycleReporter(
         if (started) return
         started = true
         ProcessLifecycleOwner.get().lifecycle.addObserver(this)
+        observeSessionForMqtt()
         AppLogger.i(TAG, "AppLifecycleReporter started")
     }
 
@@ -59,34 +65,46 @@ class AppLifecycleReporter(
         }
     }
 
+    /**
+     * After [SessionManager.awaitInitialHydration], react to login/logout only — ignore the
+     * cold-start null→session emission race by seeding [previous] from the hydrated snapshot.
+     */
+    private fun observeSessionForMqtt() {
+        scope.launch {
+            val sessionManager = NetworkRuntime.get(application).sessionManager
+            sessionManager.awaitInitialHydration()
+            var previous: Session? = sessionManager.currentSessionSnapshot
+            sessionManager.sessionFlow.collect { session ->
+                if (session == previous) return@collect
+                val wasLoggedIn = previous != null
+                previous = session
+                when {
+                    wasLoggedIn && session == null -> {
+                        MqttRuntime.get(application).clear()
+                        AppLogger.i(TAG, "mqtt cleared on logout")
+                    }
+                    !wasLoggedIn && session != null -> {
+                        mutex.withLock {
+                            refreshAuthenticatedSession(
+                                reason = "login",
+                                reportOpen = true,
+                                generation = foregroundGeneration,
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     override fun onStart(owner: LifecycleOwner) {
         val generation = ++foregroundGeneration
         scope.launch {
             mutex.withLock {
-                val runtime = NetworkRuntime.get(application)
-                val token = runtime.sessionManager.accessTokenSnapshot
-                if (token.isNullOrBlank()) {
-                    AppLogger.d(TAG, "skip open/init: no session")
-                    return@withLock
-                }
-                when (val init = runtime.appSessionRepository.initApp()) {
-                    is AppResult.Success -> {
-                        saveMqttConfig(init.data.socket)
-                        runtime.accountBalanceStore.update(init.data.accountMoney)
-                        runtime.chatUnreadStore.update(init.data.messageUnread)
-                        AppLogger.i(TAG, "/app/init ok")
-                        reportInstallStatIfNeeded()
-                    }
-                    is AppResult.Failure -> {
-                        AppLogger.w(TAG, "/app/init failed: ${init.message}")
-                    }
-                }
-                if (generation != foregroundGeneration) return@withLock
-                val fingerprint = DefaultDeviceFingerprint(application)
-                val risks = fingerprint.riskSignals()
-                runtime.appSessionRepository.openApp(
-                    hasProxy = (risks["has_proxy"] as? Number)?.toInt() == 1,
-                    hasVpn = (risks["has_vpn"] as? Number)?.toInt() == 1,
+                refreshAuthenticatedSession(
+                    reason = "foreground",
+                    reportOpen = true,
+                    generation = generation,
                 )
             }
         }
@@ -98,6 +116,51 @@ class AppLifecycleReporter(
                 val runtime = NetworkRuntime.get(application)
                 if (runtime.sessionManager.accessTokenSnapshot.isNullOrBlank()) return@withLock
                 runtime.appSessionRepository.closeApp()
+            }
+        }
+    }
+
+    /**
+     * `/app/init` (MQTT + wallet/unread) then optional `/app/open`.
+     * [generation] must still match [foregroundGeneration] before open when called from [onStart].
+     */
+    private suspend fun refreshAuthenticatedSession(
+        reason: String,
+        reportOpen: Boolean,
+        generation: Long,
+    ) {
+        val runtime = NetworkRuntime.get(application)
+        val token = runtime.sessionManager.accessTokenSnapshot
+        if (token.isNullOrBlank()) {
+            AppLogger.d(TAG, "skip open/init ($reason): no session")
+            return
+        }
+        when (val init = runtime.appSessionRepository.initApp()) {
+            is AppResult.Success -> {
+                saveMqttConfig(init.data.socket)
+                runtime.accountBalanceStore.update(init.data.accountMoney)
+                runtime.chatUnreadStore.update(init.data.messageUnread)
+                AppLogger.i(TAG, "/app/init ok ($reason)")
+                reportInstallStatIfNeeded()
+            }
+            is AppResult.Failure -> {
+                AppLogger.w(TAG, "/app/init failed ($reason): ${init.message}")
+            }
+        }
+        if (!reportOpen) return
+        if (generation != foregroundGeneration) return
+        if (runtime.sessionManager.accessTokenSnapshot.isNullOrBlank()) return
+        val fingerprint = DefaultDeviceFingerprint(application)
+        val risks = fingerprint.riskSignals()
+        runtime.appSessionRepository.openApp(
+            hasProxy = (risks["has_proxy"] as? Number)?.toInt() == 1,
+            hasVpn = (risks["has_vpn"] as? Number)?.toInt() == 1,
+        ).let { open ->
+            if (open is AppResult.Success) {
+                open.data?.let { data ->
+                    runtime.matchQuotaStore.update(matchFreeCount = data.matchFreeCount)
+                    runtime.callFreeMinStore.update(data.callFreeMin)
+                }
             }
         }
     }

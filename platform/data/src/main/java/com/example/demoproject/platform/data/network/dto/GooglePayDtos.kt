@@ -18,6 +18,28 @@ data class GooglePayCheckRequestDto(
 )
 
 @Serializable
+data class GooglePayCheckResponseDto(
+    @SerialName("pop_type")
+    @Serializable(with = LenientIntSerializer::class)
+    val popType: Int = 0,
+    val pop: GooglePayMethodPopupDto? = null,
+)
+
+@Serializable
+data class GooglePayMethodPopupDto(
+    val title: String = "",
+    val list: List<GooglePayMethodDto> = emptyList(),
+)
+
+@Serializable
+data class GooglePayMethodDto(
+    val title: String = "",
+    val icon: String = "",
+    @Serializable(with = LenientIntSerializer::class)
+    val type: Int = 0,
+)
+
+@Serializable
 data class GooglePayCreateRequestDto(
     @SerialName("goods_id")
     val goodsId: Long,
@@ -39,6 +61,21 @@ data class GooglePayCreateResponseDto(
     val productType: Int = 0,
     @SerialName("tran_no")
     val tranNo: String = "",
+    @SerialName("product_id")
+    val productId: String = "",
+    @SerialName("pay_type")
+    @Serializable(with = LenientIntSerializer::class)
+    val payType: Int = 0,
+    @SerialName("goods_id")
+    @Serializable(with = LenientLongSerializer::class)
+    val goodsId: Long = 0L,
+    @Serializable(with = JsonNumberOrStringAsStringSerializer::class)
+    val price: String = "",
+    val currency: String = "",
+    @SerialName("pay_url")
+    val payUrl: String = "",
+    val url: String = "",
+    val link: String = "",
     @SerialName("pay_item")
     val payItem: GooglePayItemDto? = null,
     val callback: JsonObject? = null,
@@ -88,4 +125,10 @@ data class GooglePayVerifyRequestDto(
     val packageName: String,
     @SerialName("purchase_token")
     val purchaseToken: String,
+)
+
+@Serializable
+data class GooglePayEventAckRequestDto(
+    @SerialName("event_id")
+    val eventId: Long,
 )

@@ -144,7 +144,7 @@ private fun ApiResponse<*>.failureMessage(): String =
     businessMessage.ifBlank {
         when (failureCode) {
             99 -> mapHttpStatus(401)
-            else -> AppResult.DEFAULT_REQUEST_FAILED_MESSAGE
+            else -> AppResult.requestFailedMessage()
         }
     }
 

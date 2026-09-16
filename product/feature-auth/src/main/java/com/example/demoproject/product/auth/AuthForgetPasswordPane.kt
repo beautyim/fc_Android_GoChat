@@ -51,6 +51,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.demoproject.ui.designsystem.DemoColors
+import com.example.demoproject.ui.designsystem.DemoNavIconButton
 import com.example.demoproject.ui.designsystem.DemoPrimaryPillButton
 import com.example.demoproject.ui.designsystem.DemoTheme
 import com.example.demoproject.ui.foundation.IconSize
@@ -327,20 +328,14 @@ private fun ForgetPasswordTopBar(
             .height(ForgetPasswordTopBarHeight)
             .background(DemoColors.sheet),
     ) {
-        Image(
-            painter = painterResource(R.drawable.auth_ic_back),
+        DemoNavIconButton(
+            icon = painterResource(R.drawable.auth_ic_back),
             contentDescription = stringResource(R.string.auth_cd_back),
+            onClick = onBack,
             modifier = Modifier
                 .align(Alignment.CenterStart)
-                .padding(start = Spacing.md)
-                .size(IconSize.md)
-                .clickable(
-                    enabled = enabled,
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null,
-                    role = Role.Button,
-                    onClick = onBack,
-                ),
+                .padding(start = Spacing.md),
+            enabled = enabled,
         )
         Text(
             text = stringResource(R.string.auth_title_forget_password),

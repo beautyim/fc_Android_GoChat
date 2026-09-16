@@ -56,7 +56,6 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -69,13 +68,13 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewFontScale
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.demoproject.ui.designsystem.DemoColors
 import com.example.demoproject.ui.designsystem.DemoGradients
+import com.example.demoproject.ui.designsystem.DemoNavIconButton
 import com.example.demoproject.ui.designsystem.DemoTheme
 import com.example.demoproject.ui.foundation.ComponentSize
 import com.example.demoproject.ui.foundation.IconSize
@@ -212,21 +211,18 @@ private fun StoreTopBar(
 ) {
     val backCd = stringResource(R.string.store_cd_back)
     val balanceCd = stringResource(R.string.store_cd_balance)
-    val isRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
     Box(
         modifier = modifier
             .height(ComponentSize.navHeaderHeight)
             .padding(horizontal = Spacing.md),
     ) {
-        Image(
-            painter = painterResource(R.drawable.store_ic_back),
+        DemoNavIconButton(
+            icon = painterResource(R.drawable.store_ic_back),
             contentDescription = backCd,
-            modifier = Modifier
-                .align(Alignment.CenterStart)
-                .size(ComponentSize.storeNavIcon)
-                .graphicsLayer { scaleX = if (isRtl) -1f else 1f }
-                .semantics { contentDescription = backCd }
-                .clickable(onClick = onBack),
+            onClick = onBack,
+            modifier = Modifier.align(Alignment.CenterStart),
+            iconSize = ComponentSize.storeNavIcon,
+            mirrorInRtl = true,
         )
         Text(
             text = stringResource(R.string.store_title),
@@ -349,7 +345,7 @@ private sealed interface StorePromoPage {
 }
 
 @Composable
-private fun StorePromoCarousel(
+internal fun StorePromoCarousel(
     vipOffers: List<StoreVipOfferUi>,
     saleOffers: List<StoreSaleOfferUi>,
     purchasingOfferId: Long?,
@@ -441,7 +437,7 @@ internal fun StorePagerDots(
 }
 
 @Composable
-private fun StoreVipCard(
+internal fun StoreVipCard(
     offer: StoreVipOfferUi,
     enabled: Boolean,
     isLoading: Boolean,

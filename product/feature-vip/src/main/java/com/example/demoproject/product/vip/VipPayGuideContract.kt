@@ -19,7 +19,7 @@ data class VipPayGuideUiState(
     val peerNickname: String = "",
     val benefits: List<VipPayGuideBenefitUi> = emptyList(),
     val plan: VipPayGuidePlanUi? = null,
-    val fromType: Int = 0,
+    val fromType: Int = 2,
     val isLoading: Boolean = false,
     val isPurchasing: Boolean = false,
 )

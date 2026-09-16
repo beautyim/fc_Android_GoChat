@@ -65,15 +65,17 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.changedToDown
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -89,6 +91,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewFontScale
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import android.view.ViewGroup
@@ -134,6 +137,35 @@ private val CallChatItemEnter =
 internal fun CallInCallContent(
     state: CallUiState,
     onIntent: (CallIntent) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    CallInCallLayout(
+        state = state,
+        onIntent = onIntent,
+        matchNextCountdownSec = null,
+        modifier = modifier,
+    )
+}
+
+@Composable
+internal fun MatchingCallInCallContent(
+    state: CallUiState,
+    onIntent: (CallIntent) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    CallInCallLayout(
+        state = state,
+        onIntent = onIntent,
+        matchNextCountdownSec = state.matchNextCountdownSec,
+        modifier = modifier,
+    )
+}
+
+@Composable
+private fun CallInCallLayout(
+    state: CallUiState,
+    onIntent: (CallIntent) -> Unit,
+    matchNextCountdownSec: Int?,
     modifier: Modifier = Modifier,
 ) {
     val keyboard = LocalSoftwareKeyboardController.current
@@ -206,6 +238,7 @@ internal fun CallInCallContent(
         ) {
             CallInCallHeader(
                 state = state,
+                showHangup = state.isMatchHangupEnabled,
                 onLike = { onIntent(CallIntent.Like) },
                 onReport = { onIntent(CallIntent.Report) },
                 onHangup = { onIntent(CallIntent.Hangup) },
@@ -242,12 +275,36 @@ internal fun CallInCallContent(
                 CallInCallPip(
                     avatarUrl = state.peerAvatarUrl,
                     rtcActive = state.rtcSurfacesActive,
-                    cameraEnabled = state.cameraEnabled,
+                    cameraEnabled = state.cameraEnabled && !state.isMatchReceiveOnly,
                     onFlipCamera = { onIntent(CallIntent.FlipCamera) },
                     modifier = Modifier
                         .align(Alignment.TopEnd)
                         .padding(end = Spacing.callRingingReportEnd, top = Spacing.md),
                 )
+
+                val hasOtherOverlay = state.isMoreSheetVisible ||
+                    state.isGiftSheetVisible ||
+                    state.isReportSheetVisible ||
+                    state.giftAnimationUrl != null
+                val showBalanceFloat = state.shouldShowBalanceFloat(
+                    imeVisible = isImeVisible,
+                    hasOtherOverlay = hasOtherOverlay,
+                )
+                if (showBalanceFloat) {
+                    state.balanceOffer?.let { offer ->
+                        CallBalanceAlertFloatingWindow(
+                            offer = offer,
+                            onClick = { onIntent(CallIntent.OpenBalanceOfferGuide) },
+                            onMoreOptions = { onIntent(CallIntent.OpenBalanceOfferGuide) },
+                            modifier = Modifier
+                                .align(Alignment.BottomEnd)
+                                .padding(
+                                    end = Spacing.callBalanceFloatEnd,
+                                    bottom = Spacing.callBalanceFloatBottom,
+                                ),
+                        )
+                    }
+                }
 
                 Column(
                     modifier = Modifier
@@ -310,10 +367,14 @@ internal fun CallInCallContent(
             CallInCallBottomBar(
                 draft = state.draftMessage,
                 imeVisible = isImeVisible,
+                matchNextCountdownSec = matchNextCountdownSec
+                    ?.takeIf { state.showMatchNext },
+                matchNextEnabled = state.isMatchNextEnabled,
                 onDraftChange = { onIntent(CallIntent.DraftChanged(it)) },
                 onMore = { onIntent(CallIntent.OpenMore) },
                 onGift = { onIntent(CallIntent.OpenGiftSheet) },
                 onSend = { onIntent(CallIntent.SendMessage) },
+                onNextMatch = { onIntent(CallIntent.NextMatch) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(
@@ -363,6 +424,7 @@ internal fun CallInCallContent(
 @Composable
 private fun CallInCallHeader(
     state: CallUiState,
+    showHangup: Boolean,
     onLike: () -> Unit,
     onReport: () -> Unit,
     onHangup: () -> Unit,
@@ -458,14 +520,16 @@ private fun CallInCallHeader(
                 onClick = onReport,
                 buttonSize = ComponentSize.callInCallHeaderAction,
             )
-            CallCircleIconButton(
-                iconRes = R.drawable.call_incall_ic_hangup,
-                iconSize = ComponentSize.callInCallHangupIcon,
-                padding = Spacing.xs + Spacing.xxs,
-                contentDescription = hangupCd,
-                onClick = onHangup,
-                buttonSize = ComponentSize.callInCallHeaderAction,
-            )
+            if (showHangup) {
+                CallCircleIconButton(
+                    iconRes = R.drawable.call_incall_ic_hangup,
+                    iconSize = ComponentSize.callInCallHangupIcon,
+                    padding = Spacing.xs + Spacing.xxs,
+                    contentDescription = hangupCd,
+                    onClick = onHangup,
+                    buttonSize = ComponentSize.callInCallHeaderAction,
+                )
+            }
         }
     }
 }
@@ -987,10 +1051,13 @@ private fun CallGiftRequestCard(
 private fun CallInCallBottomBar(
     draft: String,
     imeVisible: Boolean,
+    matchNextCountdownSec: Int?,
+    matchNextEnabled: Boolean,
     onDraftChange: (String) -> Unit,
     onMore: () -> Unit,
     onGift: () -> Unit,
     onSend: () -> Unit,
+    onNextMatch: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val moreCd = stringResource(R.string.call_incall_cd_more)
@@ -1062,6 +1129,71 @@ private fun CallInCallBottomBar(
                 modifier = Modifier.size(ComponentSize.callInCallActionIcon),
             )
         }
+        matchNextCountdownSec?.let { countdown ->
+            CallMatchNextButton(
+                countdownSec = countdown,
+            enabled = matchNextEnabled,
+                onClick = onNextMatch,
+            )
+        }
+    }
+}
+
+@Composable
+private fun CallMatchNextButton(
+    countdownSec: Int,
+    enabled: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val label = if (countdownSec > 0) {
+        stringResource(R.string.call_match_next_countdown, countdownSec)
+    } else {
+        stringResource(R.string.call_match_next)
+    }
+    val layoutDirection = LocalLayoutDirection.current
+    Row(
+        modifier = modifier
+            .height(ComponentSize.callInCallAction)
+            .widthIn(min = ComponentSize.callMatchNextMinWidth)
+            .clip(RoundedCornerShape(Radius.pill))
+            .background(DemoColors.callMatchNextEnabled)
+            .alpha(if (enabled) 1f else 0.5f)
+            .semantics { contentDescription = label }
+            .clickable(
+                enabled = enabled,
+                role = Role.Button,
+                indication = null,
+                interactionSource = remember { MutableInteractionSource() },
+                onClick = onClick,
+            )
+            .padding(
+                horizontal = if (enabled) {
+                    Spacing.callMatchNextHorizontal
+                } else {
+                    Spacing.callMatchNextCountdownHorizontal
+                },
+                vertical = Spacing.xs,
+            ),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
+    ) {
+        Text(
+            text = label,
+            color = DemoColors.callRingingOnVideo,
+            fontSize = TextSize.md,
+            fontWeight = FontWeight.Medium,
+            maxLines = 1,
+        )
+        Image(
+            painter = painterResource(R.drawable.call_match_ic_next),
+            contentDescription = null,
+            modifier = Modifier
+                .size(ComponentSize.callMatchNextIcon)
+                .graphicsLayer {
+                    scaleX = if (layoutDirection == LayoutDirection.Rtl) -1f else 1f
+                },
+        )
     }
 }
 
@@ -1224,6 +1356,58 @@ private fun CallInCallLikedPreview() {
                 peerAge = 23,
                 callDurationSec = 23,
                 likePhase = CallLikePhase.Liked,
+            ),
+            onIntent = {},
+        )
+    }
+}
+
+@PreviewScreenSizes
+@PreviewFontScale
+@Preview(showBackground = true, locale = "ar", name = "Match call countdown")
+@Composable
+private fun MatchingCallInCallCountdownPreview() {
+    DemoTheme {
+        MatchingCallInCallContent(
+            state = CallUiState(
+                phase = CallRingingPhase.InCall,
+                isMatchCall = true,
+                peerNickname = "Isabella",
+                peerAge = 23,
+                callDurationSec = 0,
+                matchTimeSeconds = 60,
+                nextTimeSeconds = 6,
+                showGiftQuickBar = true,
+                gifts = listOf(
+                    CallGiftUi(1, "A", 50, ""),
+                    CallGiftUi(2, "B", 50, ""),
+                    CallGiftUi(3, "C", 50, ""),
+                ),
+            ),
+            onIntent = {},
+        )
+    }
+}
+
+@Preview(showBackground = true, name = "Match call next enabled")
+@Composable
+private fun MatchingCallInCallEnabledPreview() {
+    DemoTheme {
+        MatchingCallInCallContent(
+            state = CallUiState(
+                phase = CallRingingPhase.InCall,
+                isMatchCall = true,
+                peerNickname = "Isabella",
+                peerAge = 23,
+                callDurationSec = 6,
+                matchTimeSeconds = 60,
+                nextTimeSeconds = 6,
+                showGiftQuickBar = true,
+                gifts = listOf(
+                    CallGiftUi(1, "A", 50, ""),
+                    CallGiftUi(2, "B", 50, ""),
+                    CallGiftUi(3, "C", 50, ""),
+                ),
             ),
             onIntent = {},
         )

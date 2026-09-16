@@ -111,6 +111,52 @@ class CallCoordinator(
     }
 
     /**
+     * Joins a room created by the match backend. No invite is emitted and no answer-status
+     * polling is needed; the caller already owns complete RTC credentials from match MQTT.
+     */
+    fun startDirectMatchCall(
+        callId: String,
+        channelId: String,
+        uid: Int,
+        token: String,
+        rtcAppId: String,
+        roomSessionId: Long = 0L,
+        fencingToken: String? = null,
+        receiveOnly: Boolean = false,
+    ) {
+        if (callId.isBlank() || channelId.isBlank() || token.isBlank()) {
+            AppLogger.w(TAG, "startDirectMatchCall ignored incomplete credentials")
+            return
+        }
+        if (_state.value is CallState.Ended) resetIfTerminal()
+        if (_state.value !is CallState.Idle) {
+            AppLogger.w(TAG, "startDirectMatchCall ignored currentState=${_state.value}")
+            return
+        }
+        clearJoined()
+        localHangupRequested = false
+        _state.value = CallState.Connecting(
+            callId = callId,
+            channelId = channelId,
+            roomSessionId = roomSessionId,
+            fencingToken = fencingToken,
+            rtcAppId = rtcAppId,
+            localRtcUid = uid,
+            localRtcToken = token,
+        )
+        scope.launch {
+            ensureRtcJoined(
+                appId = rtcAppId,
+                channelId = channelId,
+                uid = uid,
+                token = token,
+                receiveOnly = receiveOnly,
+            )
+            maybePromoteJoinedToInCall()
+        }
+    }
+
+    /**
      * Transition to [CallState.Connecting] after callee `/call/success`, then join Agora.
      */
     fun acceptIncoming(
@@ -281,7 +327,13 @@ class CallCoordinator(
         joinedLocalUid = 0
     }
 
-    private fun ensureRtcJoined(appId: String, channelId: String, uid: Int, token: String) {
+    private fun ensureRtcJoined(
+        appId: String,
+        channelId: String,
+        uid: Int,
+        token: String,
+        receiveOnly: Boolean = false,
+    ) {
         if (channelId.isBlank()) {
             AppLogger.w(TAG, "ensureRtcJoined skipped blank channel")
             return
@@ -295,7 +347,13 @@ class CallCoordinator(
         } else {
             AppLogger.w(TAG, "ensureRtcJoined blank appId — join may fail if engine not initialized")
         }
-        rtc.join(channelId = channelId, uid = uid, token = token, enableVideo = true)
+        rtc.join(
+            channelId = channelId,
+            uid = uid,
+            token = token,
+            enableVideo = true,
+            receiveOnly = receiveOnly,
+        )
     }
 
     private fun maybePromoteJoinedToInCall() {
@@ -471,6 +529,7 @@ class CallCoordinator(
 
             // In-call UX events are consumed by CallViewModel, not the state machine.
             is SignalingEvent.BalanceAlert,
+            is SignalingEvent.BalanceSync,
             is SignalingEvent.InCallChat,
             is SignalingEvent.PeerMaskStatus,
             -> Unit

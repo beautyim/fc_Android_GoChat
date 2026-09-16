@@ -1,5 +1,7 @@
 package com.example.demoproject.platform.data.repository
 
+import com.example.demoproject.platform.data.call.CallFreeMinStore
+import com.example.demoproject.platform.data.match.MatchQuotaStore
 import com.example.demoproject.platform.data.model.Session
 import com.example.demoproject.platform.data.network.api.AuthApi
 import com.example.demoproject.platform.data.network.dto.ChangePasswordRequestDto
@@ -24,6 +26,8 @@ import javax.inject.Singleton
 class AuthRepositoryImpl @Inject constructor(
     private val authApi: AuthApi,
     private val sessionManager: SessionManager,
+    private val matchQuotaStore: MatchQuotaStore,
+    private val callFreeMinStore: CallFreeMinStore,
 ) : AuthRepository {
 
     override suspend fun loginWithEmail(email: String, password: String): AppResult<AuthLoginResult> =
@@ -108,13 +112,17 @@ class AuthRepositoryImpl @Inject constructor(
                 profileComplete = userInfo?.sex != 0,
             ),
         )
+        val matchFreeCount = userInfo?.matchFreeCount ?: 0
+        val callFreeMin = userInfo?.callFreeMin ?: 0
+        matchQuotaStore.update(matchFreeCount = matchFreeCount)
+        callFreeMinStore.update(callFreeMin)
         return AppResult.Success(
             AuthLoginResult(
                 token = token,
                 isRegister = isRegister == 1,
                 user = user,
-                matchFreeCount = userInfo?.matchFreeCount ?: 0,
-                callFreeMin = userInfo?.callFreeMin ?: 0,
+                matchFreeCount = matchFreeCount,
+                callFreeMin = callFreeMin,
             ),
         )
     }

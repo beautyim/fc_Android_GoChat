@@ -1,7 +1,10 @@
 package com.example.demoproject.platform.data.repository
 
+import com.example.demoproject.platform.data.match.MatchQuotaStore
 import com.example.demoproject.platform.data.network.api.MatchApi
 import com.example.demoproject.platform.data.network.dto.MatchEndRequestDto
+import com.example.demoproject.platform.data.network.dto.MatchHeartRequestDto
+import com.example.demoproject.platform.data.network.dto.MatchNextRequestDto
 import com.example.demoproject.platform.data.network.dto.MatchStartRequestDto
 import com.example.demoproject.platform.data.network.dto.toVipAlertCallbackDtoOrNull
 import com.example.demoproject.platform.data.network.mapper.MatchStartPayloadParser
@@ -25,6 +28,7 @@ import javax.inject.Singleton
 @Singleton
 class MatchRepositoryImpl @Inject constructor(
     private val matchApi: MatchApi,
+    private val matchQuotaStore: MatchQuotaStore,
 ) : MatchRepository {
 
     private val json = Json {
@@ -36,6 +40,7 @@ class MatchRepositoryImpl @Inject constructor(
     override suspend fun getMatchInfo(source: String): AppResult<MatchInfo> =
         safeApiCall { matchApi.info() }
             .map { dto ->
+                matchQuotaStore.update(matchFreeCount = dto.matchFreeCount)
                 MatchInfo(
                     matchFreeCount = dto.matchFreeCount,
                     freeUserMatchPrice = dto.freeUserMatchPrice,
@@ -52,10 +57,17 @@ class MatchRepositoryImpl @Inject constructor(
         matchSex: Int,
         source: String,
     ): MatchStartResult =
-        executeMatchStart { matchApi.start(MatchStartRequestDto(matchType = matchType, matchSex = matchSex)) }
+        executeMatchStart(
+            parsePayload = MatchStartPayloadParser::parse,
+        ) {
+            matchApi.start(MatchStartRequestDto(matchType = matchType, matchSex = matchSex))
+        }
 
     override suspend fun endMatch(matchSessionId: Long, source: String): AppResult<Unit> =
         safeApiCallUnit { matchApi.end(MatchEndRequestDto(matchSessionId = matchSessionId)) }
+
+    override suspend fun heartMatch(matchSessionId: Long, source: String): AppResult<Unit> =
+        safeApiCallUnit { matchApi.heart(MatchHeartRequestDto(matchSessionId = matchSessionId)) }
 
     override suspend fun closeMatch(source: String): AppResult<Unit> =
         safeApiCallUnit { matchApi.close() }
@@ -65,13 +77,18 @@ class MatchRepositoryImpl @Inject constructor(
         matchSex: Int,
         source: String,
     ): MatchStartResult =
-        executeMatchStart { matchApi.next(MatchStartRequestDto(matchType = matchType, matchSex = matchSex)) }
+        executeMatchStart(
+            parsePayload = MatchStartPayloadParser::parseNext,
+        ) {
+            matchApi.next(MatchNextRequestDto(matchType = matchType, matchSex = matchSex))
+        }
 
     private suspend fun executeMatchStart(
+        parsePayload: (JsonElement?, String?) -> MatchStartInfo,
         block: suspend () -> ApiResponse<JsonElement?>,
     ): MatchStartResult =
         try {
-            mapMatchStartResponse(block())
+            mapMatchStartResponse(block(), parsePayload)
         } catch (e: CancellationException) {
             throw e
         } catch (e: IOException) {
@@ -91,11 +108,16 @@ class MatchRepositoryImpl @Inject constructor(
             )
         }
 
-    private fun mapMatchStartResponse(response: ApiResponse<JsonElement?>): MatchStartResult {
+    private fun mapMatchStartResponse(
+        response: ApiResponse<JsonElement?>,
+        parsePayload: (JsonElement?, String?) -> MatchStartInfo,
+    ): MatchStartResult {
         val payload = response.payload
         if (response.isSuccess && payload != null) {
             val rawPayload = json.encodeToString(JsonElement.serializer(), payload)
-            return MatchStartResult.Success(MatchStartPayloadParser.parse(payload, rawPayload))
+            val info = parsePayload(payload, rawPayload)
+            info.matchFreeCount?.let { matchQuotaStore.update(matchFreeCount = it) }
+            return MatchStartResult.Success(info)
         }
         val callbackDto = response.callback.toVipAlertCallbackDtoOrNull()
         val rechargePageData = callbackDto?.toRechargePageData()
@@ -105,7 +127,7 @@ class MatchRepositoryImpl @Inject constructor(
         }.ifBlank {
             callbackDto?.funcData?.title.orEmpty()
         }.ifBlank {
-            AppResult.DEFAULT_REQUEST_FAILED_MESSAGE
+            AppResult.requestFailedMessage()
         }
         return MatchStartResult.Failure(
             message = message,

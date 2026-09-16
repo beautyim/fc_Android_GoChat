@@ -71,6 +71,10 @@ import com.example.demoproject.platform.s3.S3Runtime
 import com.example.demoproject.platform.data.local.crypto.TinkAeadSessionCipher
 import com.example.demoproject.platform.data.local.pref.AppPrefs
 import com.example.demoproject.platform.data.message.ChatUnreadStore
+import com.example.demoproject.platform.data.billing.PayEventStore
+import com.example.demoproject.platform.data.call.CallFreeMinStore
+import com.example.demoproject.platform.data.match.MatchQuotaStore
+import com.example.demoproject.platform.data.match.MatchSessionCoordinator
 import com.example.demoproject.platform.data.vip.VipStatusStore
 import com.example.demoproject.platform.data.wallet.AccountBalanceStore
 import kotlinx.coroutines.CoroutineScope
@@ -89,6 +93,7 @@ import com.example.demoproject.platform.network.interceptor.ClientKeyInterceptor
 import com.example.demoproject.platform.network.interceptor.LocaleHeaderInterceptor
 import com.example.demoproject.platform.network.interceptor.SigningEncryptionInterceptor
 import com.example.demoproject.platform.network.provider.RetrofitProvider
+import com.example.demoproject.platform.network.result.NetworkUserMessages
 import kotlinx.serialization.json.Json
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -143,7 +148,11 @@ class NetworkRuntime private constructor(
     val appPrefs: AppPrefs,
     val vipStatusStore: VipStatusStore,
     val accountBalanceStore: AccountBalanceStore,
+    val matchQuotaStore: MatchQuotaStore,
+    val matchSessionCoordinator: MatchSessionCoordinator,
+    val callFreeMinStore: CallFreeMinStore,
     val chatUnreadStore: ChatUnreadStore,
+    val payEventStore: PayEventStore,
     val sessionPrefs: SessionPrefs,
 ) {
     companion object {
@@ -158,6 +167,7 @@ class NetworkRuntime private constructor(
 
         fun create(context: Context): NetworkRuntime {
             val appContext = context.applicationContext
+            NetworkUserMessages.bind(appContext)
             val networkConfig: NetworkConfig = DefaultNetworkConfig()
             val json = Json {
                 ignoreUnknownKeys = true
@@ -219,7 +229,33 @@ class NetworkRuntime private constructor(
             val database = LocalDatabaseFactory.create(appContext)
             val userDao = database.userDao()
             val userCache: UserCache = RoomUserCache(userDao)
-            val authRepository: AuthRepository = AuthRepositoryImpl(authApi, sessionManager)
+            val blockedUsersStore = BlockedUsersStore(appContext)
+            val appPrefs = AppPrefs.create(appContext)
+            val vipStatusStore = VipStatusStore()
+            val accountBalanceStore = AccountBalanceStore()
+            val matchQuotaStore = MatchQuotaStore()
+            val matchSessionCoordinator = MatchSessionCoordinator()
+            val callFreeMinStore = CallFreeMinStore()
+            val chatUnreadStore = ChatUnreadStore()
+            val payEventStore = PayEventStore()
+            CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
+                sessionManager.sessionFlow.collect { session ->
+                    if (session == null) {
+                        chatUnreadStore.clear()
+                        accountBalanceStore.clear()
+                        matchQuotaStore.clear()
+                        matchSessionCoordinator.clear()
+                        callFreeMinStore.clear()
+                        vipStatusStore.clear()
+                    }
+                }
+            }
+            val authRepository: AuthRepository = AuthRepositoryImpl(
+                authApi = authApi,
+                sessionManager = sessionManager,
+                matchQuotaStore = matchQuotaStore,
+                callFreeMinStore = callFreeMinStore,
+            )
             val appSessionRepository: AppSessionRepository = AppSessionRepositoryImpl(appApi)
             val profileRepository: ProfileRepository = ProfileRepositoryImpl(
                 profileApi = profileApi,
@@ -231,18 +267,6 @@ class NetworkRuntime private constructor(
                 messageDao = database.messageDao(),
                 sessionManager = sessionManager,
             )
-            val blockedUsersStore = BlockedUsersStore(appContext)
-            val appPrefs = AppPrefs.create(appContext)
-            val vipStatusStore = VipStatusStore()
-            val accountBalanceStore = AccountBalanceStore()
-            val chatUnreadStore = ChatUnreadStore()
-            CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
-                sessionManager.sessionFlow.collect { session ->
-                    if (session == null) {
-                        chatUnreadStore.clear()
-                    }
-                }
-            }
             val blockRepository: BlockRepository = BlockRepositoryImpl(
                 profileApi = profileApi,
                 blockedUsersStore = blockedUsersStore,
@@ -257,9 +281,13 @@ class NetworkRuntime private constructor(
                 blockedUsersStore = blockedUsersStore,
                 accountBalanceStore = accountBalanceStore,
                 chatUnreadStore = chatUnreadStore,
+                payEventStore = payEventStore,
             )
             val feedRepository: FeedRepository = FeedRepositoryImpl(feedApi)
-            val matchRepository: MatchRepository = MatchRepositoryImpl(matchApi)
+            val matchRepository: MatchRepository = MatchRepositoryImpl(
+                matchApi = matchApi,
+                matchQuotaStore = matchQuotaStore,
+            )
             val coinRepository: CoinRepository = CoinRepositoryImpl(
                 coinApi = coinApi,
                 accountBalanceStore = accountBalanceStore,
@@ -334,7 +362,11 @@ class NetworkRuntime private constructor(
                 appPrefs = appPrefs,
                 vipStatusStore = vipStatusStore,
                 accountBalanceStore = accountBalanceStore,
+                matchQuotaStore = matchQuotaStore,
+                matchSessionCoordinator = matchSessionCoordinator,
+                callFreeMinStore = callFreeMinStore,
                 chatUnreadStore = chatUnreadStore,
+                payEventStore = payEventStore,
                 sessionPrefs = sessionPrefs,
             )
         }

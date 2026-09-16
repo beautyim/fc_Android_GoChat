@@ -45,10 +45,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -67,12 +65,12 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewFontScale
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.demoproject.ui.designsystem.DemoColors
 import com.example.demoproject.ui.designsystem.DemoGradients
+import com.example.demoproject.ui.designsystem.DemoNavIconButton
 import com.example.demoproject.ui.designsystem.DemoTheme
 import com.example.demoproject.ui.foundation.ComponentSize
 import com.example.demoproject.ui.foundation.IconSize
@@ -205,22 +203,20 @@ private fun VipTopBar(
     modifier: Modifier = Modifier,
 ) {
     val backCd = stringResource(R.string.vip_cd_back)
-    val isRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
     Box(
         modifier = modifier
             .height(ComponentSize.navHeaderHeight)
             .padding(horizontal = Spacing.md),
     ) {
-        Image(
-            painter = painterResource(R.drawable.vip_ic_back),
+        DemoNavIconButton(
+            icon = painterResource(R.drawable.vip_ic_back),
             contentDescription = backCd,
+            onClick = onBack,
             modifier = Modifier
                 .align(Alignment.TopStart)
-                .padding(top = ComponentSize.vipNavIconTop)
-                .size(ComponentSize.vipNavIcon)
-                .graphicsLayer { scaleX = if (isRtl) -1f else 1f }
-                .semantics { contentDescription = backCd }
-                .clickable(onClick = onBack),
+                .padding(top = ComponentSize.vipNavIconTop),
+            iconSize = ComponentSize.vipNavIcon,
+            mirrorInRtl = true,
         )
     }
 }

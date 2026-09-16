@@ -80,7 +80,17 @@ import java.util.concurrent.atomic.AtomicBoolean
 fun CallScreen(
     viewModel: CallViewModel,
     onBack: () -> Unit = {},
+    onOpenMatch: () -> Unit = {},
     onOpenStore: () -> Unit = {},
+    onOpenChatDetail: (conversationId: String, nickname: String) -> Unit = { _, _ -> },
+    onRestartVideoCall: (
+        userId: String,
+        nickname: String,
+        age: Int,
+        avatarUrl: String,
+        videoUrl: String,
+        coverUrl: String,
+    ) -> Unit = { _, _, _, _, _, _ -> },
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
@@ -122,9 +132,9 @@ fun CallScreen(
         onDispose { viewModel.bindActivity(null) }
     }
 
-    // Incoming / outgoing call screen: always request RTC permissions on enter.
-    LaunchedEffect(Unit) {
-        if (!RtcCallPermissions.mediaGranted(context)) {
+    // AMV audience rooms subscribe only and do not need camera/mic runtime permissions.
+    LaunchedEffect(state.isMatchReceiveOnly) {
+        if (!state.isMatchReceiveOnly && !RtcCallPermissions.mediaGranted(context)) {
             permissionLauncher.launch(RtcCallPermissions.required())
         }
     }
@@ -133,10 +143,24 @@ fun CallScreen(
         viewModel.effects.collect { effect ->
             when (effect) {
                 CallEffect.Exit -> onBack()
+                CallEffect.OpenMatch -> onOpenMatch()
                 is CallEffect.ShowMessage -> {
                     Toast.makeText(context, effect.message, Toast.LENGTH_SHORT).show()
                 }
                 CallEffect.OpenStore -> onOpenStore()
+                is CallEffect.OpenChatDetail -> {
+                    onOpenChatDetail(effect.conversationId, effect.nickname)
+                }
+                is CallEffect.RestartVideoCall -> {
+                    onRestartVideoCall(
+                        effect.userId,
+                        effect.nickname,
+                        effect.age,
+                        effect.avatarUrl,
+                        effect.videoUrl,
+                        effect.coverUrl,
+                    )
+                }
             }
         }
     }
@@ -146,9 +170,24 @@ fun CallScreen(
     Box(modifier = Modifier.fillMaxSize()) {
         when (state.phase) {
             CallRingingPhase.InCall -> {
-                CallInCallContent(
-                    state = state,
-                    onIntent = viewModel::onIntent,
+                if (state.isMatchCall) {
+                    MatchingCallInCallContent(
+                        state = state,
+                        onIntent = viewModel::onIntent,
+                    )
+                } else {
+                    CallInCallContent(
+                        state = state,
+                        onIntent = viewModel::onIntent,
+                    )
+                }
+            }
+            CallRingingPhase.Connecting -> {
+                CallConnectingContent(
+                    peerName = state.peerNickname,
+                    peerAvatarUrl = state.peerAvatarUrl,
+                    notice = state.connectingNotice,
+                    onClose = { viewModel.onIntent(CallIntent.Hangup) },
                 )
             }
             else -> {
@@ -177,6 +216,37 @@ fun CallScreen(
                 onPurchaseCoin = { viewModel.onIntent(CallIntent.PurchaseCoinPayGuideCoin(it)) },
                 onPurchaseSale = { viewModel.onIntent(CallIntent.PurchaseCoinPayGuideSale(it)) },
             )
+        }
+
+        state.hangupRecharge?.let { guide ->
+            com.example.demoproject.product.store.CallHangupRechargeSheet(
+                state = guide,
+                onDismiss = { viewModel.onIntent(CallIntent.DismissHangupRecharge) },
+                onPurchaseCoin = { viewModel.onIntent(CallIntent.PurchaseHangupRechargeCoin(it)) },
+                onPurchaseSale = { viewModel.onIntent(CallIntent.PurchaseHangupRechargeSale(it)) },
+            )
+        }
+
+        state.hangupContinue?.let { guide ->
+            com.example.demoproject.product.store.CallHangupContinueSheet(
+                state = guide,
+                onDismiss = { viewModel.onIntent(CallIntent.DismissHangupContinue) },
+                onContinueVideo = { viewModel.onIntent(CallIntent.HangupContinueVideo) },
+                onOpenChat = { viewModel.onIntent(CallIntent.HangupContinueChat) },
+            )
+        }
+
+        if (state.isBalanceOfferGuideVisible) {
+            state.balanceOfferGuide?.let { guide ->
+                com.example.demoproject.product.store.CallBalanceOfferGuideSheet(
+                    state = guide,
+                    onDismiss = { viewModel.onIntent(CallIntent.DismissBalanceOfferGuide) },
+                    onContinueCall = { viewModel.onIntent(CallIntent.BalanceOfferContinue) },
+                    onMoreOptions = { viewModel.onIntent(CallIntent.BalanceOfferMoreOptions) },
+                    onPurchaseVip = { viewModel.onIntent(CallIntent.PurchaseBalanceOfferVip(it)) },
+                    onPurchaseSale = { viewModel.onIntent(CallIntent.PurchaseBalanceOfferSale(it)) },
+                )
+            }
         }
     }
 }

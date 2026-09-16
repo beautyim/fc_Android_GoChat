@@ -13,6 +13,7 @@
     <string name="call_status_resolving_callee">Aranan kişi çözülüyor…</string>
     <string name="call_status_discover_failed_fmt">keşif başarısız: %1$s</string>
     <string name="call_status_no_peer">Aranacak keşif kullanıcısı yok</string>
+    <string name="call_status_match_rooms_unavailable">Eşleşme odalarına bağlanılamadı. Lütfen tekrar deneyin.</string>
     <string name="call_status_creating_fmt">Arama oluşturuluyor hedef=%1$s…</string>
     <string name="call_status_create_failed_fmt">oluşturma başarısız kod=%1$s %2$s</string>
     <string name="call_status_outgoing_fmt">Giden oda=%1$s kanal=%2$s appIdLen=%3$d</string>
@@ -74,6 +75,8 @@
     <string name="call_incall_cd_more">Daha fazla</string>
     <string name="call_incall_cd_gift">Hediyeler</string>
     <string name="call_incall_cd_send">Gönder</string>
+    <string name="call_match_next">Sonraki</string>
+    <string name="call_match_next_countdown">%1$d sn</string>
     <string name="call_incall_cd_flip_camera">Kamerayı çevir</string>
     <string name="call_incall_cd_translate">Çevir</string>
     <string name="call_incall_cd_quick_gift">Hediye gönder %1$s</string>
@@ -88,4 +91,22 @@
     <string name="call_report_title">Şikayet</string>
     <string name="call_report_submit">Gönder</string>
     <string name="call_report_success">Şikayet gönderildi</string>
+
+    <string name="call_balance_offer_cd_float">Yükleme teklifi</string>
+    <string name="call_balance_offer_upgrade">Yükselt</string>
+    <string name="call_balance_offer_vip">VIP</string>
+    <string name="call_balance_offer_more">Daha</string>
+    <string name="call_balance_offer_coins">Jeton</string>
+    <string name="call_balance_offer_off_percent">%1$s OFF</string>
+    <string name="call_balance_offer_off_label">OFF</string>
+    <string name="call_balance_offer_plus">+</string>
+    <string name="call_balance_offer_plus_coins">+%1$d</string>
+    <string name="call_balance_offer_match_x">Eşleşme x%1$d</string>
+    <string name="call_connecting_lead">Bu bir</string>
+    <string name="call_connecting_title">Eşleşme!</string>
+    <string name="call_connecting_liked_fmt">Sen ve %1$s birbirinizi beğendiniz</string>
+    <string name="call_connecting_status">Bağlanıyor...</string>
+    <string name="call_connecting_peer_left">Eyvah! Diğer kişi ayrıldı.\nSenin için yeniden eşleşiyoruz...</string>
+    <string name="call_connecting_poor_network">Ağ bağlantısı zayıf.\nBekle - Bağlanmaya çalışıyoruz...</string>
+    <string name="call_connecting_cd_close">Bağlantı ekranını kapat</string>
 </resources>

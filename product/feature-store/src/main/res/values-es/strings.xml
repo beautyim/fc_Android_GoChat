@@ -27,4 +27,15 @@
     <string name="store_guide_my_coins">Mis monedas: %1$d</string>
     <string name="store_guide_low_balance">Saldo bajo, por favor recarga</string>
     <string name="store_guide_cd_close">Cerrar</string>
+    <string name="call_balance_offer_will_end_prefix">!!! La llamada se cortará en</string>
+    <string name="call_balance_offer_seconds">%1$ds</string>
+    <string name="call_balance_offer_will_end_suffix">. Consigue monedas para seguir conectado...</string>
+    <string name="call_balance_offer_continue_cta">Consigue monedas y continúa la llamada</string>
+    <string name="call_balance_offer_more_options">Más opciones</string>
+    <string name="call_hangup_recharge_speech">Me gustaría seguir hablando contigo—¿te parece?</string>
+    <string name="call_hangup_recharge_title">Recarga para continuar la llamada</string>
+    <string name="call_hangup_continue_waiting">Ella todavía te está esperando</string>
+    <string name="call_hangup_continue_subtitle">Habla por video con ella ahora, no la hagas esperar demasiado</string>
+    <string name="call_hangup_continue_video_cta">Continuar la videollamada con ella</string>
+    <string name="call_hangup_continue_chat_cta">Chatea con ella ahora</string>
 </resources>

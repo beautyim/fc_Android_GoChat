@@ -4,6 +4,8 @@ import com.example.demoproject.platform.data.network.dto.GooglePayCancelRequestD
 import com.example.demoproject.platform.data.network.dto.GooglePayCheckRequestDto
 import com.example.demoproject.platform.data.network.dto.GooglePayCreateRequestDto
 import com.example.demoproject.platform.data.network.dto.GooglePayCreateResponseDto
+import com.example.demoproject.platform.data.network.dto.GooglePayCheckResponseDto
+import com.example.demoproject.platform.data.network.dto.GooglePayEventAckRequestDto
 import com.example.demoproject.platform.data.network.dto.GooglePayVerifyRequestDto
 import com.example.demoproject.platform.network.dto.ApiResponse
 import kotlinx.serialization.json.JsonObject
@@ -14,7 +16,7 @@ interface GooglePayApi {
 
     /** `google/check` — validate that the requested payment type is allowed for this product. */
     @POST("google/check")
-    suspend fun check(@Body body: GooglePayCheckRequestDto): ApiResponse<JsonObject?>
+    suspend fun check(@Body body: GooglePayCheckRequestDto): ApiResponse<GooglePayCheckResponseDto>
 
     /** `google/create` — create a Google Play order before launching BillingClient. */
     @POST("google/create")
@@ -27,4 +29,8 @@ interface GooglePayApi {
     /** `google/verify` — verify the Play purchase token and deliver entitlement. */
     @POST("google/verify")
     suspend fun verify(@Body body: GooglePayVerifyRequestDto): ApiResponse<JsonObject?>
+
+    /** `google/event-ack` — acknowledge a server-delivered payment conversion event. */
+    @POST("google/event-ack")
+    suspend fun acknowledgeEvent(@Body body: GooglePayEventAckRequestDto): ApiResponse<Unit?>
 }

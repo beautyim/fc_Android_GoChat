@@ -3,6 +3,7 @@ package com.example.demoproject.platform.data.network.dto
 import com.example.demoproject.platform.data.network.serializer.JsonAnyAsStringSerializer
 import com.example.demoproject.platform.data.network.serializer.UserInfosMapSerializer
 import com.example.demoproject.platform.network.serializer.LenientIntSerializer
+import com.example.demoproject.platform.network.serializer.LenientLongSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlin.math.max
@@ -22,9 +23,34 @@ data class ConversationListResponseDto(
     val unread: Int = 0,
     @Serializable(with = LenientIntSerializer::class)
     @SerialName("follow_unread") val followUnread: Int = 0,
+    @SerialName("pay_event_list") val payEventList: List<PayEventDto> = emptyList(),
 ) {
     val hasMore: Boolean get() = hasMoreRaw == 1
 }
+
+@Serializable
+data class PayEventDto(
+    @SerialName("event_id")
+    @Serializable(with = LenientLongSerializer::class)
+    val eventId: Long = 0L,
+    @SerialName("transaction_id")
+    val transactionId: String = "",
+    val currency: String = "",
+    @Serializable(with = JsonAnyAsStringSerializer::class)
+    val value: String = "",
+    @Serializable(with = JsonAnyAsStringSerializer::class)
+    val money: String = "",
+    @SerialName("goods_id")
+    @Serializable(with = LenientLongSerializer::class)
+    val goodsId: Long = 0L,
+    val items: PayEventItemsDto? = null,
+)
+
+@Serializable
+data class PayEventItemsDto(
+    @SerialName("item_id")
+    val itemId: String = "",
+)
 
 @Serializable
 data class ConversationDto(

@@ -44,4 +44,6 @@ dependencies {
     ksp(libs.room.compiler)
     implementation(libs.sqlcipher.android)
     implementation(libs.tink.android)
+
+    testImplementation(libs.junit)
 }

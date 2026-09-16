@@ -10,7 +10,6 @@ import com.example.demoproject.platform.callkit.CallState
 import com.example.demoproject.platform.callkit.matchesCallRoomId
 import com.example.demoproject.platform.callkit.signaling.EndReason
 import com.example.demoproject.platform.callkit.signaling.OutgoingInviteRequest
-import com.example.demoproject.platform.callkit.signaling.SignalingCoinOffer
 import com.example.demoproject.platform.callkit.signaling.SignalingEvent
 import com.example.demoproject.platform.common.log.AppLogger
 import com.example.demoproject.platform.data.billing.StorePurchaseLauncherHolder
@@ -25,19 +24,25 @@ import com.example.demoproject.platform.data.repository.BillingPaymentType
 import com.example.demoproject.platform.data.repository.BillingProductType
 import com.example.demoproject.platform.data.repository.CallCreateResult
 import com.example.demoproject.platform.data.repository.CallRenewTokenResult
+import com.example.demoproject.platform.data.repository.MatchStartResult
 import com.example.demoproject.platform.data.repository.RechargePageData
-import com.example.demoproject.platform.data.repository.RechargeProduct
-import com.example.demoproject.platform.data.repository.RechargeSaleItem
 import com.example.demoproject.platform.data.repository.StorePurchaseRequest
 import com.example.demoproject.platform.data.repository.StorePurchaseResult
+import com.example.demoproject.platform.data.repository.resolveCallBalanceAlertRemainingSeconds
+import com.example.demoproject.platform.data.repository.resolveMatchBalanceAlertRemainingSeconds
 import com.example.demoproject.platform.network.result.AppResult
 import com.example.demoproject.platform.network.result.INSUFFICIENT_BALANCE_ERROR_CODE
 import com.example.demoproject.platform.network.result.MSG_SEND_INSUFFICIENT_BALANCE_ERROR_CODE
 import com.example.demoproject.platform.network.result.isInsufficientBalance
 import com.example.demoproject.platform.rtc.api.RtcCallPermissions
+import com.example.demoproject.platform.rtc.api.RtcConnectionState
 import com.example.demoproject.platform.rtc.api.RtcEvent
+import com.example.demoproject.product.store.CallBalanceOfferGuideUiState
+import com.example.demoproject.product.store.CallHangupContinueUiState
+import com.example.demoproject.product.store.CallHangupRechargeUiState
 import com.example.demoproject.product.store.CoinPayGuideUiState
 import com.example.demoproject.product.store.R as StoreR
+import com.example.demoproject.product.store.toCallHangupRechargeUiState
 import com.example.demoproject.product.store.toCoinPayGuideUiState
 import com.example.demoproject.ui.designsystem.gift.GiftSvgaPreloader
 import kotlin.math.max
@@ -58,24 +63,37 @@ import kotlinx.coroutines.yield
 class CallViewModel(
     application: Application,
     private val targetUserId: String = "",
+    initialIsMatchCall: Boolean = false,
     initialNickname: String = "",
     initialAvatarUrl: String = "",
     initialAge: Int = 0,
     initialVideoUrl: String = "",
     initialCoverUrl: String = "",
+    initialMatchEntryId: String = "",
 ) : AndroidViewModel(application) {
     private val runtime = NetworkRuntime.get(application)
+    private val matchEntry = runtime.matchSessionCoordinator.consumeCallEntry(initialMatchEntryId)
     private val _uiState = MutableStateFlow(
         CallUiState(
-            peerUserId = targetUserId,
-            peerNickname = initialNickname,
-            peerAge = initialAge,
-            peerAvatarUrl = initialAvatarUrl.toPicUrlOrNull().orEmpty()
-                .ifBlank { initialAvatarUrl },
+            isMatchCall = initialIsMatchCall,
+            phase = if (matchEntry != null) CallRingingPhase.Connecting else CallRingingPhase.Preparing,
+            peerUserId = matchEntry?.peer?.userId ?: targetUserId,
+            peerNickname = matchEntry?.peer?.nickname ?: initialNickname,
+            peerAge = matchEntry?.peer?.age ?: initialAge,
+            peerAvatarUrl = (matchEntry?.peer?.avatarUrl ?: initialAvatarUrl)
+                .toPicUrlOrNull().orEmpty()
+                .ifBlank { matchEntry?.peer?.avatarUrl ?: initialAvatarUrl },
             videoUrl = initialVideoUrl.toChatBinaryUrlOrNull().orEmpty()
                 .ifBlank { initialVideoUrl },
             coverUrl = initialCoverUrl.toPicUrlOrNull().orEmpty()
                 .ifBlank { initialCoverUrl },
+            callRoomId = matchEntry?.room?.roomId.orEmpty(),
+            matchSessionId = matchEntry?.matchSessionId ?: 0L,
+            matchId = matchEntry?.matchId,
+            matchTimeSeconds = matchEntry?.room?.matchTimeSeconds ?: 0,
+            nextTimeSeconds = matchEntry?.room?.nextTimeSeconds ?: 0,
+            isMatchReceiveOnly = matchEntry?.room?.isReceiveOnly == true,
+            isFreeCall = false,
         ),
     )
     val uiState: StateFlow<CallUiState> = _uiState.asStateFlow()
@@ -95,6 +113,9 @@ class CallViewModel(
     private var answerStatusJob: Job? = null
     private var renewJob: Job? = null
     private var giftRequestJob: Job? = null
+    private var matchNextJob: Job? = null
+    private var matchNextTransitionActive: Boolean = false
+    private var matchSessionReleased: Boolean = false
     private var inCallBootstrapped: Boolean = false
     private var stopTokenRenewal: Boolean = false
     /** When true, dismissing [CallUiState.coinPayGuide] also exits the call screen. */
@@ -103,7 +124,13 @@ class CallViewModel(
     init {
         viewModelScope.launch {
             runtime.accountBalanceStore.coins.collect { coins ->
-                _uiState.update { it.copy(coinBalance = coins) }
+                _uiState.update {
+                    it.copy(
+                        coinBalance = coins,
+                        coinPayGuide = it.coinPayGuide?.copy(balance = coins),
+                        balanceOfferGuide = it.balanceOfferGuide?.copy(balance = coins),
+                    )
+                }
             }
         }
         viewModelScope.launch {
@@ -135,7 +162,11 @@ class CallViewModel(
             }
         }
         viewModelScope.launch {
-            maybeStartOutgoing()
+            if (initialIsMatchCall) {
+                startDirectMatchCall()
+            } else {
+                maybeStartOutgoing()
+            }
         }
     }
 
@@ -146,6 +177,7 @@ class CallViewModel(
     fun onIntent(intent: CallIntent) {
         when (intent) {
             CallIntent.Hangup -> hangup()
+            CallIntent.NextMatch -> nextMatch()
             CallIntent.Answer -> answer()
             CallIntent.Report -> openReportSheet()
             CallIntent.DismissReport -> _uiState.update {
@@ -178,6 +210,80 @@ class CallViewModel(
             CallIntent.DismissCoinPayGuide -> dismissCoinPayGuide()
             is CallIntent.PurchaseCoinPayGuideCoin -> purchaseCoinPayGuide(intent.offerId, isSale = false)
             is CallIntent.PurchaseCoinPayGuideSale -> purchaseCoinPayGuide(intent.offerId, isSale = true)
+            CallIntent.DismissHangupRecharge -> dismissHangupRecharge()
+            is CallIntent.PurchaseHangupRechargeCoin ->
+                purchaseHangupRecharge(intent.offerId, isSale = false)
+            is CallIntent.PurchaseHangupRechargeSale ->
+                purchaseHangupRecharge(intent.offerId, isSale = true)
+            CallIntent.DismissHangupContinue -> dismissHangupContinue()
+            CallIntent.HangupContinueVideo -> continueHangupVideoCall()
+            CallIntent.HangupContinueChat -> openHangupChat()
+            CallIntent.OpenBalanceOfferGuide -> openBalanceOfferGuide(fromUser = true)
+            CallIntent.DismissBalanceOfferGuide -> dismissBalanceOfferGuide()
+            CallIntent.BalanceOfferContinue -> purchasePrimaryBalanceOffer()
+            CallIntent.BalanceOfferMoreOptions -> openBalanceOfferMoreOptions()
+            is CallIntent.PurchaseBalanceOfferVip ->
+                purchaseBalanceOffer(intent.offerId, isVip = true)
+            is CallIntent.PurchaseBalanceOfferSale ->
+                purchaseBalanceOffer(intent.offerId, isVip = false)
+        }
+    }
+
+    private fun selfRtcUid(): Int =
+        runtime.sessionManager.currentUserId?.toIntOrNull()?.takeIf { it > 0 } ?: 0
+
+    private suspend fun startDirectMatchCall() {
+        val entry = matchEntry
+        val room = entry?.room
+        if (entry == null || room == null || !room.canJoinDirectly) {
+            val message = str(R.string.call_status_no_peer)
+            runtime.matchSessionCoordinator.publishContinuation(
+                com.example.demoproject.platform.data.match.MatchContinuation.Failure(message),
+            )
+            _effects.send(CallEffect.OpenMatch)
+            return
+        }
+        val coordinator = CallKitHolder.coordinator
+        if (coordinator == null) {
+            val message = str(R.string.call_status_coordinator_missing)
+            runtime.matchSessionCoordinator.publishContinuation(
+                com.example.demoproject.platform.data.match.MatchContinuation.Failure(message),
+            )
+            _effects.send(CallEffect.OpenMatch)
+            return
+        }
+        // Match tokens are signed for our own uid, and `room_info` usually omits it. Joining with
+        // uid=0 makes Agora reject the token (onError 110 / invalid-token disconnect).
+        val localRtcUid = room.localRtcUid.takeIf { it > 0 } ?: selfRtcUid()
+        if (localRtcUid <= 0) {
+            val message = str(R.string.call_status_no_peer)
+            runtime.matchSessionCoordinator.publishContinuation(
+                com.example.demoproject.platform.data.match.MatchContinuation.Failure(message),
+            )
+            _effects.send(CallEffect.OpenMatch)
+            return
+        }
+        isOutgoingCaller = true
+        fencingToken = room.fencingToken
+        roomSessionId = room.roomSessionId.takeIf { it > 0L }
+            ?: room.roomId.toLongOrNull()?.takeIf { it > 0L }
+            ?: 0L
+        coordinator.resetIfTerminal()
+        coordinator.startDirectMatchCall(
+            callId = room.roomId,
+            channelId = room.channelId,
+            uid = localRtcUid,
+            token = room.rtcToken,
+            rtcAppId = room.rtcAppId,
+            roomSessionId = roomSessionId,
+            fencingToken = room.fencingToken,
+            receiveOnly = room.isReceiveOnly,
+        )
+        _uiState.update {
+            it.copy(
+                phase = CallRingingPhase.Connecting,
+                rtcSurfacesActive = true,
+            )
         }
     }
 
@@ -263,6 +369,7 @@ class CallViewModel(
                         coverUrl = show?.coverUrl?.takeIf { u -> !u.isNullOrBlank() }
                             ?: it.coverUrl,
                         callRoomId = room.effectiveHttpRoomId,
+                        isFreeCall = room.isFreeCall,
                     )
                 }
                 coordinator.resetIfTerminal()
@@ -342,6 +449,21 @@ class CallViewModel(
 
     private fun onRtcEvent(event: RtcEvent) {
         when (event) {
+            is RtcEvent.ConnectionStateChanged -> {
+                _uiState.update {
+                    if (!it.isMatchCall || it.phase != CallRingingPhase.Connecting) {
+                        it
+                    } else {
+                        it.copy(
+                            connectingNotice = if (event.state == RtcConnectionState.Reconnecting) {
+                                CallConnectingNotice.PoorNetwork
+                            } else {
+                                null
+                            },
+                        )
+                    }
+                }
+            }
             is RtcEvent.JoinedChannel -> {
                 _uiState.update { it.copy(rtcSurfacesActive = true) }
             }
@@ -359,6 +481,7 @@ class CallViewModel(
                         // Enter in-call UI only after the remote peer joins the RTC channel.
                         phase = if (enterInCall) CallRingingPhase.InCall else it.phase,
                         rtcSurfacesActive = true,
+                        connectingNotice = null,
                     )
                 }
                 if (_uiState.value.phase == CallRingingPhase.InCall) {
@@ -428,6 +551,7 @@ class CallViewModel(
                             ?: it.coverUrl,
                         callRoomId = state.inviteId.ifBlank { it.callRoomId },
                         errorMessage = null,
+                        isFreeCall = state.callFreeMin > 0,
                     )
                 }
             }
@@ -461,8 +585,11 @@ class CallViewModel(
                 roomSessionId = state.roomSessionId.takeIf { it > 0L } ?: roomSessionId
                 _uiState.update {
                     it.copy(
-                        // Stay on Incoming/Outgoing until remote peer joins — never show Connecting.
-                        phase = phaseWhileWaitingForRemote(it),
+                        phase = if (it.isMatchCall && it.remoteRtcUid <= 0) {
+                            CallRingingPhase.Connecting
+                        } else {
+                            phaseWhileWaitingForRemote(it)
+                        },
                         callRoomId = state.callId.ifBlank { it.callRoomId },
                         rtcSurfacesActive = true,
                     )
@@ -477,7 +604,11 @@ class CallViewModel(
                 roomSessionId = state.roomSessionId.takeIf { it > 0L } ?: roomSessionId
                 _uiState.update {
                     it.copy(
-                        phase = phaseWhileWaitingForRemote(it),
+                        phase = if (it.isMatchCall && it.remoteRtcUid <= 0) {
+                            CallRingingPhase.Connecting
+                        } else {
+                            phaseWhileWaitingForRemote(it)
+                        },
                         callRoomId = state.callId.ifBlank { it.callRoomId },
                         rtcSurfacesActive = true,
                     )
@@ -487,24 +618,81 @@ class CallViewModel(
                 }
             }
             is CallState.Ended -> {
+                // Capture before stopInCallJobs clears the in-call bootstrap flag.
+                val wasConnected = inCallBootstrapped
+                val wasMatchConnecting =
+                    _uiState.value.isMatchCall &&
+                        _uiState.value.phase == CallRingingPhase.Connecting &&
+                        !wasConnected
+                if (matchNextTransitionActive) {
+                    stopInCallJobs()
+                    _uiState.update {
+                        it.copy(rtcSurfacesActive = false, remoteRtcUid = 0)
+                    }
+                    return
+                }
+                if (_uiState.value.isMatchCall &&
+                    state.reason == EndReason.RemoteHangup &&
+                    !matchSessionReleased
+                ) {
+                    stopInCallJobs()
+                    _uiState.update {
+                        it.copy(
+                            phase = CallRingingPhase.Connecting,
+                            connectingNotice = if (wasMatchConnecting) {
+                                CallConnectingNotice.PeerLeft
+                            } else {
+                                null
+                            },
+                            rtcSurfacesActive = false,
+                            remoteRtcUid = 0,
+                        )
+                    }
+                    matchNextTransitionActive = true
+                    viewModelScope.launch {
+                        if (wasMatchConnecting) delay(REMATCH_DELAY_MS)
+                        performMatchNext(endCurrentCall = false, callConnected = wasConnected)
+                    }
+                    return
+                }
+                val wasConnectedFreeCall = _uiState.value.isFreeCall && wasConnected
+                val showHangupRecharge =
+                    state.reason == EndReason.InsufficientBalance && wasConnected
                 stopInCallJobs()
+                // Hangup / server end must leave the call page — except insufficient-balance
+                // after a connected call, which opens the hangup recharge sheet first.
+                exitAfterCoinPayGuideDismiss = false
                 _uiState.update {
                     it.copy(
                         phase = CallRingingPhase.Ended,
                         rtcSurfacesActive = false,
                         remoteRtcUid = 0,
+                        showBalanceFloat = false,
+                        isBalanceOfferGuideVisible = false,
+                        balanceOfferGuide = null,
+                        coinPayGuide = null,
+                        hangupRecharge = null,
+                        hangupContinue = null,
+                        isMoreSheetVisible = false,
+                        isGiftSheetVisible = false,
+                        isReportSheetVisible = false,
+                        showGiftQuickBar = false,
                     )
                 }
-                when {
-                    state.reason == EndReason.InsufficientBalance -> {
-                        exitAfterCoinPayGuideDismiss = true
-                        presentCoinPayGuide(fromCallback = null)
+                refreshCallFreeMinAfterCall(wasConnectedFreeCall = wasConnectedFreeCall)
+                if (_uiState.value.isMatchCall) {
+                    viewModelScope.launch {
+                        endAndCloseMatchSession()
+                        if (showHangupRecharge) {
+                            presentHangupRecharge()
+                        } else {
+                            _effects.send(CallEffect.Exit)
+                        }
                     }
-                    _uiState.value.coinPayGuide != null -> {
-                        // Keep screen until the user dismisses the recharge guide.
-                        exitAfterCoinPayGuideDismiss = true
-                    }
-                    else -> viewModelScope.launch { _effects.send(CallEffect.Exit) }
+                } else if (showHangupRecharge) {
+                    presentHangupRecharge()
+                } else {
+                    viewModelScope.launch { _effects.send(CallEffect.Exit) }
                 }
             }
             CallState.Idle -> {
@@ -569,7 +757,6 @@ class CallViewModel(
                     is AppResult.Success -> {
                         if (!result.data) {
                             AppLogger.d(TAG, "heartbeat inactive roomId=$roomId")
-                            // Ended(InsufficientBalance) opens CoinPayGuide; exit on dismiss.
                             CallKitHolder.coordinator?.endBySystem(EndReason.InsufficientBalance)
                             return@launch
                         }
@@ -650,9 +837,16 @@ class CallViewModel(
         durationJob = viewModelScope.launch {
             while (isActive) {
                 delay(1_000)
-                _uiState.update { it.copy(callDurationSec = it.callDurationSec + 1) }
+                _uiState.update {
+                    it.copy(
+                        callDurationSec = it.callDurationSec + 1,
+                    )
+                }
+                refreshBalanceOfferGates()
             }
         }
+        // Re-evaluate immediately in case a_type=7 arrived before InCall / ticker start.
+        refreshBalanceOfferGates()
     }
 
     private fun stopInCallJobs() {
@@ -664,6 +858,31 @@ class CallViewModel(
         giftCatalogJob?.cancel()
         inCallBootstrapped = false
         stopTokenRenewal = false
+    }
+
+    /**
+     * Re-fetch `call_free_min` after hangup so Online free badges drop once the free quota
+     * is consumed. Optimistic local decrement covers slow `/app/open`.
+     */
+    private fun refreshCallFreeMinAfterCall(wasConnectedFreeCall: Boolean) {
+        if (wasConnectedFreeCall) {
+            val current = runtime.callFreeMinStore.callFreeMin.value
+            runtime.callFreeMinStore.update((current - 1).coerceAtLeast(0))
+        }
+        viewModelScope.launch {
+            when (
+                val open = runtime.appSessionRepository.openApp(hasProxy = false, hasVpn = false)
+            ) {
+                is AppResult.Success -> {
+                    val data = open.data ?: return@launch
+                    runtime.callFreeMinStore.update(data.callFreeMin)
+                    runtime.matchQuotaStore.update(matchFreeCount = data.matchFreeCount)
+                    runtime.accountBalanceStore.update(data.accountMoney)
+                }
+                is AppResult.Failure ->
+                    AppLogger.d(TAG, "refresh call_free_min after call failed: ${open.message}")
+            }
+        }
     }
 
     private fun likePeer() {
@@ -889,11 +1108,17 @@ class CallViewModel(
     private fun onSignalingUxEvent(event: SignalingEvent) {
         when (event) {
             is SignalingEvent.BalanceAlert -> {
-                if (!matchesActiveRoom(event.roomKey, event.roomSessionId)) return
+                // Wallet is account-wide — refresh even if this alert is not for the active room UX.
                 if (event.balance >= 0) {
                     runtime.accountBalanceStore.update(event.balance)
                 }
-                viewModelScope.launch { showBalanceAlertGuide(event) }
+                if (!matchesActiveRoom(event.roomKey, event.roomSessionId)) return
+                applyBalanceAlert(event)
+            }
+            is SignalingEvent.BalanceSync -> {
+                if (event.balance >= 0) {
+                    runtime.accountBalanceStore.update(event.balance)
+                }
             }
             is SignalingEvent.InCallChat -> {
                 if (!matchesActiveRoom(event.roomKey)) return
@@ -902,6 +1127,15 @@ class CallViewModel(
             is SignalingEvent.PeerMaskStatus -> {
                 if (!matchesActiveRoom(event.roomKey)) return
                 _uiState.update { it.copy(peerMasked = event.masked) }
+            }
+            is SignalingEvent.Error -> {
+                _uiState.update {
+                    if (it.isMatchCall && it.phase == CallRingingPhase.Connecting) {
+                        it.copy(connectingNotice = CallConnectingNotice.PoorNetwork)
+                    } else {
+                        it
+                    }
+                }
             }
             else -> Unit
         }
@@ -954,6 +1188,185 @@ class CallViewModel(
         if (!exitAfterCoinPayGuideDismiss) return
         exitAfterCoinPayGuideDismiss = false
         viewModelScope.launch { _effects.send(CallEffect.Exit) }
+    }
+
+    private fun presentHangupRecharge() {
+        val snapshot = _uiState.value
+        _uiState.update {
+            it.copy(
+                hangupRecharge = CallHangupRechargeUiState(
+                    isLoading = true,
+                    peerNickname = snapshot.peerNickname,
+                    peerAge = snapshot.peerAge,
+                    peerAvatarUrl = snapshot.peerAvatarUrl,
+                ),
+                hangupContinue = null,
+            )
+        }
+        viewModelScope.launch {
+            yield()
+            val page = resolveCoinPayGuidePage(fromCallback = null)
+            val fallbackLabel =
+                getApplication<Application>().getString(StoreR.string.store_super_discount)
+            val ui = page?.toCallHangupRechargeUiState(
+                peerNickname = snapshot.peerNickname,
+                peerAge = snapshot.peerAge,
+                peerAvatarUrl = snapshot.peerAvatarUrl,
+                fallbackSuperDiscountLabel = fallbackLabel,
+                fromType = GiftSendRequestDto.FROM_TYPE_CALL,
+            )
+            if (ui == null || ui.isCatalogEmpty) {
+                _uiState.update { it.copy(hangupRecharge = null) }
+                _effects.send(CallEffect.OpenStore)
+                _effects.send(CallEffect.Exit)
+                return@launch
+            }
+            _uiState.update { it.copy(hangupRecharge = ui.copy(isLoading = false)) }
+        }
+    }
+
+    private fun dismissHangupRecharge() {
+        _uiState.update { it.copy(hangupRecharge = null) }
+        viewModelScope.launch { _effects.send(CallEffect.Exit) }
+    }
+
+    private fun purchaseHangupRecharge(offerId: Long, isSale: Boolean) {
+        val guide = _uiState.value.hangupRecharge ?: return
+        if (guide.purchasingOfferId != null) return
+        val sale = guide.saleOffers.firstOrNull { it.id == offerId }
+        val coin = guide.coinOffers.firstOrNull { it.id == offerId }
+        val sku: String
+        val goodsId: Long
+        when {
+            isSale && sale != null -> {
+                sku = sale.sku
+                goodsId = sale.id
+            }
+            !isSale && coin != null -> {
+                sku = coin.sku
+                goodsId = coin.id
+            }
+            else -> return
+        }
+        val activity = hostActivity
+        if (activity == null) {
+            viewModelScope.launch {
+                _effects.send(
+                    CallEffect.ShowMessage(
+                        getApplication<Application>().getString(StoreR.string.store_status_no_activity),
+                    ),
+                )
+            }
+            return
+        }
+        val launcher = StorePurchaseLauncherHolder.launcher
+        if (launcher == null) {
+            viewModelScope.launch {
+                _effects.send(
+                    CallEffect.ShowMessage(
+                        getApplication<Application>()
+                            .getString(StoreR.string.store_status_launcher_missing),
+                    ),
+                )
+            }
+            return
+        }
+        val request = StorePurchaseRequest(
+            uiId = "call-hangup-recharge-$goodsId",
+            goodsId = goodsId,
+            productId = sku,
+            productType = BillingProductType.Coins,
+            paymentType = BillingPaymentType.GooglePlay,
+            fromType = guide.fromType ?: GiftSendRequestDto.FROM_TYPE_CALL,
+        )
+        viewModelScope.launch {
+            _uiState.update {
+                it.copy(hangupRecharge = it.hangupRecharge?.copy(purchasingOfferId = offerId))
+            }
+            launcher.launch(activity, request) { result ->
+                when (result) {
+                    is StorePurchaseResult.Success -> {
+                        val peer = _uiState.value
+                        _uiState.update {
+                            it.copy(
+                                hangupRecharge = null,
+                                hangupContinue = CallHangupContinueUiState(
+                                    peerNickname = peer.peerNickname,
+                                    peerAge = peer.peerAge,
+                                    peerAvatarUrl = peer.peerAvatarUrl,
+                                    peerUserId = peer.peerUserId,
+                                    videoUrl = peer.videoUrl,
+                                    coverUrl = peer.coverUrl,
+                                ),
+                            )
+                        }
+                    }
+                    is StorePurchaseResult.Canceled -> {
+                        _uiState.update {
+                            it.copy(
+                                hangupRecharge = it.hangupRecharge?.copy(purchasingOfferId = null),
+                            )
+                        }
+                    }
+                    is StorePurchaseResult.Failed -> {
+                        _uiState.update {
+                            it.copy(
+                                hangupRecharge = it.hangupRecharge?.copy(purchasingOfferId = null),
+                            )
+                        }
+                        viewModelScope.launch {
+                            _effects.send(CallEffect.ShowMessage(result.message))
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private fun dismissHangupContinue() {
+        _uiState.update { it.copy(hangupContinue = null) }
+        viewModelScope.launch { _effects.send(CallEffect.Exit) }
+    }
+
+    private fun continueHangupVideoCall() {
+        val continueState = _uiState.value.hangupContinue ?: return
+        val userId = continueState.peerUserId.ifBlank { _uiState.value.peerUserId }
+        if (userId.isBlank()) {
+            dismissHangupContinue()
+            return
+        }
+        _uiState.update { it.copy(hangupContinue = null) }
+        viewModelScope.launch {
+            _effects.send(
+                CallEffect.RestartVideoCall(
+                    userId = userId,
+                    nickname = continueState.peerNickname,
+                    age = continueState.peerAge,
+                    avatarUrl = continueState.peerAvatarUrl,
+                    videoUrl = continueState.videoUrl,
+                    coverUrl = continueState.coverUrl,
+                ),
+            )
+        }
+    }
+
+    private fun openHangupChat() {
+        val continueState = _uiState.value.hangupContinue ?: return
+        val conversationId = continueState.peerUserId.ifBlank { _uiState.value.peerUserId }
+        if (conversationId.isBlank()) {
+            dismissHangupContinue()
+            return
+        }
+        val nickname = continueState.peerNickname
+        _uiState.update { it.copy(hangupContinue = null) }
+        viewModelScope.launch {
+            _effects.send(
+                CallEffect.OpenChatDetail(
+                    conversationId = conversationId,
+                    nickname = nickname,
+                ),
+            )
+        }
     }
 
     private fun maybeShowCoinPayGuide(failure: AppResult.Failure) {
@@ -1038,29 +1451,267 @@ class CallViewModel(
         }
     }
 
-    private suspend fun showBalanceAlertGuide(event: SignalingEvent.BalanceAlert) {
+    private fun applyBalanceAlert(event: SignalingEvent.BalanceAlert) {
         val fallback = getApplication<Application>().getString(StoreR.string.store_super_discount)
-        var page = RechargePageData(
-            balance = event.balance,
-            hotProducts = listOfNotNull(event.payItem?.toRechargeProduct()),
-            products = emptyList(),
-            saleItems = listOfNotNull(event.salePayItem?.toRechargeSaleItem()),
-        )
-        if (page.isEmpty) {
-            when (val full = runtime.coinRepository.getRechargePage()) {
-                is AppResult.Success -> page = page.withCarouselFrom(full.data)
-                is AppResult.Failure -> Unit
-            }
+        val state = _uiState.value
+        val liveRemaining = if (state.isMatchCall) {
+            resolveMatchBalanceAlertRemainingSeconds(
+                totalDurationSeconds = event.totalDurationSeconds,
+                elapsedSeconds = state.callDurationSec,
+            )
+        } else {
+            resolveCallBalanceAlertRemainingSeconds(
+                isFreeCall = state.isFreeCall,
+                rawDurationSeconds = event.remainingSeconds,
+                totalDurationSeconds = event.totalDurationSeconds,
+                elapsedSeconds = state.callDurationSec,
+            )
         }
-        val guide = page.toCoinPayGuideUiState(
-            fallbackSuperDiscountLabel = fallback,
-            fromType = GiftSendRequestDto.FROM_TYPE_CALL,
+        val offer = event.toCallBalanceOffer(
+            liveRemainingSeconds = liveRemaining,
+            isFreeCall = _uiState.value.isFreeCall,
+            fallbackSaleBadge = fallback,
         )
-        if (guide.isCatalogEmpty) {
-            _effects.send(CallEffect.OpenStore)
+        _uiState.update {
+            it.copy(
+                balanceAlertRoomKey = event.roomKey,
+                balanceAlertRawDuration = event.remainingSeconds,
+                balanceAlertTotalDuration = event.totalDurationSeconds,
+                balanceAlertSaleThreshold = event.saleRechargeAlertTimeSeconds,
+                balanceAlertRechargeThreshold = event.rechargeAlertTimeSeconds,
+                balanceOffer = offer,
+            )
+        }
+        refreshBalanceOfferGates()
+    }
+
+    private fun refreshBalanceOfferGates() {
+        val state = _uiState.value
+        if (state.balanceAlertRoomKey.isBlank() || state.balanceOffer == null) return
+        if (state.phase != CallRingingPhase.InCall) {
+            _uiState.update { it.copy(showBalanceFloat = false) }
             return
         }
-        _uiState.update { it.copy(coinPayGuide = guide) }
+        val liveRemaining = if (state.isMatchCall) {
+            resolveMatchBalanceAlertRemainingSeconds(
+                totalDurationSeconds = state.balanceAlertTotalDuration,
+                elapsedSeconds = state.callDurationSec,
+            )
+        } else {
+            resolveCallBalanceAlertRemainingSeconds(
+                isFreeCall = state.isFreeCall,
+                rawDurationSeconds = state.balanceAlertRawDuration,
+                totalDurationSeconds = state.balanceAlertTotalDuration,
+                elapsedSeconds = state.callDurationSec,
+            )
+        }
+        val offer = state.balanceOffer.copy(remainingSeconds = liveRemaining)
+        val showFloat = if (state.isMatchCall) {
+            shouldShowMatchBalanceAlertFloatingWindow(
+                remainingSeconds = liveRemaining,
+                saleRechargeAlertTimeSeconds = state.balanceAlertSaleThreshold,
+            )
+        } else {
+            shouldShowBalanceAlertFloatingWindow(
+                remainingSeconds = liveRemaining,
+                elapsedSeconds = state.callDurationSec,
+                isFreeCall = state.isFreeCall,
+                freeCallTriggerConsumed = state.freeCallTriggerConsumed,
+            )
+        }
+        val shouldAuto = if (state.isMatchCall &&
+            state.balanceAlertRechargeThreshold <= 0
+        ) {
+            false
+        } else {
+            shouldAutoShowBalanceAlertOffer(
+                remainingSeconds = liveRemaining,
+                rechargeAlertTimeSeconds = state.balanceAlertRechargeThreshold,
+            )
+        }
+        val alreadyAuto = state.autoShownBalanceOfferRoomId == state.balanceAlertRoomKey
+        _uiState.update {
+            it.copy(
+                balanceOffer = offer,
+                showBalanceFloat = showFloat &&
+                    !it.isBalanceOfferGuideVisible &&
+                    it.coinPayGuide == null,
+                balanceOfferGuide = it.balanceOfferGuide?.copy(
+                    remainingSeconds = liveRemaining,
+                    balance = it.coinBalance,
+                ),
+            )
+        }
+        if (shouldAuto && !alreadyAuto) {
+            openBalanceOfferGuide(fromUser = false)
+        }
+    }
+
+    private fun openBalanceOfferGuide(fromUser: Boolean) {
+        val state = _uiState.value
+        val offer = state.balanceOffer ?: return
+        if (state.coinPayGuide != null) return
+        val roomKey = state.balanceAlertRoomKey
+        if (!fromUser && state.autoShownBalanceOfferRoomId == roomKey) return
+        if (state.isBalanceOfferGuideVisible) {
+            if (!fromUser) {
+                _uiState.update { it.copy(autoShownBalanceOfferRoomId = roomKey) }
+            }
+            return
+        }
+        val guide = CallBalanceOfferGuideUiState(
+            balance = state.coinBalance,
+            remainingSeconds = offer.remainingSeconds,
+            vipOffers = offer.toGuideVipOffers(),
+            saleOffers = offer.toGuideSaleOffers(),
+            fromType = GiftSendRequestDto.FROM_TYPE_CALL,
+        )
+        if (guide.isCatalogEmpty) return
+        _uiState.update {
+            it.copy(
+                isBalanceOfferGuideVisible = true,
+                balanceOfferGuide = guide,
+                showBalanceFloat = false,
+                autoShownBalanceOfferRoomId = if (fromUser) {
+                    it.autoShownBalanceOfferRoomId
+                } else {
+                    roomKey
+                },
+                freeCallTriggerConsumed = it.isFreeCall || it.freeCallTriggerConsumed,
+            )
+        }
+    }
+
+    private fun dismissBalanceOfferGuide() {
+        _uiState.update {
+            it.copy(
+                isBalanceOfferGuideVisible = false,
+                balanceOfferGuide = null,
+            )
+        }
+        refreshBalanceOfferGates()
+    }
+
+    private fun openBalanceOfferMoreOptions() {
+        dismissBalanceOfferGuide()
+        presentCoinPayGuide(fromCallback = null, fromType = GiftSendRequestDto.FROM_TYPE_CALL)
+    }
+
+    private fun purchasePrimaryBalanceOffer() {
+        val guide = _uiState.value.balanceOfferGuide ?: return
+        val id = guide.primaryOfferId ?: return
+        purchaseBalanceOffer(id, isVip = guide.primaryIsVip)
+    }
+
+    private fun purchaseBalanceOffer(offerId: Long, isVip: Boolean) {
+        val guide = _uiState.value.balanceOfferGuide ?: return
+        if (guide.purchasingOfferId != null) return
+        val vip = guide.vipOffers.firstOrNull { it.id == offerId }
+        val sale = guide.saleOffers.firstOrNull { it.id == offerId }
+        val sku: String
+        val goodsId: Long
+        val productType: BillingProductType
+        when {
+            isVip && vip != null -> {
+                sku = vip.sku
+                goodsId = vip.id
+                productType = BillingProductType.Vip
+            }
+            !isVip && sale != null -> {
+                sku = sale.sku
+                goodsId = sale.id
+                productType = BillingProductType.Coins
+            }
+            else -> return
+        }
+        val activity = hostActivity
+        if (activity == null) {
+            viewModelScope.launch {
+                _effects.send(
+                    CallEffect.ShowMessage(
+                        getApplication<Application>().getString(StoreR.string.store_status_no_activity),
+                    ),
+                )
+            }
+            return
+        }
+        val launcher = StorePurchaseLauncherHolder.launcher
+        if (launcher == null) {
+            viewModelScope.launch {
+                _effects.send(
+                    CallEffect.ShowMessage(
+                        getApplication<Application>().getString(StoreR.string.store_status_launcher_missing),
+                    ),
+                )
+            }
+            return
+        }
+        val request = StorePurchaseRequest(
+            uiId = "call-balance-offer-$goodsId",
+            goodsId = goodsId,
+            productId = sku,
+            productType = productType,
+            paymentType = BillingPaymentType.GooglePlay,
+            fromType = guide.fromType ?: GiftSendRequestDto.FROM_TYPE_CALL,
+        )
+        viewModelScope.launch {
+            _uiState.update {
+                it.copy(
+                    balanceOfferGuide = it.balanceOfferGuide?.copy(purchasingOfferId = offerId),
+                )
+            }
+            launcher.launch(activity, request) { result ->
+                when (result) {
+                    is StorePurchaseResult.Success -> clearBalanceAlert()
+                    is StorePurchaseResult.Canceled -> {
+                        _uiState.update {
+                            it.copy(
+                                balanceOfferGuide = it.balanceOfferGuide?.copy(
+                                    purchasingOfferId = null,
+                                ),
+                            )
+                        }
+                    }
+                    is StorePurchaseResult.Failed -> {
+                        _uiState.update {
+                            it.copy(
+                                balanceOfferGuide = it.balanceOfferGuide?.copy(
+                                    purchasingOfferId = null,
+                                ),
+                            )
+                        }
+                        viewModelScope.launch {
+                            _effects.send(CallEffect.ShowMessage(result.message))
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private fun clearBalanceAlert() {
+        _uiState.update {
+            it.copy(
+                balanceAlertRoomKey = "",
+                balanceAlertRawDuration = 0,
+                balanceAlertTotalDuration = 0,
+                balanceAlertSaleThreshold = 0,
+                balanceAlertRechargeThreshold = 0,
+                balanceOffer = null,
+                showBalanceFloat = false,
+                isBalanceOfferGuideVisible = false,
+                balanceOfferGuide = null,
+                freeCallTriggerConsumed = true,
+            )
+        }
+        viewModelScope.launch {
+            _effects.send(
+                CallEffect.ShowMessage(
+                    getApplication<Application>()
+                        .getString(StoreR.string.store_status_purchase_verified),
+                ),
+            )
+        }
     }
 
     private fun purchaseCoinPayGuide(offerId: Long, isSale: Boolean) {
@@ -1213,41 +1864,6 @@ class CallViewModel(
         }
     }
 
-    private fun SignalingCoinOffer.toRechargeProduct(): RechargeProduct? {
-        if (id <= 0L && sku.isBlank()) return null
-        return RechargeProduct(
-            id = id,
-            sku = sku,
-            coinAmount = diamond,
-            price = moneyDesc,
-            originalPrice = originalDesc.takeIf { it.isNotBlank() },
-            saleLabel = saleDesc.takeIf { it.isNotBlank() },
-            labelType = 0,
-            iconUrl = null,
-            coinIndex = 0,
-        )
-    }
-
-    private fun SignalingCoinOffer.toRechargeSaleItem(): RechargeSaleItem? {
-        if (id <= 0L && sku.isBlank()) return null
-        return RechargeSaleItem(
-            id = id,
-            sku = sku,
-            baseCoins = diamond,
-            bonusCoins = giveCoins,
-            totalCoins = diamond + giveCoins,
-            price = moneyDesc,
-            originalPrice = originalDesc.takeIf { it.isNotBlank() },
-            discountRate = saleDesc.takeIf { it.isNotBlank() },
-            styleIndex = 0,
-            iconUrl = null,
-            coinIndex = 0,
-            showBonusAsMatch = false,
-            matchCount = 0,
-            superDiscountLabel = null,
-        )
-    }
-
     private fun toggleTranslation(messageId: String) {
         _uiState.update { state ->
             state.copy(
@@ -1268,8 +1884,121 @@ class CallViewModel(
     }
 
     private fun hangup() {
-        CallKitHolder.coordinator?.hangup()
-            ?: viewModelScope.launch { _effects.send(CallEffect.Exit) }
+        val state = _uiState.value
+        when {
+            state.connectingNotice == CallConnectingNotice.PeerLeft -> {
+                matchNextJob?.cancel()
+                matchNextJob = null
+                matchNextTransitionActive = false
+                viewModelScope.launch {
+                    endAndCloseMatchSession()
+                    _effects.send(CallEffect.Exit)
+                }
+            }
+            state.hangupContinue != null -> dismissHangupContinue()
+            state.hangupRecharge != null -> dismissHangupRecharge()
+            state.isMatchCall &&
+                state.phase == CallRingingPhase.InCall &&
+                !state.isMatchHangupEnabled -> Unit
+            state.isMatchCall -> {
+                viewModelScope.launch {
+                    val roomId = state.callRoomId
+                    if (roomId.isNotBlank()) {
+                        runtime.callSessionRepository.endCall(roomId, state.callDurationSec)
+                    }
+                    CallKitHolder.coordinator?.endBySystem(EndReason.Hangup)
+                        ?: run {
+                            endAndCloseMatchSession()
+                            _effects.send(CallEffect.Exit)
+                        }
+                }
+            }
+            else -> CallKitHolder.coordinator?.hangup()
+                ?: viewModelScope.launch { _effects.send(CallEffect.Exit) }
+        }
+    }
+
+    private fun nextMatch() {
+        val state = _uiState.value
+        if (!state.isMatchNextEnabled || matchNextTransitionActive || matchSessionReleased) return
+        matchNextTransitionActive = true
+        _uiState.update { it.copy(isMatchNextInProgress = true) }
+        matchNextJob?.cancel()
+        matchNextJob = viewModelScope.launch {
+            performMatchNext(endCurrentCall = true, callConnected = true)
+        }
+    }
+
+    private suspend fun performMatchNext(endCurrentCall: Boolean, callConnected: Boolean) {
+        if (matchSessionReleased) return
+        val unjoinableStreak =
+            runtime.matchSessionCoordinator.recordRoomOutcome(connected = callConnected)
+        if (unjoinableStreak >= UNJOINABLE_ROOM_LIMIT) {
+            matchNextTransitionActive = false
+            endAndCloseMatchSession()
+            runtime.matchSessionCoordinator.resetRoomOutcomes()
+            runtime.matchSessionCoordinator.publishContinuation(
+                com.example.demoproject.platform.data.match.MatchContinuation.Failure(
+                    message = str(R.string.call_status_match_rooms_unavailable),
+                ),
+            )
+            _effects.send(CallEffect.OpenMatch)
+            return
+        }
+        runtime.matchSessionCoordinator.publishContinuation(
+            com.example.demoproject.platform.data.match.MatchContinuation.Searching(
+                callConnected = callConnected,
+            ),
+        )
+        val snapshot = _uiState.value
+        if (endCurrentCall && snapshot.callRoomId.isNotBlank()) {
+            runtime.callSessionRepository.endCall(
+                roomId = snapshot.callRoomId,
+                durationSeconds = snapshot.callDurationSec,
+            )
+        }
+        if (endCurrentCall) {
+            CallKitHolder.coordinator?.endBySystem(EndReason.Hangup)
+        }
+        when (
+            val result = runtime.matchRepository.nextMatch(
+                source = "match_screen_next",
+            )
+        ) {
+            is MatchStartResult.Success -> {
+                runtime.matchSessionCoordinator.publishContinuation(
+                    com.example.demoproject.platform.data.match.MatchContinuation.Success(
+                        result.info,
+                    ),
+                )
+            }
+            is MatchStartResult.Failure -> {
+                runtime.matchSessionCoordinator.publishContinuation(
+                    com.example.demoproject.platform.data.match.MatchContinuation.Failure(
+                        message = result.message,
+                        rechargePageData = result.rechargePageData,
+                    ),
+                )
+            }
+        }
+        matchNextTransitionActive = false
+        _effects.send(CallEffect.OpenMatch)
+    }
+
+    /**
+     * Leaves the match queue for good. Once this runs, a later server `CallEnded` for the same
+     * room must not re-enter the queue via [performMatchNext].
+     */
+    private suspend fun endAndCloseMatchSession() {
+        if (matchSessionReleased) return
+        matchSessionReleased = true
+        matchNextJob?.cancel()
+        matchNextJob = null
+        val sessionId = _uiState.value.matchSessionId
+        if (sessionId > 0L) {
+            runtime.matchRepository.endMatch(sessionId, source = "match_call_end")
+        }
+        runtime.matchRepository.closeMatch(source = "match_call_close")
     }
 
     private fun answer() {
@@ -1345,6 +2074,8 @@ class CallViewModel(
         const val ANSWER_STATUS_INTERVAL_MS = 3_000L
         const val ANSWER_STATUS_REQUEST_TIMEOUT_MS = 5_000L
         const val DEFAULT_ANSWER_TIMEOUT_MS = 60_000L
+        const val REMATCH_DELAY_MS = 1_000L
+        const val UNJOINABLE_ROOM_LIMIT = 3
         const val DEFAULT_RENEW_AHEAD_SEC = 300
         const val IN_CALL_MSG_TYPE_TIP = 4
     }

@@ -151,6 +151,8 @@ object ComponentSize {
     const val giftPageRows = 2
     /** iOS action sheet row height. */
     val actionSheetRow = 52.dp
+    /** iOS action sheet separator hairline. */
+    val actionSheetDivider = 0.5.dp
     /** Figma Call Records list avatar — 60dp. */
     val callRecordsAvatar = 60.dp
     /** Figma Call Records row video action — 28dp. */
@@ -628,6 +630,22 @@ object ComponentSize {
     val callRingingAnswerGlowMid = 81.dp
     /** Call ringing top fade — Figma 145dp. */
     val callRingingTopGradient = 145.dp
+    /** Match-call connecting close glyph — Figma 24dp. */
+    val callConnectingClose = 24.dp
+    val callConnectingCloseTouch = 48.dp
+    /** Overlapping "It's a" / "Match!" title artwork — Figma y=110..224. */
+    val callConnectingTitleGroupHeight = 119.dp
+    /** Title glow, exported clipped to the 375×350 top slice of the board. */
+    val callConnectingTitleGlowAspect = 375f / 350f
+    /** Match-call connecting avatar card — Figma 246×343. */
+    val callConnectingAvatarWidth = 246.dp
+    val callConnectingAvatarAspect = 246f / 343f
+    /** Match-call connecting avatar border and glow — Figma 1:1524. */
+    val callConnectingAvatarStroke = 1.dp
+    val callConnectingAvatarGlow = 8.dp
+    val callConnectingAvatarScrimHeight = 100.dp
+    /** Match-call transient notice width — Figma 281dp. */
+    val callConnectingNoticeWidth = 281.dp
     /** In-call PiP preview — Figma 100×133. */
     val callInCallPipWidth = 100.dp
     val callInCallPipHeight = 133.dp
@@ -637,6 +655,9 @@ object ComponentSize {
     val callInCallAction = 44.dp
     /** In-call bottom action glyph — Figma 24dp. */
     val callInCallActionIcon = 24.dp
+    /** Match-call Next pill — Figma 76×44; width may grow for localized labels. */
+    val callMatchNextMinWidth = 76.dp
+    val callMatchNextIcon = 16.dp
     /** In-call header report / hangup circle — same diameter as ringing report. */
     val callInCallHeaderAction = 36.dp
     /** In-call header report / hangup glyph. */
@@ -663,4 +684,113 @@ object ComponentSize {
     val callInCallTranslate = 16.dp
     /** In-call bottom gradient — Figma 171dp. */
     val callInCallBottomGradient = 171.dp
+    /** Call balance float width — Figma 120dp. */
+    val callBalanceFloatWidth = 120.dp
+    /** Call balance float total height incl. timer overhang — Figma 182dp. */
+    val callBalanceFloatHeight = 182.dp
+    /** Call balance float body height under timer tab — Figma 174dp. */
+    val callBalanceFloatBodyHeight = 174.dp
+    /** Call balance float timer tab — Figma 91×20. */
+    val callBalanceFloatTimerWidth = 91.dp
+    val callBalanceFloatTimerHeight = 20.dp
+    /** Call balance float timer glyph — Figma 12dp. */
+    val callBalanceFloatTimerIcon = 12.dp
+    /** Call balance float product mini-card — Figma 104×54. */
+    val callBalanceFloatProductWidth = 104.dp
+    val callBalanceFloatProductHeight = 54.dp
+    /** Call balance float benefit icon — Figma 16dp. */
+    val callBalanceFloatBenefitIcon = 16.dp
+    /** Call balance float coin product glyph — Figma 20dp. */
+    val callBalanceFloatCoinIcon = 20.dp
+    /** Call balance float OFF badge — Figma 57×18. */
+    val callBalanceFloatOffWidth = 57.dp
+    val callBalanceFloatOffHeight = 18.dp
+    /** Call balance float CTA — Figma 96×28. */
+    val callBalanceFloatCtaWidth = 96.dp
+    val callBalanceFloatCtaHeight = 28.dp
+    /** Call balance float card radius — Figma 9dp. */
+    val callBalanceFloatRadius = 9.dp
+    /** Call balance float product radius — Figma 12dp. */
+    val callBalanceFloatProductRadius = 12.dp
+    /** Call balance float title row — Figma `Upgrade VIP` / `More Coins` h=24. */
+    val callBalanceFloatTitleRowHeight = 24.dp
+    /** Call balance float card elevation. */
+    val callBalanceFloatElevation = 2.dp
+    /** Call balance float CTA original-price strike — Figma 34dp. */
+    val callBalanceFloatStrikeWidth = 34.dp
+    /** Call balance offer-guide sheet max height — Figma ~418dp. */
+    val callBalanceOfferGuideMaxHeight = 418.dp
+    /** Call balance offer-guide CTA height — Figma py 16 ≈ 51dp. */
+    val callBalanceOfferGuideCtaHeight = 51.dp
+    /** Call hangup-recharge sheet max height — Figma `1 1113` ≈ 457dp. */
+    val callHangupRechargeMaxHeight = 457.dp
+    /** Call hangup-continue sheet max height — Figma frame ≈ 483dp incl. home indicator. */
+    val callHangupContinueMaxHeight = 460.dp
+    /** Call hangup peer avatar — Figma 100dp. */
+    val callHangupAvatar = 100.dp
+    /** Call hangup avatar ring stroke — Figma ~2dp. */
+    val callHangupAvatarBorder = 2.dp
+    /** Call hangup speech-bubble tail leaf — Figma 12dp rotated square. */
+    val callHangupSpeechTail = 12.dp
+    /** Call hangup-continue CTA height — Figma py 16 ≈ 51dp. */
+    val callHangupContinueCtaHeight = 51.dp
+    /** Call hangup continue secondary border — Figma 1dp. */
+    val callHangupSecondaryStroke = 1.dp
+    /** Call hangup recharge lower fill — Figma 1:5167 ≈ 100dp. */
+    val callHangupSheetBottomFill = 100.dp
+    /** Match hero card aspect — Figma 359×593. */
+    val matchHeroAspect = 359f / 593f
+    /** Match Video Match CTA height — Figma py 16 ≈ 51dp. */
+    val matchCtaHeight = 51.dp
+    /** Match VIP crown / 50% Off glyph — Figma 14dp. */
+    val matchVipOffIcon = 14.dp
+    /** Match price chip coin — Figma 16dp. */
+    val matchPriceCoin = 16.dp
+    /** Match filter glyph — Figma 20dp. */
+    val matchFilterIcon = 20.dp
+    /** Match radar heart (glow) leaf — Figma ~24dp. */
+    val matchHeartGlow = 24.dp
+    /** Match radar heart (solid white) leaf — Figma ~16dp. */
+    val matchHeartWhite = 16.dp
+    /** Match filter sheet gender option — Figma 40dp. */
+    val matchFilterOptionHeight = 40.dp
+    /** Match filter option hairline — Figma 1dp. */
+    val matchFilterOptionStroke = 1.dp
+    /** Match filter sheet gender glyph — Figma 14dp. */
+    val matchFilterGenderIcon = 14.dp
+    /** Match filter close glyph — Figma 20dp. */
+    val matchFilterCloseIcon = 20.dp
+    /** Applied male-filter glyph outer box — Figma 24dp. */
+    val matchAppliedFilterIcon = 24.dp
+    /**
+     * FREE badge lift above CTA bottom so it overlaps the button top-end
+     * (Figma FREE top 508, CTA top 522 → lift ≈ CTA height − 14).
+     */
+    val matchFreeBadgeLift = 37.dp
+    /**
+     * Matching-in-progress radar field — Figma 172:3624 is 345dp wide on a
+     * 375dp board. The emblem is laid out as one unit: every token below is
+     * expressed at this reference side and scaled by the measured side.
+     */
+    val matchSearchingField = 345.dp
+    /** Matching rotating arc bounding box — Figma Ellipse 27 213dp. */
+    val matchSearchingArcRing = 213.dp
+    /** Matching rotating arc stroke — Figma 6.65dp. */
+    val matchSearchingArcStroke = 6.65.dp
+    /** Matching arc leading dot box — 10dp leaf + 5dp glow. */
+    val matchSearchingArcDotLeading = 20.dp
+    /** Matching arc trailing dot box — 10dp leaf + 7.4dp glow. */
+    val matchSearchingArcDotTrailing = 24.8.dp
+    /** Matching sparkle box — 2dp leaf + 4dp glow. */
+    val matchSearchingSpark = 10.dp
+    /** Matching hearts emblem box — 101dp leaf + 17.37dp glow. */
+    val matchSearchingHearts = 135.75.dp
+    /** Matching scattered glow heart box — Figma 31×29. */
+    val matchSearchingHeartGlowWidth = 31.dp
+    val matchSearchingHeartGlowHeight = 29.dp
+    /** Matching scattered white heart box — Figma 14.33×12.67. */
+    val matchSearchingHeartWhiteWidth = 14.33.dp
+    val matchSearchingHeartWhiteHeight = 12.67.dp
+    /** Matching band hairline at the outermost ring — Figma 1dp. */
+    val matchSearchingRingStroke = 1.dp
 }

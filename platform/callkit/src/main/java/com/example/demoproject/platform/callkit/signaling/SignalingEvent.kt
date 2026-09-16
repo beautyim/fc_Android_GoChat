@@ -50,6 +50,16 @@ sealed interface SignalingEvent {
         val rechargeAlertTimeSeconds: Int = 0,
         val payItem: SignalingCoinOffer? = null,
         val salePayItem: SignalingCoinOffer? = null,
+        val vipPayItem: SignalingCoinOffer? = null,
+    ) : SignalingEvent
+
+    /**
+     * MQTT a_type=6 — in-call wallet balance snapshot (no offer SKU).
+     * Emitted after mid-call recharge / VIP so clients refresh coins without a float/guide.
+     */
+    data class BalanceSync(
+        val roomKey: String,
+        val balance: Int,
     ) : SignalingEvent
 
     /**
@@ -74,14 +84,25 @@ sealed interface SignalingEvent {
     data class Error(val message: String, val cause: Throwable? = null) : SignalingEvent
 }
 
-/** Lightweight coin SKU snapshot carried on MQTT balance alerts (no data-module dependency). */
+/** Lightweight coin / VIP SKU snapshot carried on MQTT balance alerts (no data-module dependency). */
 data class SignalingCoinOffer(
     val id: Long = 0L,
     val sku: String = "",
+    /** `1` = coins, `2` = VIP (server `product_type`). */
+    val productType: Int = 1,
     val diamond: Int = 0,
     val giveCoins: Int = 0,
     val moneyDesc: String = "",
     val originalDesc: String = "",
     val saleDesc: String = "",
-)
+    /** Percent-only or "38% OFF" from `save_rate` / `sale_desc`. */
+    val saveRate: String = "",
+    val title: String = "",
+    val label: String = "",
+    val days: Int = 0,
+    val month: Int = 0,
+    val matchCount: Int = 0,
+) {
+    val isVipProduct: Boolean get() = productType == 2
+}
 

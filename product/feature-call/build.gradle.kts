@@ -40,4 +40,5 @@ dependencies {
     implementation(libs.media3.database)
     implementation(libs.media3.datasource)
     debugImplementation(libs.androidx.compose.ui.tooling)
+    testImplementation(libs.junit)
 }

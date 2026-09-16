@@ -41,6 +41,11 @@ class HomeViewModel(
                 _uiState.update { it.copy(coinBalance = coins) }
             }
         }
+        viewModelScope.launch {
+            runtime.callFreeMinStore.callFreeMin.collect { callFreeMin ->
+                applyCallFreeMin(callFreeMin)
+            }
+        }
         viewModelScope.launch { refreshSessionMeta() }
         ensureTabLoaded(OnlineFilter.All, force = false)
     }
@@ -429,7 +434,8 @@ class HomeViewModel(
                 val data = open.data
                 if (data != null) {
                     runtime.accountBalanceStore.update(data.accountMoney)
-                    applyCallFreeMin(data.callFreeMin)
+                    runtime.matchQuotaStore.update(matchFreeCount = data.matchFreeCount)
+                    runtime.callFreeMinStore.update(data.callFreeMin)
                 }
             }
             is AppResult.Failure -> {

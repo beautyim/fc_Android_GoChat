@@ -142,6 +142,18 @@ object Spacing {
     val callRingingBottomInset = 37.dp
     /** Call ringing report end inset — Figma 15dp (375-324-36). */
     val callRingingReportEnd = 15.dp
+    /** Match-call connecting top close inset — Figma x=16, y=60 after status bar. */
+    val callConnectingCloseHorizontal = 16.dp
+    val callConnectingCloseTop = 16.dp
+    /** Match-call title block spacing and avatar separation — Figma 1:1520. */
+    val callConnectingHeroTop = 62.dp
+    val callConnectingSubtitleTop = 4.dp
+    val callConnectingAvatarTop = 18.dp
+    val callConnectingStatusTop = 17.dp
+    /** Match-call notice sits 29dp above the navigation-bar safe area. */
+    val callConnectingNoticeBottom = 29.dp
+    val callConnectingNoticeHorizontal = 12.dp
+    val callConnectingNoticeVertical = 8.dp
     /** In-call header end controls gap. */
     val callInCallHeaderEndGap = 8.dp
     /** In-call name → Like chip — Figma 8dp. */
@@ -150,6 +162,9 @@ object Spacing {
     val callInCallBottomBarHorizontal = 11.dp
     /** In-call composer ↔ side buttons — Figma 8dp. */
     val callInCallBottomBarGap = 8.dp
+    /** Match-call Next pill horizontal content — Figma 10dp enabled / 8dp countdown. */
+    val callMatchNextHorizontal = 10.dp
+    val callMatchNextCountdownHorizontal = 8.dp
     /** In-call chat column start — Figma 8dp. */
     val callInCallChatStart = 8.dp
     /** In-call chat bubble stack gap — Figma 10dp. */
@@ -166,6 +181,92 @@ object Spacing {
     val callInCallMoreRowVertical = 12.dp
     /** In-call more sheet top inset before first row — Figma ~28dp. */
     val callInCallMoreTop = 28.dp
+    /** Call balance float end inset — Figma right 10dp (375−245−120). */
+    val callBalanceFloatEnd = 10.dp
+    /** Call balance float above bottom bar — Figma gap above composer. */
+    val callBalanceFloatBottom = 12.dp
+    /** Call balance float body below timer ribbon — Figma top=8. */
+    val callBalanceFloatBodyTop = 8.dp
+    /** Call balance float timer content — Figma top=4. */
+    val callBalanceFloatTimerContentTop = 4.dp
+    /** Call balance float Upgrade VIP — Figma top=28. */
+    val callBalanceFloatTitleTop = 28.dp
+    /** Call balance float OFF badge — Figma top=57. */
+    val callBalanceFloatOffTop = 57.dp
+    /** Call balance float product card — Figma top=68. */
+    val callBalanceFloatProductTop = 68.dp
+    /** OFF overhang above product — Figma 68−57=11dp. */
+    val callBalanceFloatOffOverhang = 11.dp
+    /** Call balance float CTA — Figma top=128. */
+    val callBalanceFloatCtaTop = 128.dp
+    /** Product bottom → CTA — Figma 128−(68+54)=6dp. */
+    val callBalanceFloatProductToCta = 6.dp
+    /** Call balance float More options — Figma text center ≈166 → top≈160. */
+    val callBalanceFloatMoreTop = 160.dp
+    /** Call balance float horizontal inset for product — Figma 8dp. */
+    val callBalanceFloatInset = 8.dp
+    /** Call balance float icon ↔ label — Figma 2dp. */
+    val callBalanceFloatIconGap = 2.dp
+    /** Call balance float CTA price gap — Figma 4dp. */
+    val callBalanceFloatPriceGap = 4.dp
+    /** Call balance float product coins row center — Figma y=19 → top≈11. */
+    val callBalanceFloatCoinsRowTop = 11.dp
+    /** Call balance float coin-pack icon top — Figma center ≈19 → top≈9. */
+    val callBalanceFloatCoinIconTop = 9.dp
+    /** Call balance float coin-pack amount — Figma top=39, raised 10dp for optical balance. */
+    val callBalanceFloatCoinAmountTop = 29.dp
+    /** Call balance float product match row center — Figma y=40 → top≈32. */
+    val callBalanceFloatMatchRowTop = 32.dp
+    /** Call balance offer-guide CTA → more options — Figma ~12dp. */
+    val callBalanceOfferGuideCtaToMore = 12.dp
+    /** Call balance offer-guide more → home indicator — Figma ~16dp. */
+    val callBalanceOfferGuideMoreBottom = 16.dp
+    /** Call hangup-recharge header top under wavy bg — Figma avatar ≈53dp. */
+    val callHangupRechargeHeaderTop = 53.dp
+    /** Call hangup avatar → name/speech column — Figma ~19dp (25→119−100). */
+    val callHangupAvatarToMeta = 19.dp
+    /** Call hangup name → speech bubble — Figma ~8dp. */
+    val callHangupNameToSpeech = 8.dp
+    /** Call hangup speech horizontal pad — Figma 10dp. */
+    val callHangupSpeechHorizontal = 10.dp
+    /** Call hangup speech vertical pad — Figma 8dp. */
+    val callHangupSpeechVertical = 8.dp
+    /** Call hangup header → top-up title — Figma ~20dp. */
+    val callHangupHeaderToTitle = 20.dp
+    /** Call hangup title → sale carousel — Figma ~12dp. */
+    val callHangupTitleToSale = 12.dp
+    /** Call hangup continue avatar top under wavy bg — Figma ~23dp. */
+    val callHangupContinueAvatarTop = 23.dp
+    /** Call hangup continue avatar → name — Figma ~16dp. */
+    val callHangupContinueAvatarToName = 16.dp
+    /** Call hangup continue name → waiting title — Figma ~12dp. */
+    val callHangupContinueNameToTitle = 12.dp
+    /** Call hangup continue title → subtitle — Figma ~16dp. */
+    val callHangupContinueTitleToSubtitle = 16.dp
+    /** Call hangup continue subtitle → primary CTA — Figma ~28dp. */
+    val callHangupContinueSubtitleToCta = 28.dp
+    /** Call hangup continue primary → secondary CTA — Figma ~12dp. */
+    val callHangupContinueCtaGap = 12.dp
+    /** Call hangup continue secondary → home indicator — Figma ~16dp. */
+    val callHangupContinueBottom = 16.dp
+    /** Match hero card horizontal inset — Figma 8dp. */
+    val matchHeroInset = 8.dp
+    /** Match hero top insets for chips / filter — Figma 12dp. */
+    val matchHeroChrome = 12.dp
+    /** Match CTA bottom inset above card edge — Figma ~23dp (593−522−48). */
+    val matchCtaBottom = 23.dp
+    /** Match CTA horizontal inset inside card — Figma ~18dp. */
+    val matchCtaHorizontal = 18.dp
+    /** Matching radar field side inset — Figma (375−345)/2 = 15dp. */
+    val matchSearchingFieldInset = 15.dp
+    /** Matching hearts emblem lift above the radar centre — Figma 37.5dp. */
+    val matchSearchingEmblemLift = 37.5.dp
+    /** Matching caption block drop below the radar centre — Figma 36.5dp. */
+    val matchSearchingCaptionDrop = 36.5.dp
+    /** Matching title → caption — Figma 209−200 = 9dp. */
+    val matchSearchingTitleToCaption = 9.dp
+    /** Matching Cancel link above the home indicator — Figma 108.5−34 = 74.5dp. */
+    val matchSearchingCancelBottom = 74.5.dp
     val md = 16.dp
     val lg = 24.dp
     val xl = 28.dp

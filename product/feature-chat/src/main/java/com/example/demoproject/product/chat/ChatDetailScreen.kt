@@ -107,6 +107,7 @@ import com.example.demoproject.product.store.CoinPayGuideSheet
 import com.example.demoproject.product.vip.VipPayGuideSheet
 import com.example.demoproject.ui.designsystem.DemoColors
 import com.example.demoproject.ui.designsystem.DemoGradients
+import com.example.demoproject.ui.designsystem.DemoNavIconButton
 import com.example.demoproject.ui.designsystem.DemoTheme
 import com.example.demoproject.ui.designsystem.gift.GiftSvgaOverlay
 import com.example.demoproject.ui.designsystem.media.MediaViewer
@@ -668,25 +669,12 @@ private fun ChatDetailTopBarIcon(
     contentDescription: String?,
     onClick: () -> Unit,
 ) {
-    Box(
-        modifier = Modifier
-            .size(IconSize.md)
-            .clip(CircleShape)
-            .clickable(
-                role = Role.Button,
-                interactionSource = remember { MutableInteractionSource() },
-                indication = ripple(bounded = true),
-                onClick = onClick,
-            ),
-        contentAlignment = Alignment.Center,
-    ) {
-        Image(
-            painter = painterResource(iconRes),
-            contentDescription = contentDescription,
-            modifier = Modifier.size(IconSize.md),
-            contentScale = ContentScale.Fit,
-        )
-    }
+    DemoNavIconButton(
+        icon = painterResource(iconRes),
+        contentDescription = contentDescription,
+        onClick = onClick,
+        iconSize = IconSize.md,
+    )
 }
 
 @Composable

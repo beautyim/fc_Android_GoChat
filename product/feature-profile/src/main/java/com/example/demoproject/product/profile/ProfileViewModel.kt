@@ -110,10 +110,7 @@ class ProfileViewModel(
             }
             ProfileIntent.OpenCoins -> emit(ProfileEffect.OpenStore)
             ProfileIntent.Message -> openChatDetail()
-            ProfileIntent.VideoChat -> {
-                if (_uiState.value.isBlockedByPeer) return
-                emit(ProfileEffect.ShowMessage(str(R.string.profile_message_video_soon)))
-            }
+            ProfileIntent.VideoChat -> startVideoCall()
             is ProfileIntent.OpenMedia -> {
                 val index = intent.index
                 if (index in _uiState.value.viewerItems.indices) {
@@ -131,6 +128,19 @@ class ProfileViewModel(
             ProfileEffect.OpenChatDetail(
                 conversationId = state.userId,
                 nickname = state.nickname,
+            ),
+        )
+    }
+
+    private fun startVideoCall() {
+        val state = _uiState.value
+        if (state.isSelf || state.isBlockedByPeer || state.userId.isBlank()) return
+        emit(
+            ProfileEffect.StartVideoCall(
+                userId = state.userId,
+                nickname = state.nickname,
+                avatarUrl = state.avatarUrl.orEmpty(),
+                age = state.age,
             ),
         )
     }

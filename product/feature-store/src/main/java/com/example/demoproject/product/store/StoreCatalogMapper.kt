@@ -18,6 +18,24 @@ fun RechargePageData.toCoinPayGuideUiState(
         fromType = fromType,
     )
 
+fun RechargePageData.toCallHangupRechargeUiState(
+    peerNickname: String,
+    peerAge: Int,
+    peerAvatarUrl: String,
+    fallbackSuperDiscountLabel: String,
+    fromType: Int? = null,
+    isLoading: Boolean = false,
+): CallHangupRechargeUiState =
+    CallHangupRechargeUiState(
+        isLoading = isLoading,
+        peerNickname = peerNickname,
+        peerAge = peerAge,
+        peerAvatarUrl = peerAvatarUrl,
+        saleOffers = saleItems.map { it.toSaleUi(fallbackSuperDiscountLabel) },
+        coinOffers = toCoinOffers(),
+        fromType = fromType,
+    )
+
 fun RechargePageData.vipCarouselItems(): List<RechargeVipPayItem> =
     vipPayItems.ifEmpty { listOfNotNull(vipPayItem) }
 

@@ -4,10 +4,26 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 const val MATCH_TYPE_VIDEO: Int = 1
+/** Backend gender filter — male. */
+const val MATCH_SEX_MALE: Int = 1
+/** Backend gender filter — female (Match tab default). */
 const val MATCH_SEX_FEMALE: Int = 2
 
 @Serializable
 data class MatchStartRequestDto(
+    @SerialName("match_type") val matchType: Int = MATCH_TYPE_VIDEO,
+    @SerialName("match_sex") val matchSex: Int = MATCH_SEX_FEMALE,
+    @SerialName("support_ack") val supportAck: Int = 1,
+    val caps: MatchCapabilitiesDto = MatchCapabilitiesDto(),
+)
+
+@Serializable
+data class MatchCapabilitiesDto(
+    val amv: Int = 1,
+)
+
+@Serializable
+data class MatchNextRequestDto(
     @SerialName("match_type") val matchType: Int = MATCH_TYPE_VIDEO,
     @SerialName("match_sex") val matchSex: Int = MATCH_SEX_FEMALE,
 )
@@ -15,6 +31,11 @@ data class MatchStartRequestDto(
 @Serializable
 data class MatchEndRequestDto(
     @SerialName("match_session_id") val matchSessionId: Long = 0,
+)
+
+@Serializable
+data class MatchHeartRequestDto(
+    @SerialName("match_session_id") val matchSessionId: Long,
 )
 
 @Serializable

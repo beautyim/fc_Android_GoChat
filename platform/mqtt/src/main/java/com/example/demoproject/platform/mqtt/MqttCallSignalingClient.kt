@@ -97,8 +97,15 @@ class MqttCallSignalingClient(
                         "dataKeys=${data.keys.sorted()}",
                 )
                 return when (val aType = data.intPrimitive("a_type")) {
-                    1 -> parseIncomingInvite(root, data)
+                    // Match rooms are handed to CallKit from the Match coordinator. Treating this
+                    // packet as a normal invite races navigation and can create a second call.
+                    1 -> if (data.intPrimitive("is_match_call") == 1) {
+                        null
+                    } else {
+                        parseIncomingInvite(root, data)
+                    }
                     2, 3 -> parseCallEnded(root, data, serverInitiated = aType == 2)
+                    6 -> parseBalanceSync(root, data)
                     7 -> parseBalanceAlert(root, data)
                     8 -> parseInCallChat(root, data)
                     14 -> parseInviteAccepted(root, data)
@@ -173,6 +180,16 @@ class MqttCallSignalingClient(
         return SignalingEvent.InviteAccepted(inviteId = roomId, callId = roomId)
     }
 
+    private fun parseBalanceSync(root: JsonObject, packet: JsonObject): SignalingEvent.BalanceSync? {
+        val roomKey = resolveCallRoomKey(packet)
+            ?: resolveCallRoomKey(root)
+            ?: return null
+        val balance = packet.intPrimitive("balance") ?: return null
+        if (balance < 0) return null
+        AppLogger.d(TAG, "parseBalanceSync roomKey=$roomKey balance=$balance")
+        return SignalingEvent.BalanceSync(roomKey = roomKey, balance = balance)
+    }
+
     private fun parseBalanceAlert(root: JsonObject, packet: JsonObject): SignalingEvent.BalanceAlert? {
         val roomKey = resolveCallRoomKey(packet)
             ?: resolveCallRoomKey(root)
@@ -195,6 +212,8 @@ class MqttCallSignalingClient(
             rechargeAlertTimeSeconds = packet.intPrimitive("recharge_alert_time") ?: 0,
             payItem = parseCoinOffer(nestedObject(packet, "pay_item")),
             salePayItem = parseCoinOffer(nestedObject(packet, "sale_pay_item")),
+            vipPayItem = parseCoinOffer(nestedObject(packet, "vip_pay_item"))
+                ?.copy(productType = 2),
         )
         AppLogger.d(
             TAG,
@@ -262,14 +281,26 @@ class MqttCallSignalingClient(
         val id = obj.longPrimitive("id")
         val sku = obj.stringPrimitive("sku").orEmpty()
         if (id <= 0L && sku.isBlank()) return null
+        val originalDesc = obj.stringPrimitive("original_desc")
+            ?: obj.stringPrimitive("original")
+            ?: ""
         return SignalingCoinOffer(
             id = id,
             sku = sku,
+            productType = obj.intPrimitive("product_type") ?: 1,
             diamond = obj.intPrimitive("diamond") ?: 0,
             giveCoins = obj.intPrimitive("give_coins") ?: 0,
             moneyDesc = obj.stringPrimitive("money_desc").orEmpty(),
-            originalDesc = obj.stringPrimitive("original_desc").orEmpty(),
+            originalDesc = originalDesc,
             saleDesc = obj.stringPrimitive("sale_desc").orEmpty(),
+            saveRate = obj.stringPrimitive("save_rate").orEmpty(),
+            title = obj.stringPrimitive("title").orEmpty(),
+            label = obj.stringPrimitive("label").orEmpty(),
+            days = obj.intPrimitive("days") ?: 0,
+            month = obj.intPrimitive("month") ?: 0,
+            matchCount = obj.intPrimitive("match")
+                ?: nestedObject(obj, "extra_rewards")?.intPrimitive("match")
+                ?: 0,
         )
     }
 
@@ -575,6 +606,6 @@ class MqttCallSignalingClient(
         /** `/event` topic invite uses msg_type=28 in current backend payloads. */
         const val EVENT_MSG_TYPE_CALL_INVITE: Int = 28
         /** a_types that are never peer-mask packets. */
-        private val EXCLUDED_MASK_A_TYPES = setOf(1, 2, 3, 7, 8, 14)
+        private val EXCLUDED_MASK_A_TYPES = setOf(1, 2, 3, 6, 7, 8, 14)
     }
 }

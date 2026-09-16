@@ -34,6 +34,7 @@ class AgoraRtcClient(
     private var currentAppId: String = ""
     private var joinedChannelId: String? = null
     private var localCameraMuted: Boolean = false
+    private var receiveOnlyMode: Boolean = false
     /** Shared local preview surface reused by [createVideoView] and pre-join capture. */
     private var localPreviewView: View? = null
     private val mainHandler = Handler(Looper.getMainLooper())
@@ -189,7 +190,13 @@ class AgoraRtcClient(
         }
     }
 
-    override fun join(channelId: String, uid: Int, token: String, enableVideo: Boolean) {
+    override fun join(
+        channelId: String,
+        uid: Int,
+        token: String,
+        enableVideo: Boolean,
+        receiveOnly: Boolean,
+    ) {
         val rtc = synchronized(engineLock) { engine }
         if (rtc == null) {
             AppLogger.w(TAG, "join failed engine null")
@@ -203,11 +210,13 @@ class AgoraRtcClient(
         }
         AppLogger.d(
             TAG,
-            "join start channel=$channelId uid=$uid tokenLen=${token.length} enableVideo=$enableVideo",
+            "join start channel=$channelId uid=$uid tokenLen=${token.length} " +
+                "enableVideo=$enableVideo receiveOnly=$receiveOnly",
         )
+        receiveOnlyMode = receiveOnly
         remoteVideoMuteStates.clear()
         startFirstFrameWatchdog(channelId = channelId, uid = uid)
-        if (enableVideo) {
+        if (enableVideo && !receiveOnly) {
             localCameraMuted = false
             // Singleton engines reuse the last facing after switchCamera(); reset to front
             // before capture so every video call starts on the front camera.
@@ -221,16 +230,20 @@ class AgoraRtcClient(
         _events.tryEmit(RtcEvent.ConnectionStateChanged(RtcConnectionState.Connecting))
         val options = ChannelMediaOptions().apply {
             autoSubscribeAudio = true
-            autoSubscribeVideo = enableVideo
-            publishCameraTrack = enableVideo
-            publishMicrophoneTrack = true
-            clientRoleType = Constants.CLIENT_ROLE_BROADCASTER
+            autoSubscribeVideo = true
+            publishCameraTrack = enableVideo && !receiveOnly
+            publishMicrophoneTrack = !receiveOnly
+            clientRoleType = if (receiveOnly) {
+                Constants.CLIENT_ROLE_AUDIENCE
+            } else {
+                Constants.CLIENT_ROLE_BROADCASTER
+            }
             channelProfile = Constants.CHANNEL_PROFILE_COMMUNICATION
         }
         joinedChannelId = channelId
         val rc = rtc.joinChannel(token, channelId, uid, options)
         AppLogger.d(TAG, "joinChannel returned rc=$rc channel=$channelId uid=$uid")
-        if (enableVideo) {
+        if (enableVideo && !receiveOnly) {
             startLocalCapture(rtc)
         } else {
             rtc.muteLocalVideoStream(true)
@@ -246,6 +259,7 @@ class AgoraRtcClient(
             engine?.leaveChannel()
             joinedChannelId = null
             localCameraMuted = false
+            receiveOnlyMode = false
         }
         _events.tryEmit(RtcEvent.ConnectionStateChanged(RtcConnectionState.Disconnected))
     }
@@ -258,6 +272,7 @@ class AgoraRtcClient(
     }
 
     override fun setMicMuted(muted: Boolean) {
+        if (receiveOnlyMode) return
         synchronized(engineLock) { engine }?.muteLocalAudioStream(muted)
     }
 
@@ -266,6 +281,7 @@ class AgoraRtcClient(
      * not merely stop encoding (which can freeze the last frame for the remote).
      */
     override fun setCameraMuted(muted: Boolean) {
+        if (receiveOnlyMode) return
         val rtc = synchronized(engineLock) { engine } ?: return
         localCameraMuted = muted
         if (muted) {
@@ -301,6 +317,7 @@ class AgoraRtcClient(
         TextureView(appContext)
 
     override fun setupLocalVideo(view: View?) {
+        if (receiveOnlyMode) return
         val rtc = synchronized(engineLock) { engine } ?: return
         if (view == null) {
             if (!localCameraMuted && joinedChannelId != null) {
@@ -326,6 +343,7 @@ class AgoraRtcClient(
     }
 
     override fun refreshLocalPreview() {
+        if (receiveOnlyMode) return
         val rtc = synchronized(engineLock) { engine } ?: return
         if (localCameraMuted) return
         runCatching {
@@ -352,6 +370,7 @@ class AgoraRtcClient(
             .onFailure { AppLogger.w(TAG, "leaveChannel: ${it.message}", it) }
         engine = null
         joinedChannelId = null
+        receiveOnlyMode = false
         localPreviewView = null
         currentAppId = ""
         _events.tryEmit(RtcEvent.ConnectionStateChanged(RtcConnectionState.Disconnected))
@@ -378,7 +397,7 @@ class AgoraRtcClient(
             val now = System.currentTimeMillis()
             val elapsed = now - startAt
             if (joinedChannelId != channelId) return@Runnable
-            if (firstLocalFrameAtMs == 0L) {
+            if (!receiveOnlyMode && firstLocalFrameAtMs == 0L) {
                 AppLogger.w(
                     TAG,
                     "first-frame-timeout local-publish-missing channel=$channelId uid=$uid elapsedMs=$elapsed joinAtMs=$startAt nowMs=$now",
@@ -402,7 +421,7 @@ class AgoraRtcClient(
      * per [startFirstFrameWatchdog] cycle; does not retry further after this.
      */
     private fun recoverStalledLocalCapture() {
-        if (localCameraMuted || joinedChannelId == null) return
+        if (receiveOnlyMode || localCameraMuted || joinedChannelId == null) return
         val rtc = synchronized(engineLock) { engine } ?: return
         AppLogger.w(TAG, "recoverStalledLocalCapture channel=$joinedChannelId")
         runCatching {

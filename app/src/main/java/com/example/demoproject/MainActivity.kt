@@ -16,6 +16,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.Box
 import androidx.compose.material3.Surface
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
 import androidx.compose.material3.windowsizeclass.WindowHeightSizeClass
@@ -46,6 +47,7 @@ import com.example.demoproject.platform.callkit.CallState
 import com.example.demoproject.platform.data.model.Session
 import com.example.demoproject.platform.data.network.NetworkRuntime
 import com.example.demoproject.platform.data.session.SessionManager
+import com.example.demoproject.payment.PaymentMethodSheetHost
 import com.example.demoproject.product.auth.AuthScreen
 import com.example.demoproject.product.auth.AuthViewModel
 import com.example.demoproject.product.call.CallRecordsEffect
@@ -61,6 +63,7 @@ import com.example.demoproject.product.chat.ChatListViewModel
 import com.example.demoproject.product.home.HomeEffect
 import com.example.demoproject.product.home.HomeScreen
 import com.example.demoproject.product.home.HomeViewModel
+import com.example.demoproject.product.match.MatchEffect
 import com.example.demoproject.product.match.MatchScreen
 import com.example.demoproject.product.match.MatchViewModel
 import com.example.demoproject.product.me.AboutUsScreen
@@ -99,7 +102,8 @@ object DemoRoutes {
     const val Chat = "chat"
     const val ChatDetail = "chat/detail/{conversationId}/{nickname}"
     const val Match = "match"
-    const val Call = "call/{userId}/{nickname}/{age}/{avatar}/{video}/{cover}"
+    const val Call =
+        "call/{userId}/{nickname}/{age}/{avatar}/{video}/{cover}/{isMatchCall}/{matchEntryId}"
     const val CallRecords = "call-records"
     const val Store = "store"
     const val Vip = "vip"
@@ -123,10 +127,13 @@ object DemoRoutes {
         avatarUrl: String = "",
         videoUrl: String = "",
         coverUrl: String = "",
+        isMatchCall: Boolean = false,
+        matchEntryId: String = "",
     ): String {
         fun enc(raw: String): String =
             URLEncoder.encode(raw.ifBlank { "_" }, StandardCharsets.UTF_8.toString())
-        return "call/${enc(userId)}/${enc(nickname)}/$age/${enc(avatarUrl)}/${enc(videoUrl)}/${enc(coverUrl)}"
+        return "call/${enc(userId)}/${enc(nickname)}/$age/${enc(avatarUrl)}/${enc(videoUrl)}/" +
+            "${enc(coverUrl)}/$isMatchCall/${enc(matchEntryId)}"
     }
 
     fun profileUser(externalUserId: String): String {
@@ -147,7 +154,12 @@ class MainActivity : ComponentActivity() {
             ProvideWindowSize(calculateWindowSizeClass(this).toDemoWindowSize()) {
                 DemoTheme {
                     Surface(modifier = Modifier.fillMaxSize()) {
-                        DemoNavHost()
+                        Box(modifier = Modifier.fillMaxSize()) {
+                            DemoNavHost()
+                            PaymentMethodSheetHost(
+                                controller = (application as DemoApplication).paymentMethodSheetController,
+                            )
+                        }
                     }
                 }
             }
@@ -404,7 +416,35 @@ private fun DemoNavHost() {
         }
         composable(DemoRoutes.Match) {
             val vm: MatchViewModel = viewModel(factory = factory)
-            MatchScreen(viewModel = vm, onBack = { navController.popBackStack() })
+            LaunchedEffect(vm) {
+                vm.effects.collect { effect ->
+                    when (effect) {
+                        MatchEffect.OpenStore -> navController.navigate(DemoRoutes.Store)
+                        is MatchEffect.ShowMessage -> {
+                            Toast.makeText(context, effect.message, Toast.LENGTH_SHORT).show()
+                        }
+                        is MatchEffect.OpenProfile -> {
+                            navController.navigate(DemoRoutes.profileUser(effect.externalUserId))
+                        }
+                        is MatchEffect.StartVideoCall -> {
+                            navController.navigate(
+                                DemoRoutes.call(
+                                    userId = effect.userId,
+                                    nickname = effect.nickname,
+                                    age = effect.age,
+                                    avatarUrl = effect.avatarUrl,
+                                    isMatchCall = true,
+                                    matchEntryId = effect.entryId,
+                                ),
+                            )
+                        }
+                    }
+                }
+            }
+            MatchScreen(
+                viewModel = vm,
+                onNavigateTab = { route -> navigateMainTab(navController, route) },
+            )
         }
         composable(
             route = DemoRoutes.Call,
@@ -415,6 +455,8 @@ private fun DemoNavHost() {
                 navArgument("avatar") { type = NavType.StringType },
                 navArgument("video") { type = NavType.StringType },
                 navArgument("cover") { type = NavType.StringType },
+                navArgument("isMatchCall") { type = NavType.BoolType },
+                navArgument("matchEntryId") { type = NavType.StringType },
             ),
         ) { entry ->
             fun decodeArg(key: String): String {
@@ -430,7 +472,19 @@ private fun DemoNavHost() {
             val avatarUrl = decodeArg("avatar")
             val videoUrl = decodeArg("video")
             val coverUrl = decodeArg("cover")
-            val callFactory = remember(app, userId, nickname, age, avatarUrl, videoUrl, coverUrl) {
+            val isMatchCall = entry.arguments?.getBoolean("isMatchCall") ?: false
+            val matchEntryId = decodeArg("matchEntryId")
+            val callFactory = remember(
+                app,
+                userId,
+                nickname,
+                age,
+                avatarUrl,
+                videoUrl,
+                coverUrl,
+                isMatchCall,
+                matchEntryId,
+            ) {
                 object : ViewModelProvider.Factory {
                     @Suppress("UNCHECKED_CAST")
                     override fun <T : ViewModel> create(modelClass: Class<T>): T {
@@ -438,23 +492,47 @@ private fun DemoNavHost() {
                         return CallViewModel(
                             application = app,
                             targetUserId = userId,
+                            initialIsMatchCall = isMatchCall,
                             initialNickname = nickname,
                             initialAvatarUrl = avatarUrl,
                             initialAge = age,
                             initialVideoUrl = videoUrl,
                             initialCoverUrl = coverUrl,
+                            initialMatchEntryId = matchEntryId,
                         ) as T
                     }
                 }
             }
             val vm: CallViewModel = viewModel(
-                key = "call-$userId-$nickname-$age",
+                key = "call-$userId-$nickname-$age-$isMatchCall-$matchEntryId",
                 factory = callFactory,
             )
             CallScreen(
                 viewModel = vm,
                 onBack = { navController.popBackStack() },
+                onOpenMatch = {
+                    if (!navController.popBackStack(DemoRoutes.Match, inclusive = false)) {
+                        navController.navigate(DemoRoutes.Match)
+                    }
+                },
                 onOpenStore = { navController.navigate(DemoRoutes.Store) },
+                onOpenChatDetail = { conversationId, nickname ->
+                    navController.popBackStack()
+                    navController.navigate(DemoRoutes.chatDetail(conversationId, nickname))
+                },
+                onRestartVideoCall = { userId, nickname, age, avatarUrl, videoUrl, coverUrl ->
+                    navController.popBackStack()
+                    navController.navigate(
+                        DemoRoutes.call(
+                            userId = userId,
+                            nickname = nickname,
+                            age = age,
+                            avatarUrl = avatarUrl,
+                            videoUrl = videoUrl,
+                            coverUrl = coverUrl,
+                        ),
+                    )
+                },
             )
         }
         composable(DemoRoutes.Store) {
@@ -613,6 +691,16 @@ private fun DemoNavHost() {
                 onOpenStore = { navController.navigate(DemoRoutes.Store) },
                 onOpenChatDetail = { conversationId, nickname ->
                     navController.navigate(DemoRoutes.chatDetail(conversationId, nickname))
+                },
+                onStartVideoCall = { userId, nickname, age, avatarUrl ->
+                    navController.navigate(
+                        DemoRoutes.call(
+                            userId = userId,
+                            nickname = nickname,
+                            age = age,
+                            avatarUrl = avatarUrl,
+                        ),
+                    )
                 },
             )
         }

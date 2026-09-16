@@ -2,6 +2,8 @@ package com.example.demoproject.payment
 
 import android.app.Activity
 import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import com.android.billingclient.api.AcknowledgePurchaseParams
 import com.android.billingclient.api.BillingClient
 import com.android.billingclient.api.BillingClientStateListener
@@ -21,6 +23,7 @@ import com.example.demoproject.platform.data.repository.BillingOrderStatus
 import com.example.demoproject.platform.data.repository.BillingOrderStore
 import com.example.demoproject.platform.data.repository.BillingPayType
 import com.example.demoproject.platform.data.repository.BillingPaymentType
+import com.example.demoproject.platform.data.repository.BillingPaymentCheck
 import com.example.demoproject.platform.data.repository.BillingProductType
 import com.example.demoproject.platform.data.repository.BillingRepository
 import com.example.demoproject.platform.data.repository.GooglePayOrder
@@ -64,6 +67,9 @@ class StorePurchaseCoordinator(
     /** Debug-only hook, toggled from Settings, that skips real Google Play Billing and simulates a success. */
     private val isFakePaymentEnabled: suspend () -> Boolean = { false },
     private val analyticsTracker: AnalyticsTracker? = null,
+    private val selectPaymentMethod: suspend (BillingPaymentCheck) -> BillingPaymentType? = {
+        BillingPaymentType.GooglePlay
+    },
 ) {
     private val appContext = context.applicationContext
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
@@ -93,10 +99,6 @@ class StorePurchaseCoordinator(
         scope.launch {
             if (!purchaseActive.compareAndSet(false, true)) {
                 onResult(StorePurchaseResult.Failed(genericPaymentError()))
-                return@launch
-            }
-            if (request.paymentType != BillingPaymentType.GooglePlay) {
-                finishWithoutPending(onResult, StorePurchaseResult.Failed(genericPaymentError()))
                 return@launch
             }
             val normalizedRequest = request.copy(
@@ -132,23 +134,33 @@ class StorePurchaseCoordinator(
         request: StorePurchaseRequest,
         onResult: (StorePurchaseResult) -> Unit,
     ) {
-        when (val check = repository.checkPaymentType(request)) {
+        val paymentCheck = when (val check = repository.checkPaymentType(request)) {
             is AppResult.Failure -> {
                 finishWithoutPending(onResult, StorePurchaseResult.Failed(check.message))
                 return
             }
-            is AppResult.Success -> Unit
+            is AppResult.Success -> check.data
         }
+        val selectedPaymentType = if (paymentCheck.requiresSelection) {
+            selectPaymentMethod(paymentCheck)
+        } else {
+            BillingPaymentType.GooglePlay
+        }
+        if (selectedPaymentType == null) {
+            finishWithoutPending(onResult, StorePurchaseResult.Canceled)
+            return
+        }
+        val selectedRequest = request.copy(paymentType = selectedPaymentType)
 
-        val order = when (val created = repository.createOrder(request)) {
+        val order = when (val created = repository.createOrder(selectedRequest)) {
             is AppResult.Failure -> {
                 finishWithoutPending(onResult, StorePurchaseResult.Failed(created.message))
                 return
             }
             is AppResult.Success -> created.data
         }
-        if (order.callback != null) {
-            finishWithoutPending(onResult, StorePurchaseResult.Failed(genericPaymentError()))
+        if (selectedPaymentType == BillingPaymentType.ThirdParty) {
+            handleExternalPayment(activity, order, onResult)
             return
         }
 
@@ -161,11 +173,11 @@ class StorePurchaseCoordinator(
                 isSandboxData = useFakePayment,
             ),
         )
-        val stored = order.toStoredOrder(request, BillingOrderStatus.Created)
+        val stored = order.toStoredOrder(selectedRequest, BillingOrderStatus.Created)
         orderStore.upsert(stored)
 
         if (useFakePayment) {
-            completeFakePurchase(request, order, stored, onResult)
+            completeFakePurchase(selectedRequest, order, stored, onResult)
             return
         }
 
@@ -195,6 +207,38 @@ class StorePurchaseCoordinator(
                 failAndCancel(stored, onResult, APP_ERROR_LAUNCH_FAILED, billingResult.responseCode)
             }
         }
+    }
+
+    private suspend fun handleExternalPayment(
+        activity: Activity,
+        order: GooglePayOrder,
+        onResult: (StorePurchaseResult) -> Unit,
+    ) {
+        val url = order.externalPaymentUrl
+        val opened = url != null && runCatching {
+            val uri = Uri.parse(url)
+            require(uri.scheme.equals("https", ignoreCase = true) || uri.scheme.equals("http", ignoreCase = true))
+            activity.startActivity(Intent(Intent.ACTION_VIEW, uri))
+        }.onFailure { error ->
+            AppLogger.e(TAG, "external checkout open failed: ${error.javaClass.simpleName}", error)
+        }.isSuccess
+        if (opened) {
+            analyticsTracker?.track(
+                AnalyticsEvent.OrderSubmit(
+                    goodsId = order.goodsId,
+                    productId = order.productId,
+                    orderNo = order.tranNo,
+                ),
+            )
+            finishWithoutPending(onResult, StorePurchaseResult.Canceled)
+            return
+        }
+        repository.cancelOrder(
+            tranNo = order.tranNo,
+            appErrorCode = APP_ERROR_EXTERNAL_URL_MISSING,
+            googleCode = BillingClient.BillingResponseCode.ERROR,
+        )
+        finishWithoutPending(onResult, StorePurchaseResult.Failed(genericPaymentError()))
     }
 
     /**
@@ -624,7 +668,8 @@ private const val APP_ERROR_EMPTY_PURCHASES = 5
 private const val APP_ERROR_MISSING_ORDER_ID = 6
 private const val APP_ERROR_INVALID_PURCHASE_STATE = 7
 private const val APP_ERROR_STALE_CREATED_ORDER = 8
-private const val APP_ERROR_BILLING_UNAVAILABLE = 9
+private const val APP_ERROR_BILLING_UNAVAILABLE = APP_ERROR_BILLING_GENERIC
+private const val APP_ERROR_EXTERNAL_URL_MISSING = 9
 
 /** Verified VIP orders should flip local VIP membership immediately (before Me/VIP refresh). */
 internal fun isVipProductType(productTypeApi: Int): Boolean =
