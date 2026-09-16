@@ -8,6 +8,7 @@ sealed interface SignalingEvent {
         val callerUserId: String,
         val callerName: String = "",
         val callerAvatar: String = "",
+        val callerAge: Int = 0,
         val callType: Int = CallMediaType.Video,
         val channelId: String,
         val rtcToken: String,
@@ -20,6 +21,14 @@ sealed interface SignalingEvent {
          * free, per product rule. Fixed at invite time, never re-derived later.
          */
         val callFreeMin: Int = 0,
+        /**
+         * `user_info.video` play / cover paths from the invite push (video show).
+         * May be relative CDN keys; UI resolves them before playback.
+         */
+        val peerVideoUrl: String = "",
+        val peerCoverUrl: String = "",
+        /** From invite push; echo on `/call/success` / `/call/heart` when present. */
+        val fencingToken: String? = null,
     ) : SignalingEvent
 
     data class InviteAccepted(val inviteId: String, val callId: String) : SignalingEvent
@@ -30,6 +39,49 @@ sealed interface SignalingEvent {
 
     data class CallEnded(val callId: String, val reason: EndReason) : SignalingEvent
 
+    /** MQTT a_type=7 — low balance / recharge guide during an active call. */
+    data class BalanceAlert(
+        val roomKey: String,
+        val roomSessionId: Long = 0L,
+        val balance: Int = 0,
+        val remainingSeconds: Int = 0,
+        val totalDurationSeconds: Int = 0,
+        val saleRechargeAlertTimeSeconds: Int = 0,
+        val rechargeAlertTimeSeconds: Int = 0,
+        val payItem: SignalingCoinOffer? = null,
+        val salePayItem: SignalingCoinOffer? = null,
+    ) : SignalingEvent
+
+    /**
+     * MQTT a_type=8 — in-call chat or billing tip.
+     * [msgType] `1` = peer text, `4` = system/billing tip.
+     */
+    data class InCallChat(
+        val roomKey: String,
+        val msgType: Int,
+        val content: String,
+        val sendUid: Long = 0L,
+        val messageId: String = "",
+    ) : SignalingEvent
+
+    /** MQTT a_type=9 (or other non-lifecycle) — peer camera mask/blur. */
+    data class PeerMaskStatus(
+        val roomKey: String,
+        /** `true` when remote blur is on (`status=1`). */
+        val masked: Boolean,
+    ) : SignalingEvent
+
     data class Error(val message: String, val cause: Throwable? = null) : SignalingEvent
 }
+
+/** Lightweight coin SKU snapshot carried on MQTT balance alerts (no data-module dependency). */
+data class SignalingCoinOffer(
+    val id: Long = 0L,
+    val sku: String = "",
+    val diamond: Int = 0,
+    val giveCoins: Int = 0,
+    val moneyDesc: String = "",
+    val originalDesc: String = "",
+    val saleDesc: String = "",
+)
 

@@ -43,6 +43,11 @@ data class CallMqttNotificationDto(
      * re-derived from later MQTT balance-alert pushes).
      */
     val callFreeMin: Int = 0,
+    /**
+     * Opaque session fence from invite / create; echo on `/call/success` and `/call/heart`.
+     */
+    @SerialName("fencing_token")
+    val fencingToken: String? = null,
 ) {
     private fun String?.isUsableChannel(): Boolean {
         val value = this?.trim().orEmpty()

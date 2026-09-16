@@ -17,6 +17,7 @@ import com.example.demoproject.platform.data.network.dto.FocusFollowRequestDto
 import com.example.demoproject.platform.data.network.dto.FocusListRequestDto
 import com.example.demoproject.platform.data.network.dto.HomeInfoRequestDto
 import com.example.demoproject.platform.data.network.dto.HomeListRequestDto
+import com.example.demoproject.platform.data.network.toChatBinaryUrlOrNull
 import com.example.demoproject.platform.data.network.toPicUrlOrNull
 import com.example.demoproject.platform.data.network.toRelativeMediaPathOrNull
 import com.example.demoproject.platform.data.network.api.ProfileApi
@@ -497,8 +498,13 @@ private fun AlbumMediaDto.toAlbumPhoto(): AlbumPhoto? {
     val thumbnail = smallPhotoUrl.toPicUrlOrNull()
         ?: smallUrl.toPicUrlOrNull()
         ?: coverUrl.toPicUrlOrNull()
-        ?: url.toPicUrlOrNull()
-    val full = url.toPicUrlOrNull() ?: thumbnail
+        ?: url.takeUnless { isVideo }?.toPicUrlOrNull()
+    // Video binaries must use the asset CDN; pic CDN rejects .mp4 with HTTP 400.
+    val full = if (isVideo) {
+        url.toChatBinaryUrlOrNull()
+    } else {
+        url.toPicUrlOrNull()
+    } ?: thumbnail
     if (thumbnail.isNullOrBlank() && full.isNullOrBlank()) return null
     return AlbumPhoto(
         mediaId = mediaId,

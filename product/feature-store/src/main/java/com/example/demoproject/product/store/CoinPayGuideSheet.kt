@@ -13,19 +13,19 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsBottomHeight
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
@@ -44,6 +44,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -63,16 +64,16 @@ import com.example.demoproject.ui.foundation.Radius
 import com.example.demoproject.ui.foundation.Spacing
 import com.example.demoproject.ui.foundation.TextSize
 
-private val CoinPayGuideSheetShape = RoundedCornerShape(
-    topStart = Radius.coinPayGuideSheet,
-    topEnd = Radius.coinPayGuideSheet,
-)
+private val CoinPayGuideSheetShape = RectangleShape
 
 /**
  * Insufficient-balance coin recharge guide.
  *
  * Dismiss only via the close chip or scrim tap — sheet drag gestures are disabled.
  * Sale / coin cards reuse the store page composables.
+ * Silhouette comes from `store_guide_bg` (Figma `弹窗背景 1`) alpha, not a rounded clip.
+ * Draws edge-to-edge under the system nav bar and paints that strip with the sheet
+ * bottom color so it is not transparent.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -91,16 +92,23 @@ fun CoinPayGuideSheet(
         scrimColor = DemoColors.scrim,
         dragHandle = null,
         sheetGesturesEnabled = false,
+        contentWindowInsets = { WindowInsets(0, 0, 0, 0) },
     ) {
-        CoinPayGuideSheetContent(
-            state = state,
-            onDismiss = onDismiss,
-            onPurchaseCoin = onPurchaseCoin,
-            onPurchaseSale = onPurchaseSale,
-            modifier = Modifier
-                .fillMaxWidth()
-                .navigationBarsPadding(),
-        )
+        Column(modifier = Modifier.fillMaxWidth()) {
+            CoinPayGuideSheetContent(
+                state = state,
+                onDismiss = onDismiss,
+                onPurchaseCoin = onPurchaseCoin,
+                onPurchaseSale = onPurchaseSale,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Spacer(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .windowInsetsBottomHeight(WindowInsets.navigationBars)
+                    .background(DemoColors.coinGuideSheetBottom),
+            )
+        }
     }
 }
 
@@ -116,8 +124,7 @@ internal fun CoinPayGuideSheetContent(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .heightIn(max = ComponentSize.coinGuideSheetMaxHeight)
-            .clip(CoinPayGuideSheetShape),
+            .heightIn(max = ComponentSize.coinGuideSheetMaxHeight),
     ) {
         CoinPayGuideBackground(modifier = Modifier.matchParentSize())
         Column(modifier = Modifier.fillMaxSize()) {
@@ -185,7 +192,9 @@ internal fun CoinPayGuideSheetContent(
             Image(
                 painter = painterResource(R.drawable.store_guide_ic_close),
                 contentDescription = null,
-                modifier = Modifier.size(ComponentSize.coinGuideCloseIcon),
+                modifier = Modifier
+                    .width(ComponentSize.coinGuideCloseIconWidth)
+                    .height(ComponentSize.coinGuideCloseIconHeight),
                 contentScale = ContentScale.Fit,
             )
         }
@@ -193,26 +202,17 @@ internal fun CoinPayGuideSheetContent(
 }
 
 /**
- * Figma crops `弹窗背景 1` inside the sheet frame with
- * `height: 142.37%` and `top: -31.44%`, which pulls the art up and clips the bottom.
+ * Full-bleed Figma `弹窗背景 1` (`store_guide_bg`): wavy top + hearts are part of the
+ * asset alpha. Do not crop/offset or clip to a rounded rect — that hides the silhouette.
  */
 @Composable
 private fun CoinPayGuideBackground(modifier: Modifier = Modifier) {
-    BoxWithConstraints(
-        modifier = modifier.background(DemoColors.sheet),
-    ) {
-        val imageHeight = maxHeight * ComponentSize.coinGuideBgHeightRatio
-        val imageOffsetY = maxHeight * ComponentSize.coinGuideBgTopRatio
-        Image(
-            painter = painterResource(R.drawable.store_guide_bg),
-            contentDescription = null,
-            contentScale = ContentScale.FillBounds,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(imageHeight)
-                .offset(y = imageOffsetY),
-        )
-    }
+    Image(
+        painter = painterResource(R.drawable.store_guide_bg),
+        contentDescription = null,
+        contentScale = ContentScale.FillBounds,
+        modifier = modifier,
+    )
 }
 
 @Composable

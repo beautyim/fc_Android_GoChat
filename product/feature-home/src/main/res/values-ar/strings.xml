@@ -20,5 +20,14 @@
     <string name="home_online_cd_video">مكالمة فيديو</string>
     <string name="home_nav_match">مطابقة</string>
     <string name="home_online_cd_loading">جارٍ التحميل</string>
+    <string name="home_video_show_video_chat">محادثة فيديو</string>
+    <string name="home_video_show_next">التالي</string>
+    <string name="home_video_show_gift_send_success">تم إرسال الهدية</string>
+    <string name="home_video_show_play_failed">تعذر تشغيل هذا الفيديو</string>
+    <string name="home_video_show_cd_close">إغلاق</string>
+    <string name="home_video_show_cd_profile">فتح الملف الشخصي</string>
+    <string name="home_video_show_cd_gift">إرسال هدية</string>
+    <string name="home_video_show_cd_next">عرض الفيديو التالي</string>
+    <string name="home_video_show_cd_loading">جارٍ تحميل الفيديو</string>
 </resources>
 

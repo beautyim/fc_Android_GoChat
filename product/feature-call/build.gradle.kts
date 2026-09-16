@@ -20,10 +20,12 @@ dependencies {
     implementation(project(":platform:data"))
     implementation(project(":platform:callkit"))
     implementation(project(":platform:mqtt"))
+    implementation(project(":product:feature-store"))
 
     implementation(project(":ui:foundation"))
     implementation(project(":ui:designsystem"))
     implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
@@ -33,5 +35,9 @@ dependencies {
     implementation(libs.androidx.compose.material3)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.coil.compose)
+    implementation(libs.media3.exoplayer)
+    implementation(libs.media3.ui)
+    implementation(libs.media3.database)
+    implementation(libs.media3.datasource)
     debugImplementation(libs.androidx.compose.ui.tooling)
 }

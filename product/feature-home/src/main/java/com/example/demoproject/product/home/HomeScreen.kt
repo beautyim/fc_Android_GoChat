@@ -187,6 +187,19 @@ fun HomeScreen(
             onSelect = onNavigateTab,
             modifier = Modifier.align(Alignment.BottomCenter),
         )
+        state.videoShowUser?.let { user ->
+            VideoShowOverlay(
+                user = user,
+                coinBalance = state.coinBalance,
+                gifts = state.gifts,
+                selectedGiftId = state.selectedGiftId,
+                isGiftSheetVisible = state.isGiftSheetVisible,
+                isGiftCatalogLoading = state.isGiftCatalogLoading,
+                isGiftSending = state.isGiftSending,
+                giftAnimationUrl = state.giftAnimationUrl,
+                onIntent = onIntent,
+            )
+        }
     }
 }
 

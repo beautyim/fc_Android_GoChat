@@ -28,6 +28,15 @@ data class OutgoingInviteRequest(
     val channelId: String,
     val rtcToken: String,
     val rtcUid: Int,
+    val rtcAppId: String = "",
+    val roomSessionId: Long = 0L,
+    val fencingToken: String? = null,
+    val peerNickname: String = "",
+    val peerAvatarUrl: String = "",
+    val peerAge: Int = 0,
+    /** Absolute or relative video-show play URL for the dialing background. */
+    val peerVideoUrl: String = "",
+    val peerCoverUrl: String = "",
 )
 
 enum class RejectReason {

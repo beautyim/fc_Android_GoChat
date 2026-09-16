@@ -148,6 +148,7 @@ object ComponentSize {
     /** Gifts per pager page (2 rows × 4 cols). */
     const val giftPageSize = 8
     const val giftPageColumns = 4
+    const val giftPageRows = 2
     /** iOS action sheet row height. */
     val actionSheetRow = 52.dp
     /** Figma Call Records list avatar — 60dp. */
@@ -333,6 +334,11 @@ object ComponentSize {
     val chatGiftQuickIcon = 30.dp
     /** Figma first-visit gift quick bar coin — 12dp. */
     val chatGiftQuickCoin = 12.dp
+    /**
+     * First-visit gift quick bar content height — Figma 176:5089 item
+     * (6+30+4+14+6). Overlay; list uses matching bottom contentPadding.
+     */
+    val chatGiftQuickBarHeight = 60.dp
     /** Figma first-visit greeting wave — 120×116. */
     val chatGreetingWaveWidth = 120.dp
     val chatGreetingWaveHeight = 116.dp
@@ -539,10 +545,12 @@ object ComponentSize {
     val vipNavIconTop = 16.dp
     /** VIP pay-guide sheet close icon leaf — Figma 20dp. */
     val vipGuideCloseIcon = 20.dp
-    /** Coin pay-guide close chip — Figma 36dp. */
+    /** Coin pay-guide close chip — Figma 36dp (6+24+6 / 1+34+1). */
     val coinGuideCloseChip = 36.dp
-    /** Coin pay-guide close glyph — Figma ~22dp. */
-    val coinGuideCloseIcon = 22.dp
+    /** Coin pay-guide close glyph width — Figma SVG 13dp. */
+    val coinGuideCloseIconWidth = 13.dp
+    /** Coin pay-guide close glyph height — Figma SVG 22dp. */
+    val coinGuideCloseIconHeight = 22.dp
     /** Coin pay-guide balance coin — Figma 16dp. */
     val coinGuideBalanceCoin = 16.dp
     /** Coin pay-guide close chip elevation — Figma 0 1 2 @ 4%. */
@@ -552,14 +560,6 @@ object ComponentSize {
      * Keeps sticky header + scroll body measurable for [Modifier.weight].
      */
     val coinGuideSheetMaxHeight = 468.dp
-    /**
-     * Figma `弹窗背景 1` image scale inside the 468dp frame: `height: 142.37%`.
-     */
-    const val coinGuideBgHeightRatio = 1.4237f
-    /**
-     * Figma `弹窗背景 1` image offset: `top: -31.44%` (crops lower portion of the asset).
-     */
-    const val coinGuideBgTopRatio = -0.3144f
     /** VIP pay-guide plan badge icon — Figma 60dp. */
     val vipGuidePlanIcon = 60.dp
     /** VIP pay-guide plan card height — Figma 80dp. */
@@ -587,4 +587,80 @@ object ComponentSize {
     val vipSkeletonPlanPriceHeight = 24.dp
     val vipSkeletonDisclaimerWidth = 200.dp
     val vipSkeletonDisclaimerHeight = 10.dp
+    /** Video show close glyph — Figma 24dp. */
+    val videoShowClose = 24.dp
+    /** Video show header avatar — Figma 32dp. */
+    val videoShowAvatar = 32.dp
+    /** Video show report circle — Figma 36dp. */
+    val videoShowReport = 36.dp
+    /** Video show report glyph — Figma 20dp. */
+    val videoShowReportIcon = 20.dp
+    /** Video show gift FAB — Figma 50dp. */
+    val videoShowGift = 50.dp
+    /** Video show Video Chat CTA — Figma py 16 ≈ 51dp. */
+    val videoShowCta = 51.dp
+    /** Video show progress track — Figma 4dp. */
+    val videoShowProgress = 4.dp
+    /** Video show top fade — Figma 166dp. */
+    val videoShowTopGradient = 166.dp
+    /** Video show bottom fade — Figma 180dp. */
+    val videoShowBottomGradient = 180.dp
+    /** Call ringing header avatar — Figma 46dp. */
+    val callRingingAvatar = 46.dp
+    /** Call ringing hang up / cancel — Figma 70dp. */
+    val callRingingHangup = 70.dp
+    /**
+     * Call ringing answer solid fill — Figma Ellipse 27 = 70dp
+     * (same diameter as hang up; glow rings sit outside).
+     */
+    val callRingingAnswer = 70.dp
+    /** Call ringing hang-up glyph — Figma ~32dp. */
+    val callRingingHangupIcon = 32.dp
+    /** Call ringing answer glyph — Figma Frame 36dp. */
+    val callRingingAnswerIcon = 36.dp
+    /** Call ringing report circle — Figma 8+20+8. */
+    val callRingingReport = 36.dp
+    /** Call ringing report glyph — Figma 20dp. */
+    val callRingingReportIcon = 20.dp
+    /** Call ringing answer outer glow — Figma Ellipse 29 = 90dp. */
+    val callRingingAnswerGlow = 90.dp
+    /** Call ringing answer mid glow — Figma Ellipse 28 = 81dp. */
+    val callRingingAnswerGlowMid = 81.dp
+    /** Call ringing top fade — Figma 145dp. */
+    val callRingingTopGradient = 145.dp
+    /** In-call PiP preview — Figma 100×133. */
+    val callInCallPipWidth = 100.dp
+    val callInCallPipHeight = 133.dp
+    /** In-call PiP corner — Figma ~16dp. */
+    val callInCallPipRadius = 16.dp
+    /** In-call bottom action circle — Figma 44dp. */
+    val callInCallAction = 44.dp
+    /** In-call bottom action glyph — Figma 24dp. */
+    val callInCallActionIcon = 24.dp
+    /** In-call header report / hangup circle — same diameter as ringing report. */
+    val callInCallHeaderAction = 36.dp
+    /** In-call header report / hangup glyph. */
+    val callInCallHeaderIcon = 20.dp
+    val callInCallHangupIcon = 24.dp
+    /** In-call like heart — Figma 16dp. */
+    val callInCallLikeIcon = 16.dp
+    /** In-call timer glyph — Figma 16dp. */
+    val callInCallTimerIcon = 16.dp
+    /** In-call flip-camera on PiP — Figma 18dp. */
+    val callInCallFlipIcon = 18.dp
+    /** In-call gift quick icon / coin — same as chat quick bar. */
+    val callInCallGiftQuickIcon = 30.dp
+    val callInCallGiftQuickCoin = 12.dp
+    /** In-call more-sheet leading icon circle padding + 24dp glyph. */
+    val callInCallMoreIcon = 24.dp
+    /** In-call gift-request decor — Figma 60dp. */
+    val callInCallGiftRequestDecor = 60.dp
+    /** In-call gift-sent tip bar height — Figma 44dp. */
+    val callInCallGiftSentTipHeight = 44.dp
+    /** In-call gift-sent tip gift icon — Figma 52dp. */
+    val callInCallGiftSentTipIcon = 52.dp
+    /** In-call translate chip — Figma ~16dp hit. */
+    val callInCallTranslate = 16.dp
+    /** In-call bottom gradient — Figma 171dp. */
+    val callInCallBottomGradient = 171.dp
 }

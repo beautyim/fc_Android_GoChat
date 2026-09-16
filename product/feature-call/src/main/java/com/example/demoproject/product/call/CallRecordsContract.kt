@@ -66,7 +66,14 @@ sealed interface CallRecordsIntent {
 
 sealed interface CallRecordsEffect {
     data class OpenProfile(val externalUserId: String) : CallRecordsEffect
-    data class StartVideoCall(val userId: String, val nickname: String) : CallRecordsEffect
+    data class StartVideoCall(
+        val userId: String,
+        val nickname: String,
+        val avatarUrl: String = "",
+        val age: Int = 0,
+        val videoUrl: String = "",
+        val coverUrl: String = "",
+    ) : CallRecordsEffect
     data object OpenStore : CallRecordsEffect
     data object OpenMatch : CallRecordsEffect
     data class ShowMessage(val message: String) : CallRecordsEffect

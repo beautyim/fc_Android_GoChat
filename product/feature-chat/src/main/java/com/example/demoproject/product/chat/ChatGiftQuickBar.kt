@@ -1,6 +1,7 @@
 package com.example.demoproject.product.chat
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -12,12 +13,15 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -34,12 +38,10 @@ import com.example.demoproject.ui.foundation.ComponentSize
 import com.example.demoproject.ui.foundation.Radius
 import com.example.demoproject.ui.foundation.Spacing
 import com.example.demoproject.ui.foundation.TextSize
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.ui.draw.clip
 
 /**
  * First-visit gift shortcuts above the composer (Figma 176:5089).
- * Transparent background; horizontal scroll; pushes the message list up when visible.
+ * Transparent background (rgba(34,34,34,0) items); horizontal scroll.
  */
 @Composable
 fun ChatGiftQuickBar(
@@ -50,7 +52,9 @@ fun ChatGiftQuickBar(
 ) {
     if (gifts.isEmpty()) return
     LazyRow(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            .background(Color.Transparent),
         contentPadding = PaddingValues(horizontal = Spacing.chipGap),
         horizontalArrangement = Arrangement.spacedBy(Spacing.giftCardGap),
         verticalAlignment = Alignment.CenterVertically,
@@ -75,6 +79,7 @@ private fun ChatGiftQuickItem(
     Column(
         modifier = Modifier
             .clip(RoundedCornerShape(Radius.chatBanner))
+            .background(Color.Transparent)
             .semantics { contentDescription = cd }
             .clickable(
                 enabled = enabled && gift.id > 0L,
@@ -115,7 +120,7 @@ private fun ChatGiftQuickItem(
     }
 }
 
-@Preview(name = "GiftQuickBar", showBackground = true)
+@Preview(name = "GiftQuickBar", showBackground = true, backgroundColor = 0xFFF9F9F9)
 @Composable
 private fun ChatGiftQuickBarPreview() {
     DemoTheme {

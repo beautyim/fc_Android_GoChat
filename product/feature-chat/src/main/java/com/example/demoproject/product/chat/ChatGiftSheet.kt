@@ -86,6 +86,14 @@ private val GiftSheetTopGlow = Brush.verticalGradient(
 /** Keep title / price slots the same height for skeleton and real content. */
 private val GiftTitleSlotHeight = 12.dp
 private val GiftPriceSlotHeight = 12.dp
+/** Matches GiftCard vertical footprint so empty grid cells keep 2×4 page height. */
+private val GiftCardSlotHeight =
+    (Spacing.sm - Spacing.xxs) * 2 +
+        ComponentSize.giftCardImage +
+        Spacing.xs +
+        GiftTitleSlotHeight +
+        Spacing.xs +
+        GiftPriceSlotHeight
 
 private val GiftPlaceholderPage: List<ChatGiftUi> = List(ComponentSize.giftPageSize) { index ->
     ChatGiftUi(
@@ -199,6 +207,8 @@ internal fun ChatGiftSheetContent(
                         modifier = Modifier.fillMaxWidth(),
                         contentPadding = PaddingValues(horizontal = Spacing.chipGap),
                         pageSpacing = Spacing.giftCardGap,
+                        // Pager height follows a full 2×4 page; keep short last pages top-aligned.
+                        verticalAlignment = Alignment.Top,
                     ) { page ->
                         GiftPageGrid(
                             gifts = pages[page],
@@ -307,30 +317,35 @@ private fun GiftPageGrid(
     selectedGiftId: Long?,
     onSelectGift: (Long) -> Unit,
 ) {
-    val rows = gifts.chunked(ComponentSize.giftPageColumns)
+    // Always lay out a fixed rows×cols grid so a short last page keeps cell sizes.
     Column(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(Spacing.giftCardGap),
     ) {
-        repeat(2) { rowIndex ->
-            val rowItems = rows.getOrNull(rowIndex).orEmpty()
+        repeat(ComponentSize.giftPageRows) { rowIndex ->
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(Spacing.giftCardGap),
             ) {
                 repeat(ComponentSize.giftPageColumns) { colIndex ->
-                    val gift = rowItems.getOrNull(colIndex)
-                    if (gift != null) {
-                        GiftCard(
-                            gift = gift,
-                            selected = !gift.isPlaceholder && gift.id == selectedGiftId,
-                            onClick = {
-                                if (!gift.isPlaceholder) onSelectGift(gift.id)
-                            },
-                            modifier = Modifier.weight(1f),
-                        )
-                    } else {
-                        Spacer(modifier = Modifier.weight(1f))
+                    val gift = gifts.getOrNull(rowIndex * ComponentSize.giftPageColumns + colIndex)
+                    Box(modifier = Modifier.weight(1f)) {
+                        if (gift != null) {
+                            GiftCard(
+                                gift = gift,
+                                selected = !gift.isPlaceholder && gift.id == selectedGiftId,
+                                onClick = {
+                                    if (!gift.isPlaceholder) onSelectGift(gift.id)
+                                },
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+                        } else {
+                            Spacer(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(GiftCardSlotHeight),
+                            )
+                        }
                     }
                 }
             }
@@ -585,6 +600,32 @@ private fun ChatGiftSheetPreview() {
             avatarUrl = null,
             coinBalance = 100,
             gifts = List(8) { index ->
+                ChatGiftUi(
+                    id = index.toLong(),
+                    title = "Love Heart",
+                    price = 199,
+                    iconUrl = "",
+                )
+            },
+            selectedGiftId = 1L,
+            isCatalogLoading = false,
+            isSending = false,
+            onSelectGift = {},
+            onSend = {},
+            onOpenCoins = {},
+        )
+    }
+}
+
+@Preview(name = "ChatGiftSheet partial last page")
+@Composable
+private fun ChatGiftSheetPartialPagePreview() {
+    DemoTheme {
+        ChatGiftSheetContent(
+            nickname = "Valeria",
+            avatarUrl = null,
+            coinBalance = 100,
+            gifts = List(5) { index ->
                 ChatGiftUi(
                     id = index.toLong(),
                     title = "Love Heart",

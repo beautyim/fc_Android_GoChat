@@ -4,9 +4,12 @@ import android.app.Application
 import androidx.annotation.StringRes
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.demoproject.platform.data.model.GiftFromType
 import com.example.demoproject.platform.data.model.OnlinePresence
 import com.example.demoproject.platform.data.network.NetworkRuntime
 import com.example.demoproject.platform.network.result.AppResult
+import com.example.demoproject.product.profile.ProfileGiftUi
+import com.example.demoproject.ui.designsystem.gift.GiftSvgaPreloader
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -29,6 +32,9 @@ class HomeViewModel(
 
     private val tabJobs = mutableMapOf<OnlineFilter, Job>()
 
+    /** After LoadMore succeeds, advance video-show to the next user with a show. */
+    private var pendingVideoShowNext: Boolean = false
+
     init {
         viewModelScope.launch {
             runtime.accountBalanceStore.coins.collect { coins ->
@@ -44,20 +50,228 @@ class HomeViewModel(
             HomeIntent.Refresh -> ensureTabLoaded(_uiState.value.selectedFilter, force = true)
             HomeIntent.LoadMore -> loadMore()
             is HomeIntent.SelectFilter -> selectFilter(intent.filter)
-            is HomeIntent.OpenUserProfile -> viewModelScope.launch {
-                _effects.send(HomeEffect.OpenProfile(intent.user.profileRouteUserId))
-            }
+            is HomeIntent.OpenUserProfile -> openUserProfile(intent.user)
             is HomeIntent.OpenUserAction -> openUserAction(intent.user)
             HomeIntent.OpenCoins -> viewModelScope.launch { _effects.send(HomeEffect.OpenStore) }
             is HomeIntent.ReportUser -> viewModelScope.launch {
                 _effects.send(HomeEffect.ShowMessage(str(R.string.home_online_report_coming_soon)))
             }
+            HomeIntent.CloseVideoShow -> closeVideoShow()
+            HomeIntent.NextVideoShow -> nextVideoShow()
+            HomeIntent.OpenVideoShowProfile -> openVideoShowProfile()
+            HomeIntent.OpenVideoShowGift -> openVideoShowGift()
+            HomeIntent.DismissVideoShowGiftSheet -> _uiState.update {
+                it.copy(isGiftSheetVisible = false, isGiftSending = false)
+            }
+            is HomeIntent.SelectVideoShowGift -> {
+                _uiState.update { it.copy(selectedGiftId = intent.giftId) }
+                val url = _uiState.value.gifts
+                    .firstOrNull { it.id == intent.giftId }
+                    ?.svgaUrl
+                GiftSvgaPreloader.prefetch(getApplication(), url)
+            }
+            HomeIntent.SendVideoShowGift -> sendVideoShowGift()
+            HomeIntent.DismissVideoShowGiftAnimation -> _uiState.update {
+                it.copy(giftAnimationUrl = null)
+            }
+            HomeIntent.StartVideoShowCall -> startVideoShowCall()
+        }
+    }
+
+    private fun openUserProfile(user: OnlineUserUi) {
+        if (user.videoShow != null) {
+            pendingVideoShowNext = false
+            _uiState.update {
+                it.copy(
+                    videoShowUserId = user.id,
+                    isGiftSheetVisible = false,
+                    isGiftSending = false,
+                    giftAnimationUrl = null,
+                )
+            }
+            return
+        }
+        viewModelScope.launch {
+            _effects.send(HomeEffect.OpenProfile(user.profileRouteUserId))
+        }
+    }
+
+    private fun closeVideoShow() {
+        pendingVideoShowNext = false
+        _uiState.update {
+            it.copy(
+                videoShowUserId = null,
+                isGiftSheetVisible = false,
+                isGiftSending = false,
+                giftAnimationUrl = null,
+            )
+        }
+    }
+
+    private fun openVideoShowProfile() {
+        val user = _uiState.value.videoShowUser ?: return
+        pendingVideoShowNext = false
+        _uiState.update {
+            it.copy(
+                videoShowUserId = null,
+                isGiftSheetVisible = false,
+                isGiftSending = false,
+                giftAnimationUrl = null,
+            )
+        }
+        viewModelScope.launch {
+            _effects.send(HomeEffect.OpenProfile(user.profileRouteUserId))
+        }
+    }
+
+    private fun openVideoShowGift() {
+        val user = _uiState.value.videoShowUser ?: return
+        if (user.id.isBlank()) return
+        _uiState.update {
+            it.copy(
+                isGiftSheetVisible = true,
+                isGiftCatalogLoading = it.gifts.isEmpty(),
+            )
+        }
+        if (_uiState.value.gifts.isEmpty()) {
+            loadGiftCatalog()
+        }
+    }
+
+    private fun loadGiftCatalog() {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isGiftCatalogLoading = true) }
+            when (val result = runtime.messageRepository.getGiftConfig()) {
+                is AppResult.Success -> {
+                    val gifts = result.data.gifts.map { gift ->
+                        ProfileGiftUi(
+                            id = gift.id,
+                            title = gift.title,
+                            price = gift.price,
+                            iconUrl = gift.iconUrl,
+                            svgaUrl = gift.svgaUrl,
+                        )
+                    }
+                    _uiState.update {
+                        it.copy(
+                            isGiftCatalogLoading = false,
+                            gifts = gifts,
+                            selectedGiftId = it.selectedGiftId ?: gifts.firstOrNull()?.id,
+                        )
+                    }
+                    val selectedId = _uiState.value.selectedGiftId
+                    val url = gifts.firstOrNull { it.id == selectedId }?.svgaUrl
+                    GiftSvgaPreloader.prefetch(getApplication(), url)
+                }
+                is AppResult.Failure -> {
+                    _uiState.update { it.copy(isGiftCatalogLoading = false) }
+                    _effects.send(HomeEffect.ShowMessage(result.message))
+                }
+            }
+        }
+    }
+
+    private fun sendVideoShowGift() {
+        val state = _uiState.value
+        val user = state.videoShowUser ?: return
+        val giftId = state.selectedGiftId ?: return
+        val selected = state.gifts.firstOrNull { it.id == giftId } ?: return
+        if (user.id.isBlank() || state.isGiftSending) return
+        viewModelScope.launch {
+            _uiState.update { it.copy(isGiftSending = true) }
+            GiftSvgaPreloader.prefetch(getApplication(), selected.svgaUrl)
+            when (
+                val result = runtime.messageRepository.sendGift(
+                    conversationId = user.id,
+                    giftId = giftId,
+                    fromType = GiftFromType.CHAT,
+                )
+            ) {
+                is AppResult.Success -> {
+                    val animationUrl = selected.svgaUrl
+                        .takeIf { it.isNotBlank() }
+                        ?: result.data.gift?.svgaUrl?.takeIf { it.isNotBlank() }
+                    _uiState.update {
+                        it.copy(
+                            isGiftSending = false,
+                            isGiftSheetVisible = false,
+                            giftAnimationUrl = animationUrl,
+                        )
+                    }
+                    if (animationUrl == null) {
+                        _effects.send(
+                            HomeEffect.ShowMessage(str(R.string.home_video_show_gift_send_success)),
+                        )
+                    }
+                }
+                is AppResult.Failure -> {
+                    _uiState.update { it.copy(isGiftSending = false) }
+                    _effects.send(HomeEffect.ShowMessage(result.message))
+                }
+            }
+        }
+    }
+
+    private fun startVideoShowCall() {
+        val user = _uiState.value.videoShowUser ?: return
+        val show = user.videoShow
+        viewModelScope.launch {
+            _effects.send(
+                HomeEffect.StartVideoCall(
+                    userId = user.id,
+                    nickname = user.nickname,
+                    avatarUrl = user.avatarUrl.orEmpty(),
+                    age = user.age,
+                    videoUrl = show?.videoUrl.orEmpty(),
+                    coverUrl = show?.coverUrl.orEmpty(),
+                ),
+            )
+        }
+    }
+
+    private fun nextVideoShow() {
+        // Keep gift sheet closed when switching users.
+        _uiState.update {
+            it.copy(isGiftSheetVisible = false, isGiftSending = false, giftAnimationUrl = null)
+        }
+        val state = _uiState.value
+        val currentId = state.videoShowUserId ?: return
+        val shows = state.videoShowUsers
+        if (shows.isEmpty()) {
+            closeVideoShow()
+            return
+        }
+        val index = shows.indexOfFirst { it.id == currentId }
+        if (index >= 0 && index < shows.lastIndex) {
+            pendingVideoShowNext = false
+            _uiState.update { it.copy(videoShowUserId = shows[index + 1].id) }
+            return
+        }
+        val page = state.currentPage
+        if (page.hasMore && !page.isLoadingMore && !page.isLoading && !page.isRefreshing) {
+            pendingVideoShowNext = true
+            loadMore()
+            return
+        }
+        val first = shows.firstOrNull() ?: return
+        if (first.id != currentId) {
+            pendingVideoShowNext = false
+            _uiState.update { it.copy(videoShowUserId = first.id) }
         }
     }
 
     private fun selectFilter(filter: OnlineFilter) {
         if (filter != _uiState.value.selectedFilter) {
-            _uiState.update { it.copy(selectedFilter = filter) }
+            pendingVideoShowNext = false
+            _uiState.update {
+                it.copy(
+                    selectedFilter = filter,
+                    videoShowUserId = null,
+                    isGiftSheetVisible = false,
+                    isGiftSending = false,
+                    giftAnimationUrl = null,
+                )
+            }
         }
         ensureTabLoaded(filter, force = false)
     }
@@ -113,6 +327,8 @@ class HomeViewModel(
                             )
                         }
                     }
+                    // Refresh closes video show if the current user disappeared.
+                    reconcileVideoShowAfterListChange(filter)
                 }
                 is AppResult.Failure -> {
                     _uiState.update { state ->
@@ -162,8 +378,13 @@ class HomeViewModel(
                             )
                         }
                     }
+                    if (pendingVideoShowNext) {
+                        pendingVideoShowNext = false
+                        advanceVideoShowAfterLoadMore()
+                    }
                 }
                 is AppResult.Failure -> {
+                    pendingVideoShowNext = false
                     _uiState.update { state ->
                         state.copyPage(filter) {
                             copy(
@@ -174,6 +395,31 @@ class HomeViewModel(
                     }
                 }
             }
+        }
+    }
+
+    private fun advanceVideoShowAfterLoadMore() {
+        val state = _uiState.value
+        val currentId = state.videoShowUserId ?: return
+        val shows = state.videoShowUsers
+        val index = shows.indexOfFirst { it.id == currentId }
+        if (index >= 0 && index < shows.lastIndex) {
+            _uiState.update { it.copy(videoShowUserId = shows[index + 1].id) }
+            return
+        }
+        // Still at end after load — wrap if possible.
+        val first = shows.firstOrNull() ?: return
+        if (first.id != currentId) {
+            _uiState.update { it.copy(videoShowUserId = first.id) }
+        }
+    }
+
+    private fun reconcileVideoShowAfterListChange(filter: OnlineFilter) {
+        val state = _uiState.value
+        if (state.selectedFilter != filter) return
+        val currentId = state.videoShowUserId ?: return
+        if (state.videoShowUsers.none { it.id == currentId }) {
+            _uiState.update { it.copy(videoShowUserId = null) }
         }
     }
 
@@ -230,6 +476,10 @@ class HomeViewModel(
                     HomeEffect.StartVideoCall(
                         userId = user.id,
                         nickname = user.nickname,
+                        avatarUrl = user.avatarUrl.orEmpty(),
+                        age = user.age,
+                        videoUrl = user.videoShow?.videoUrl.orEmpty(),
+                        coverUrl = user.videoShow?.coverUrl.orEmpty(),
                     ),
                 )
             }

@@ -86,10 +86,13 @@ class DemoApplication : Application() {
             },
             json = runtime.json,
         )
+        val agora = AgoraRtcClient(this)
+        CallKitHolder.rtc = agora
+        CallKitHolder.signaling = signaling
         CallKitHolder.coordinator = CallCoordinator(
             scope = appScope,
             signaling = signaling,
-            rtc = AgoraRtcClient(this),
+            rtc = agora,
         )
         ChatMqttInbox(
             mqttManager = mqtt.manager,

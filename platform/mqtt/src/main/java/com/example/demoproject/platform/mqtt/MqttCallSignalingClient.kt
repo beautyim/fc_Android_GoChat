@@ -5,6 +5,7 @@ import com.example.demoproject.platform.callkit.signaling.CallSignalingClient
 import com.example.demoproject.platform.callkit.signaling.EndReason
 import com.example.demoproject.platform.callkit.signaling.OutgoingInviteRequest
 import com.example.demoproject.platform.callkit.signaling.RejectReason
+import com.example.demoproject.platform.callkit.signaling.SignalingCoinOffer
 import com.example.demoproject.platform.callkit.signaling.SignalingEvent
 import com.example.demoproject.platform.common.log.AppLogger
 import kotlinx.coroutines.flow.Flow
@@ -98,7 +99,10 @@ class MqttCallSignalingClient(
                 return when (val aType = data.intPrimitive("a_type")) {
                     1 -> parseIncomingInvite(root, data)
                     2, 3 -> parseCallEnded(root, data, serverInitiated = aType == 2)
-                    else -> null
+                    7 -> parseBalanceAlert(root, data)
+                    8 -> parseInCallChat(root, data)
+                    14 -> parseInviteAccepted(root, data)
+                    else -> parsePeerMaskStatus(root, data, aType)
                 }
             }
             1 -> {
@@ -145,6 +149,7 @@ class MqttCallSignalingClient(
             callerUserId = callerUserId.toString(),
             callerName = resolveCallerName(callData, packetPayload, rootPayload),
             callerAvatar = resolveCallerAvatar(callData, packetPayload, rootPayload),
+            callerAge = resolveCallerAge(packetPayload, rootPayload),
             callType = if (callData.type == CallMediaType.Voice) CallMediaType.Voice else CallMediaType.Video,
             channelId = callData.effectiveChannel,
             rtcToken = callData.token,
@@ -152,6 +157,119 @@ class MqttCallSignalingClient(
             rtcAppId = callData.appId,
             roomSessionId = callData.numericRoomId,
             callFreeMin = callData.callFreeMin,
+            fencingToken = callData.fencingToken,
+            peerVideoUrl = resolvePeerVideoUrl(packetPayload, rootPayload),
+            peerCoverUrl = resolvePeerCoverUrl(packetPayload, rootPayload),
+        )
+    }
+
+    private fun parseInviteAccepted(root: JsonObject, packet: JsonObject): SignalingEvent.InviteAccepted? {
+        val roomId = resolveCallRoomKey(packet)
+            ?: resolveCallRoomKey(root)
+            ?: extractCallData(packet)?.effectiveHttpRoomId?.takeIf { it.isNotEmpty() }
+            ?: extractCallData(root)?.effectiveHttpRoomId?.takeIf { it.isNotEmpty() }
+            ?: return null
+        AppLogger.d(TAG, "parseInviteAccepted roomId=$roomId")
+        return SignalingEvent.InviteAccepted(inviteId = roomId, callId = roomId)
+    }
+
+    private fun parseBalanceAlert(root: JsonObject, packet: JsonObject): SignalingEvent.BalanceAlert? {
+        val roomKey = resolveCallRoomKey(packet)
+            ?: resolveCallRoomKey(root)
+            ?: return null
+        val remaining = packet.intPrimitive("duration") ?: 0
+        val total = packet.intPrimitive("total_duration") ?: 0
+        if (remaining <= 0 && total <= 0) {
+            AppLogger.w(TAG, "parseBalanceAlert drop roomKey=$roomKey no duration")
+            return null
+        }
+        val alert = SignalingEvent.BalanceAlert(
+            roomKey = roomKey,
+            roomSessionId = packet.longPrimitive("room_session_id").takeIf { it > 0L }
+                ?: root.longPrimitive("room_session_id").takeIf { it > 0L }
+                ?: 0L,
+            balance = packet.intPrimitive("balance") ?: 0,
+            remainingSeconds = remaining,
+            totalDurationSeconds = total,
+            saleRechargeAlertTimeSeconds = packet.intPrimitive("sale_recharge_alert_time") ?: 0,
+            rechargeAlertTimeSeconds = packet.intPrimitive("recharge_alert_time") ?: 0,
+            payItem = parseCoinOffer(nestedObject(packet, "pay_item")),
+            salePayItem = parseCoinOffer(nestedObject(packet, "sale_pay_item")),
+        )
+        AppLogger.d(
+            TAG,
+            "parseBalanceAlert roomKey=$roomKey balance=${alert.balance} remaining=$remaining total=$total",
+        )
+        return alert
+    }
+
+    private fun parseInCallChat(root: JsonObject, packet: JsonObject): SignalingEvent.InCallChat? {
+        val roomKey = resolveCallRoomKey(packet)
+            ?: resolveCallRoomKey(root)
+            ?: return null
+        // Tip payloads (msg_type=4) use `text`; chat-style may use content/msg_content.
+        val content = packet.stringPrimitive("content")
+            ?: packet.stringPrimitive("msg_content")
+            ?: packet.stringPrimitive("text")
+            ?: return null
+        if (content.isBlank()) return null
+        if (isCallSignalingWirePayload(content)) {
+            AppLogger.d(TAG, "parseInCallChat drop signaling wire payload roomKey=$roomKey")
+            return null
+        }
+        val msgType = packet.intPrimitive("msg_type") ?: 1
+        val sendUid = packet.longPrimitive("send_uid").takeIf { it > 0L }
+            ?: root.longPrimitive("send_uid").takeIf { it > 0L }
+            ?: 0L
+        val mtime = packet.longPrimitive("mtime").takeIf { it > 0L }
+            ?: root.longPrimitive("mtime").takeIf { it > 0L }
+            ?: System.currentTimeMillis()
+        return SignalingEvent.InCallChat(
+            roomKey = roomKey,
+            msgType = msgType,
+            content = content,
+            sendUid = sendUid,
+            messageId = "mqtt_${roomKey}_$mtime",
+        )
+    }
+
+    private fun parsePeerMaskStatus(
+        root: JsonObject,
+        packet: JsonObject,
+        aType: Int?,
+    ): SignalingEvent.PeerMaskStatus? {
+        // Exclude lifecycle / alert / chat a_types; require status and no end/duration/pay fields.
+        if (aType != null && aType in EXCLUDED_MASK_A_TYPES) return null
+        if (packet.containsKey("duration") ||
+            packet.containsKey("pay_item") ||
+            packet.containsKey("end_type")
+        ) {
+            return null
+        }
+        val status = packet.intPrimitive("status") ?: return null
+        val roomKey = resolveCallRoomKey(packet)
+            ?: resolveCallRoomKey(root)
+            ?: return null
+        AppLogger.d(TAG, "parsePeerMaskStatus roomKey=$roomKey status=$status aType=$aType")
+        return SignalingEvent.PeerMaskStatus(
+            roomKey = roomKey,
+            masked = status == 1,
+        )
+    }
+
+    private fun parseCoinOffer(obj: JsonObject?): SignalingCoinOffer? {
+        if (obj == null) return null
+        val id = obj.longPrimitive("id")
+        val sku = obj.stringPrimitive("sku").orEmpty()
+        if (id <= 0L && sku.isBlank()) return null
+        return SignalingCoinOffer(
+            id = id,
+            sku = sku,
+            diamond = obj.intPrimitive("diamond") ?: 0,
+            giveCoins = obj.intPrimitive("give_coins") ?: 0,
+            moneyDesc = obj.stringPrimitive("money_desc").orEmpty(),
+            originalDesc = obj.stringPrimitive("original_desc").orEmpty(),
+            saleDesc = obj.stringPrimitive("sale_desc").orEmpty(),
         )
     }
 
@@ -263,6 +381,7 @@ class MqttCallSignalingClient(
             callerAvatar = resolveAvatar(packet),
             roomSessionId = roomSessionId,
             callFreeMin = resolveCallFreeMinFromJson(packet),
+            fencingToken = packet.stringPrimitive("fencing_token"),
         ).takeIf { it.hasValidRoom }
     }
 
@@ -296,6 +415,71 @@ class MqttCallSignalingClient(
     private fun resolveCallFreeMinFromJson(packet: JsonObject): Int =
         nestedObject(packet, "user_info")?.intPrimitive("call_free_min") ?: 0
 
+    /**
+     * `user_info.video` is the peer video show on call invite / create payloads
+     * (see API `data.user_info.video`). Prefer `url`, then `video_url`.
+     */
+    private fun resolvePeerVideoUrl(packetPayload: JsonObject, rootPayload: JsonObject): String {
+        listOf(packetPayload, rootPayload).forEach { root ->
+            nestedObject(root, "user_info")?.let { user ->
+                nestedObject(user, "video")?.let { video ->
+                    video.stringPrimitive("url")?.let { return it }
+                    video.stringPrimitive("video_url")?.let { return it }
+                }
+            }
+            nestedObject(root, "video")?.let { video ->
+                video.stringPrimitive("url")?.let { return it }
+                video.stringPrimitive("video_url")?.let { return it }
+            }
+        }
+        return ""
+    }
+
+    private fun resolvePeerCoverUrl(packetPayload: JsonObject, rootPayload: JsonObject): String {
+        listOf(packetPayload, rootPayload).forEach { root ->
+            nestedObject(root, "user_info")?.let { user ->
+                nestedObject(user, "video")?.let { video ->
+                    video.stringPrimitive("cover_url")?.let { return it }
+                    video.stringPrimitive("small_photo_url")?.let { return it }
+                    video.stringPrimitive("small_url")?.let { return it }
+                }
+            }
+            nestedObject(root, "video")?.let { video ->
+                video.stringPrimitive("cover_url")?.let { return it }
+                video.stringPrimitive("small_photo_url")?.let { return it }
+                video.stringPrimitive("small_url")?.let { return it }
+            }
+        }
+        return ""
+    }
+
+    private fun resolveCallerAge(packetPayload: JsonObject, rootPayload: JsonObject): Int {
+        listOf(packetPayload, rootPayload).forEach { root ->
+            nestedObject(root, "user_info")?.let { user ->
+                user.intPrimitive("age")?.takeIf { it > 0 }?.let { return it }
+                birthdayToAge(user.stringPrimitive("birthday")).takeIf { it > 0 }?.let { return it }
+            }
+            nestedObject(root, "caller")?.let { caller ->
+                caller.intPrimitive("age")?.takeIf { it > 0 }?.let { return it }
+                birthdayToAge(caller.stringPrimitive("birthday")).takeIf { it > 0 }?.let { return it }
+            }
+            root.intPrimitive("age")?.takeIf { it > 0 }?.let { return it }
+            birthdayToAge(root.stringPrimitive("birthday")).takeIf { it > 0 }?.let { return it }
+        }
+        return 0
+    }
+
+    private fun birthdayToAge(raw: String?): Int {
+        if (raw.isNullOrBlank()) return 0
+        val trimmed = raw.trim()
+        val birth = runCatching { java.time.LocalDate.parse(trimmed) }.getOrNull()
+            ?: trimmed.take(10).takeIf { it.length == 10 }?.let { head ->
+                runCatching { java.time.LocalDate.parse(head) }.getOrNull()
+            }
+            ?: return 0
+        return java.time.Period.between(birth, java.time.LocalDate.now()).years.coerceAtLeast(0)
+    }
+
     private fun resolveDisplayName(packet: JsonObject): String {
         listOf("caller_name", "nickname", "nick_name", "name").forEach { key ->
             packet.stringPrimitive(key)?.let { return it }
@@ -328,6 +512,13 @@ class MqttCallSignalingClient(
             }
         }
         return ""
+    }
+
+    private fun isCallSignalingWirePayload(rawContent: String): Boolean {
+        val t = rawContent.trim()
+        if (t.isEmpty() || !t.startsWith("{")) return false
+        val lower = t.lowercase()
+        return "\"channel\"" in lower && "\"token\"" in lower && "\"uid\"" in lower
     }
 
     private fun nestedObject(root: JsonObject, key: String): JsonObject? =
@@ -383,5 +574,7 @@ class MqttCallSignalingClient(
         const val END_TYPE_BALANCE: Int = 5
         /** `/event` topic invite uses msg_type=28 in current backend payloads. */
         const val EVENT_MSG_TYPE_CALL_INVITE: Int = 28
+        /** a_types that are never peer-mask packets. */
+        private val EXCLUDED_MASK_A_TYPES = setOf(1, 2, 3, 7, 8, 14)
     }
 }

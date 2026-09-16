@@ -53,6 +53,8 @@ class CallRecordsViewModel(
                     CallRecordsEffect.StartVideoCall(
                         userId = intent.record.peerId,
                         nickname = intent.record.nickname,
+                        avatarUrl = intent.record.avatarUrl.orEmpty(),
+                        age = intent.record.age,
                     ),
                 )
             }

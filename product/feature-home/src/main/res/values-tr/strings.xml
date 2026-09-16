@@ -20,5 +20,14 @@
     <string name="home_online_cd_video">Görüntülü arama</string>
     <string name="home_nav_match">Eşleşme</string>
     <string name="home_online_cd_loading">Yükleniyor</string>
+    <string name="home_video_show_video_chat">Görüntülü Sohbet</string>
+    <string name="home_video_show_next">Sonraki</string>
+    <string name="home_video_show_gift_send_success">Hediye gönderildi</string>
+    <string name="home_video_show_play_failed">Bu video oynatılamıyor</string>
+    <string name="home_video_show_cd_close">Kapat</string>
+    <string name="home_video_show_cd_profile">Profili aç</string>
+    <string name="home_video_show_cd_gift">Hediye gönder</string>
+    <string name="home_video_show_cd_next">Sonraki video gösterisi</string>
+    <string name="home_video_show_cd_loading">Video yükleniyor</string>
 </resources>
 

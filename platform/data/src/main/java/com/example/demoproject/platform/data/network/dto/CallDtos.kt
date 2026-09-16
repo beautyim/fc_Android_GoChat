@@ -51,6 +51,34 @@ data class CallRoomIdRequestDto(
 )
 
 @Serializable
+data class CallAnswerStatusDataDto(
+    /** `waiting` | `answered` | `ended` */
+    val status: String = "waiting",
+    @SerialName("answer_timeout_sec")
+    @Serializable(with = LenientIntSerializer::class)
+    val answerTimeoutSec: Int = 0,
+)
+
+@Serializable
+data class CallRenewTokenDataDto(
+    @SerialName("rtc_token") val rtcToken: String = "",
+    val token: String = "",
+    @SerialName("expire_at")
+    @Serializable(with = LenientLongSerializer::class)
+    val expireAt: Long = 0,
+    @SerialName("renew_ahead_sec")
+    @Serializable(with = LenientIntSerializer::class)
+    val renewAheadSec: Int = 0,
+    @SerialName("server_now")
+    @Serializable(with = LenientLongSerializer::class)
+    val serverNow: Long = 0,
+) {
+    /** Prefer `rtc_token`; fall back to `token`. */
+    val effectiveToken: String
+        get() = rtcToken.trim().ifBlank { token.trim() }
+}
+
+@Serializable
 data class CallEndRequestDto(
     @SerialName("room_id") val roomId: String,
     val duration: Int = 0,

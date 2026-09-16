@@ -10,21 +10,45 @@ fun String?.toPicUrlOrNull(): String? = toCdnUrlOrNull(PIC_BASE_URL)
 fun String?.toAssetUrlOrNull(): String? = toCdnUrlOrNull(ASSET_BASE_URL)
 
 /**
- * Voice / video file keys from chat JSON — these usually map to the asset bucket, not the image CDN.
- * Prefer S3, then image CDN, so relative upload paths play correctly in [android.media.MediaPlayer].
+ * Voice / video file keys from chat JSON / album / video-show — these map to the asset
+ * bucket, not the image CDN. The pic host is an image-resize API and returns HTTP 400
+ * (`RequestTypeError`) for `.mp4` and other binaries.
+ *
+ * Absolute pic-CDN video URLs are rewritten onto the asset host; local `content://` /
+ * `file://` URIs are left untouched.
  */
 fun String?.toChatBinaryUrlOrNull(): String? {
     val raw = this?.trim().orEmpty()
     if (raw.isBlank()) return null
-    if (raw.startsWith("http://", ignoreCase = true) ||
-        raw.startsWith("https://", ignoreCase = true) ||
-        raw.startsWith("content://") ||
-        raw.startsWith("file://")
-    ) {
+    if (raw.startsWith("content://") || raw.startsWith("file://")) {
         return raw
     }
-    // Relative keys from `/upload` are typically on the same host as other media objects.
+    if (raw.startsWith("http://", ignoreCase = true) ||
+        raw.startsWith("https://", ignoreCase = true)
+    ) {
+        if (raw.isLikelyVideoBinary()) {
+            val relative = stripKnownCdnPrefixes(raw).trimStart('/')
+            if (relative.isNotBlank() &&
+                !relative.startsWith("http://", ignoreCase = true) &&
+                !relative.startsWith("https://", ignoreCase = true)
+            ) {
+                return relative.toAssetUrlOrNull() ?: raw
+            }
+        }
+        return raw
+    }
+    // Relative keys from `/upload` / `album/...` live on the asset host.
     return toAssetUrlOrNull() ?: toPicUrlOrNull()
+}
+
+private fun String.isLikelyVideoBinary(): Boolean {
+    val path = substringBefore('?').substringBefore('#').lowercase()
+    return path.endsWith(".mp4") ||
+        path.endsWith(".webm") ||
+        path.endsWith(".mov") ||
+        path.endsWith(".m4v") ||
+        path.endsWith(".mkv") ||
+        path.endsWith(".3gp")
 }
 
 /**

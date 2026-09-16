@@ -8,6 +8,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateIntAsState
 import androidx.compose.animation.core.infiniteRepeatable
@@ -277,6 +278,19 @@ fun ChatDetailScreen(
         label = "chatDetailBottomInset",
     )
     val bottomPanelDp = with(density) { bottomInsetPx.toDp() }
+    val giftQuickBarVisible = state.showGiftQuickBar && state.gifts.isNotEmpty()
+    val giftQuickBarInset by animateDpAsState(
+        targetValue = if (giftQuickBarVisible) {
+            ComponentSize.chatGiftQuickBarHeight + Spacing.xs
+        } else {
+            0.dp
+        },
+        animationSpec = tween(
+            durationMillis = ChatEmojiPanelAnimMillis,
+            easing = FastOutSlowInEasing,
+        ),
+        label = "chatGiftQuickBarInset",
+    )
 
     Box(modifier = modifier.fillMaxSize()) {
         Column(
@@ -360,6 +374,7 @@ fun ChatDetailScreen(
                     else -> ChatDetailMessageList(
                         state = state,
                         onIntent = onIntent,
+                        bottomContentPadding = giftQuickBarInset,
                         modifier = Modifier.fillMaxSize(),
                     )
                 }
@@ -379,47 +394,40 @@ fun ChatDetailScreen(
                     ),
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
-                        .padding(bottom = ComponentSize.chatGreetingAboveGiftBar),
+                        .padding(
+                            bottom = giftQuickBarInset + ComponentSize.chatGreetingAboveGiftBar,
+                        ),
                 ) {
                     ChatGreetingWave(
                         enabled = true,
                         onClick = { onIntent(ChatDetailIntent.SendGreeting) },
                     )
                 }
-            }
-            androidx.compose.animation.AnimatedVisibility(
-                visible = state.showGiftQuickBar && state.gifts.isNotEmpty(),
-                enter = fadeIn(
-                    animationSpec = tween(
-                        durationMillis = ChatEmojiPanelAnimMillis,
-                        easing = FastOutSlowInEasing,
+                androidx.compose.animation.AnimatedVisibility(
+                    visible = giftQuickBarVisible,
+                    enter = fadeIn(
+                        animationSpec = tween(
+                            durationMillis = ChatEmojiPanelAnimMillis,
+                            easing = FastOutSlowInEasing,
+                        ),
                     ),
-                ) + androidx.compose.animation.expandVertically(
-                    animationSpec = tween(
-                        durationMillis = ChatEmojiPanelAnimMillis,
-                        easing = FastOutSlowInEasing,
+                    exit = fadeOut(
+                        animationSpec = tween(
+                            durationMillis = ChatEmojiPanelAnimMillis,
+                            easing = FastOutSlowInEasing,
+                        ),
                     ),
-                ),
-                exit = fadeOut(
-                    animationSpec = tween(
-                        durationMillis = ChatEmojiPanelAnimMillis,
-                        easing = FastOutSlowInEasing,
-                    ),
-                ) + androidx.compose.animation.shrinkVertically(
-                    animationSpec = tween(
-                        durationMillis = ChatEmojiPanelAnimMillis,
-                        easing = FastOutSlowInEasing,
-                    ),
-                ),
-            ) {
-                ChatGiftQuickBar(
-                    gifts = state.gifts,
-                    enabled = !state.isGiftSending,
-                    onSendGift = { onIntent(ChatDetailIntent.SendQuickGift(it)) },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = Spacing.xs),
-                )
+                    modifier = Modifier.align(Alignment.BottomCenter),
+                ) {
+                    ChatGiftQuickBar(
+                        gifts = state.gifts,
+                        enabled = !state.isGiftSending,
+                        onSendGift = { onIntent(ChatDetailIntent.SendQuickGift(it)) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = Spacing.xs),
+                    )
+                }
             }
             ChatDetailComposer(
                 state = state,
@@ -686,6 +694,7 @@ private fun ChatDetailMessageList(
     state: ChatDetailUiState,
     onIntent: (ChatDetailIntent) -> Unit,
     modifier: Modifier = Modifier,
+    bottomContentPadding: Dp = 0.dp,
 ) {
     // reverseLayout + newest-first display: index 0 is the visual bottom on the first frame,
     // so entering the room never paints the top then jumps.
@@ -723,8 +732,11 @@ private fun ChatDetailMessageList(
         modifier = modifier,
         reverseLayout = true,
         contentPadding = PaddingValues(
-            horizontal = Spacing.chipGap,
-            vertical = Spacing.sm,
+            start = Spacing.chipGap,
+            end = Spacing.chipGap,
+            // reverseLayout: bottom padding lands at the visual bottom (composer side).
+            top = Spacing.sm,
+            bottom = Spacing.sm + bottomContentPadding,
         ),
         verticalArrangement = Arrangement.spacedBy(ComponentSize.chatDetailMessageGap),
     ) {

@@ -2,8 +2,11 @@ package com.example.demoproject.platform.data.network.mapper
 
 import com.example.demoproject.platform.data.model.Gender
 import com.example.demoproject.platform.data.model.User
+import com.example.demoproject.platform.data.model.VideoShow
+import com.example.demoproject.platform.data.network.toChatBinaryUrlOrNull
 import com.example.demoproject.platform.data.network.toPicUrlOrNull
 import com.example.demoproject.platform.data.network.dto.UserDto
+import com.example.demoproject.platform.data.network.dto.VideoShowDto
 
 // ── User ──
 
@@ -37,7 +40,21 @@ fun UserDto.toDomain(now: java.time.LocalDate = java.time.LocalDate.now()): User
     isBlockedByPeer = isBeBlack,
     // Public `user_id` for /home/info; profile card UI displays `uid` separately.
     externalUserId = userId,
+    // `/home/list` uses `video_show`; call create / invite use `video`.
+    videoShow = (videoShow ?: video)?.toDomain(),
 )
+
+fun VideoShowDto.toDomain(): VideoShow? {
+    val playUrl = url.ifBlank { videoUrl }
+        .toChatBinaryUrlOrNull()
+        ?.takeIf { it.isNotBlank() }
+        ?: return null
+    return VideoShow(
+        mediaId = mediaId.trim(),
+        videoUrl = playUrl,
+        coverUrl = coverUrl.toPicUrlOrNull(),
+    )
+}
 
 /** `sex` 1-male / 2-female / 3-non-binary (per `/perfect/run`). */
 private fun Int.toGender(): Gender = when (this) {

@@ -128,6 +128,44 @@ object Spacing {
     val blockedActionVertical = 6.dp
     /** Blocked users artwork → "No users" label box — Figma 26dp (y 453 − 427). */
     val blockedEmptyGap = 26.dp
+    /** Video show user chip → report min gap — 30dp. */
+    val videoShowUserToReport = 30.dp
+    /** Call ringing header start inset — Figma 12dp. */
+    val callRingingHeaderStart = 12.dp
+    /** Call ringing avatar → name — Figma 8dp. */
+    val callRingingAvatarGap = 8.dp
+    /** Call ringing name → status — Figma ~4dp. */
+    val callRingingStatusGap = 4.dp
+    /** Call ringing action → label — Figma 8dp. */
+    val callRingingActionLabelGap = 8.dp
+    /** Call ringing bottom actions inset above nav bar — Figma ~37dp. */
+    val callRingingBottomInset = 37.dp
+    /** Call ringing report end inset — Figma 15dp (375-324-36). */
+    val callRingingReportEnd = 15.dp
+    /** In-call header end controls gap. */
+    val callInCallHeaderEndGap = 8.dp
+    /** In-call name → Like chip — Figma 8dp. */
+    val callInCallLikeGap = 8.dp
+    /** In-call bottom bar horizontal — Figma ~(375-353)/2 ≈ 11dp. */
+    val callInCallBottomBarHorizontal = 11.dp
+    /** In-call composer ↔ side buttons — Figma 8dp. */
+    val callInCallBottomBarGap = 8.dp
+    /** In-call chat column start — Figma 8dp. */
+    val callInCallChatStart = 8.dp
+    /** In-call chat bubble stack gap — Figma 10dp. */
+    val callInCallChatGap = 10.dp
+    /** In-call gift quick bar above composer — Figma ~4–10dp. */
+    val callInCallGiftQuickBottom = 4.dp
+    /** In-call gift-sent tip start inset — Figma 10dp. */
+    val callInCallGiftSentTipStart = 10.dp
+    /** In-call gift-sent tip gap between icon and xN — Figma ~11dp. */
+    val callInCallGiftSentTipEndGap = 4.dp
+    /** How far the gift icon overhangs the purple bar on the end — Figma ~22dp. */
+    val callInCallGiftSentTipIconOverhang = 22.dp
+    /** In-call more sheet row vertical — Figma 12dp. */
+    val callInCallMoreRowVertical = 12.dp
+    /** In-call more sheet top inset before first row — Figma ~28dp. */
+    val callInCallMoreTop = 28.dp
     val md = 16.dp
     val lg = 24.dp
     val xl = 28.dp

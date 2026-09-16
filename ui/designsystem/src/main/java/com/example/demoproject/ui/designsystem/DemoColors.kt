@@ -46,6 +46,14 @@ object DemoColors {
     val onlineAction = Color(0xFF00D670)
     /** FREE badge — #FF6A00. */
     val freeBadge = Color(0xFFFF6A00)
+    /** Video show CTA gradient start — Figma #00E384. */
+    val videoShowCtaStart = Color(0xFF00E384)
+    /** Video show CTA gradient end — Figma #00D7E6. */
+    val videoShowCtaEnd = Color(0xFF00D7E6)
+    /** Video show user chip fill — white @ 10%. */
+    val videoShowUserChip = Color(0x1AFFFFFF)
+    /** Video show progress track — #999999. */
+    val videoShowProgressTrack = Color(0xFF999999)
     /** Status text on cards — white @ 60%. */
     val onCardMuted = Color(0x99FFFFFF)
     /** Card drop shadow — rgba(0,0,0,0.16). */
@@ -98,6 +106,44 @@ object DemoColors {
     val callRecordsNegative = Color(0xFFE80000)
     /** Call records connected / match status — #03B300. */
     val callRecordsPositive = Color(0xFF03B300)
+    /** Call ringing hang up / cancel fill — Figma red. */
+    val callRingingHangup = Color(0xFFFF3B30)
+    /** Call ringing answer fill — Figma green. */
+    val callRingingAnswer = Color(0xFF34C759)
+    /** Call ringing answer outer glow. */
+    val callRingingAnswerGlow = Color(0x4034C759)
+    /** Call ringing answer mid glow ring. */
+    val callRingingAnswerGlowMid = Color(0x6634C759)
+    /** Call ringing report circle — black @ 20%. */
+    val callRingingReportBg = Color(0x33000000)
+    /** Call ringing top scrim start — black @ 50%. */
+    val callRingingTopScrim = Color(0x80000000)
+    /** Call ringing status line — white @ 80%. */
+    val callRingingStatus = Color(0xCCFFFFFF)
+    /** Call ringing on-video text / icons. */
+    val callRingingOnVideo = Color(0xFFFFFFFF)
+    /** Call ringing text shadow. */
+    val callRingingTextShadow = Color(0x80000000)
+    /** In-call overlay chip / bubble — black @ 20%. */
+    val callInCallOverlay = Color(0x33000000)
+    /** In-call composer placeholder — white @ 70%. */
+    val callInCallPlaceholder = Color(0xB3FFFFFF)
+    /** In-call gift quick price — white @ 90%. */
+    val callInCallGiftQuickPrice = Color(0xE6FFFFFF)
+    /** In-call Like / accent fill — #9D41FF. */
+    val callInCallAccent = Color(0xFF9D41FF)
+    /** In-call more-sheet icon circle — #9D41FF @ 10%. */
+    val callInCallMoreIconBg = Color(0x1A9D41FF)
+    /** In-call more row divider — black @ 10%. */
+    val callInCallMoreDivider = Color(0x1A000000)
+    /** In-call gift-request highlight — #E94381. */
+    val callInCallGiftRequestAccent = Color(0xFFE94381)
+    /** In-call gift-request subtitle — white @ 80%. */
+    val callInCallGiftRequestSub = Color(0xCCFFFFFF)
+    /** In-call gift-sent tip bar — #A855F7 @ 50%. */
+    val callInCallGiftSentTip = Color(0x80A855F7)
+    /** In-call gift-sent tip subtitle — white @ 80%. */
+    val callInCallGiftSentTipSub = Color(0xCCFFFFFF)
     /** iOS segmented control track — #767680 @ 12%. */
     val segmentTrack = Color(0x1F767680)
     /** Segmented control selected pill shadow. */
@@ -229,6 +275,11 @@ object DemoColors {
     val coinGuideCloseChip = Color(0xFFFFFFFF)
     /** Coin pay-guide close chip shadow — black @ 4%. */
     val coinGuideCloseShadow = Color(0x0A000000)
+    /**
+     * Coin pay-guide sheet bottom fill under the system nav bar —
+     * matches the lower portion of Figma `弹窗背景 1` (~#F9F0F7).
+     */
+    val coinGuideSheetBottom = Color(0xFFF9F0F7)
     /** VIP pay-guide plan card gradient. */
     val vipGuidePlanStart = Color(0xFFFFE6F8)
     val vipGuidePlanMid = Color(0xFFEDE1FF)

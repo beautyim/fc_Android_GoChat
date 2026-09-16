@@ -31,7 +31,7 @@ object Radius {
     val vipPlanCard = 16.dp
     /** VIP pay-guide sheet top corners — Figma 32dp. */
     val vipPayGuideSheet = 32.dp
-    /** Coin pay-guide sheet top corners — Figma 24dp. */
-    val coinPayGuideSheet = 24.dp
+    /** In-call gift-sent tip end corners — Figma ~32dp. */
+    val callInCallGiftSentTipEnd = 32.dp
     val pill = 333.dp
 }

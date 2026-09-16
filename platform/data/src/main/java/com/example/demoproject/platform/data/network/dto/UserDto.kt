@@ -136,6 +136,13 @@ data class UserDto(
     @SerialName("call_free_min") val callFreeMin: Int = 0,
     @Serializable(with = LenientIntSerializer::class)
     @SerialName("is_deleted") val isDeletedRaw: Int = 0,
+    /** Present on `/home/list` when the user has a short video show. */
+    @SerialName("video_show") val videoShow: VideoShowDto? = null,
+    /**
+     * Peer video show on `/call/create` and incoming-call MQTT (`user_info.video`).
+     * Same media shape as [videoShow]; prefer whichever field the payload carries.
+     */
+    @SerialName("video") val video: VideoShowDto? = null,
 ) {
     val isVip: Boolean get() = isVipRaw == 1
     val isOnline: Boolean get() = onlineStatus > 0

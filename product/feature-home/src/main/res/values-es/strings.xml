@@ -20,5 +20,14 @@
     <string name="home_online_cd_video">Videollamada</string>
     <string name="home_nav_match">Match</string>
     <string name="home_online_cd_loading">Cargando</string>
+    <string name="home_video_show_video_chat">Videochat</string>
+    <string name="home_video_show_next">Siguiente</string>
+    <string name="home_video_show_gift_send_success">Regalo enviado</string>
+    <string name="home_video_show_play_failed">No se puede reproducir este video</string>
+    <string name="home_video_show_cd_close">Cerrar</string>
+    <string name="home_video_show_cd_profile">Abrir perfil</string>
+    <string name="home_video_show_cd_gift">Enviar regalo</string>
+    <string name="home_video_show_cd_next">Siguiente video show</string>
+    <string name="home_video_show_cd_loading">Cargando video</string>
 </resources>
 

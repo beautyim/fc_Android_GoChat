@@ -41,6 +41,11 @@ data class User(
     val voiceCallGold: Int = 0,
     /** External user number from backend `user_id`; use this for `/home/info`. */
     val externalUserId: String = id,
+    /**
+     * Short video show for ringing / overlay backgrounds.
+     * Sourced from `/home/list` `video_show` or call `user_info.video`.
+     */
+    val videoShow: VideoShow? = null,
 ) {
     /**
      * Presence for Online-tab cards.

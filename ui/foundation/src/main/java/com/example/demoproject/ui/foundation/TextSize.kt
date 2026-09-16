@@ -50,6 +50,24 @@ object TextSize {
     val lg = 18.sp
     /** Me coin balance — Figma 20. */
     val meBalance = 20.sp
+    /** Call ringing peer name — Figma 20. */
+    val callRingingName = 20.sp
+    /** In-call Like chip — Figma 14/15. */
+    val callInCallLike = 14.sp
+    /** In-call chat body — Figma 12sp. */
+    val callInCallChat = 12.sp
+    /** In-call system notification title — Figma 14sp. */
+    val callInCallSystemTitle = 14.sp
+    /** In-call gift-request CTA — Figma 11sp. */
+    val callInCallGiftRequestCta = 11.sp
+    /** In-call gift-request subtitle — Figma 10sp. */
+    val callInCallGiftRequestSub = 10.sp
+    /** In-call gift-sent tip title — Figma 14sp. */
+    val callInCallGiftSentTipTitle = 14.sp
+    /** In-call gift-sent tip gift name — Figma 10sp. */
+    val callInCallGiftSentTipName = 10.sp
+    /** In-call gift-sent tip count — Figma 22sp. */
+    val callInCallGiftSentTipCount = 22.sp
     val title = 22.sp
     /** Store coin package amount — Figma 22. */
     val storeCoinAmount = 22.sp

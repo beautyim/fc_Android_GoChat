@@ -41,6 +41,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.demoproject.BuildConfig
+import com.example.demoproject.platform.callkit.CallKitHolder
+import com.example.demoproject.platform.callkit.CallState
 import com.example.demoproject.platform.data.model.Session
 import com.example.demoproject.platform.data.network.NetworkRuntime
 import com.example.demoproject.platform.data.session.SessionManager
@@ -88,6 +90,8 @@ import com.example.demoproject.ui.foundation.WindowWidthClass
 import java.net.URLDecoder
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.mapNotNull
 
 object DemoRoutes {
     const val Home = "home"
@@ -95,7 +99,7 @@ object DemoRoutes {
     const val Chat = "chat"
     const val ChatDetail = "chat/detail/{conversationId}/{nickname}"
     const val Match = "match"
-    const val Call = "call"
+    const val Call = "call/{userId}/{nickname}/{age}/{avatar}/{video}/{cover}"
     const val CallRecords = "call-records"
     const val Store = "store"
     const val Vip = "vip"
@@ -110,6 +114,19 @@ object DemoRoutes {
         val id = URLEncoder.encode(conversationId, StandardCharsets.UTF_8.toString())
         val name = URLEncoder.encode(nickname.ifBlank { "_" }, StandardCharsets.UTF_8.toString())
         return "chat/detail/$id/$name"
+    }
+
+    fun call(
+        userId: String = "",
+        nickname: String = "",
+        age: Int = 0,
+        avatarUrl: String = "",
+        videoUrl: String = "",
+        coverUrl: String = "",
+    ): String {
+        fun enc(raw: String): String =
+            URLEncoder.encode(raw.ifBlank { "_" }, StandardCharsets.UTF_8.toString())
+        return "call/${enc(userId)}/${enc(nickname)}/$age/${enc(avatarUrl)}/${enc(videoUrl)}/${enc(coverUrl)}"
     }
 
     fun profileUser(externalUserId: String): String {
@@ -177,7 +194,6 @@ private fun DemoNavHost() {
                     modelClass.isAssignableFrom(AuthViewModel::class.java) -> AuthViewModel(app) as T
                     modelClass.isAssignableFrom(ChatListViewModel::class.java) -> ChatListViewModel(app) as T
                     modelClass.isAssignableFrom(MatchViewModel::class.java) -> MatchViewModel(app) as T
-                    modelClass.isAssignableFrom(CallViewModel::class.java) -> CallViewModel(app) as T
                     modelClass.isAssignableFrom(CallRecordsViewModel::class.java) -> CallRecordsViewModel(app) as T
                     modelClass.isAssignableFrom(StoreViewModel::class.java) -> StoreViewModel(app) as T
                     modelClass.isAssignableFrom(VipPurchaseViewModel::class.java) -> VipPurchaseViewModel(app) as T
@@ -196,6 +212,30 @@ private fun DemoNavHost() {
         observeSessionNavigation(navController, sessionManager)
     }
 
+    LaunchedEffect(navController) {
+        val coordinator = CallKitHolder.coordinator ?: return@LaunchedEffect
+        coordinator.state
+            .mapNotNull { state -> state as? CallState.IncomingRinging }
+            .distinctUntilChanged { a, b -> a.inviteId == b.inviteId }
+            .collect { ringing ->
+                val route = navController.currentBackStackEntry?.destination?.route.orEmpty()
+                if (route.startsWith("call/")) return@collect
+                // Leave userId blank so CallViewModel does not start an outgoing /call/create.
+                navController.navigate(
+                    DemoRoutes.call(
+                        userId = "",
+                        nickname = ringing.callerName,
+                        age = ringing.callerAge,
+                        avatarUrl = ringing.callerAvatar,
+                        videoUrl = ringing.peerVideoUrl,
+                        coverUrl = ringing.peerCoverUrl,
+                    ),
+                ) {
+                    launchSingleTop = true
+                }
+            }
+    }
+
     NavHost(navController = navController, startDestination = destination) {
         composable(DemoRoutes.Home) {
             val vm: HomeViewModel = viewModel(factory = factory)
@@ -212,7 +252,16 @@ private fun DemoNavHost() {
                             )
                         }
                         is HomeEffect.StartVideoCall -> {
-                            navController.navigate(DemoRoutes.Call)
+                            navController.navigate(
+                                DemoRoutes.call(
+                                    userId = effect.userId,
+                                    nickname = effect.nickname,
+                                    age = effect.age,
+                                    avatarUrl = effect.avatarUrl,
+                                    videoUrl = effect.videoUrl,
+                                    coverUrl = effect.coverUrl,
+                                ),
+                            )
                         }
                         HomeEffect.OpenStore -> navController.navigate(DemoRoutes.Store)
                         is HomeEffect.ShowMessage -> {
@@ -239,7 +288,16 @@ private fun DemoNavHost() {
                             navController.navigate(DemoRoutes.profileUser(effect.externalUserId))
                         }
                         is CallRecordsEffect.StartVideoCall -> {
-                            navController.navigate(DemoRoutes.Call)
+                            navController.navigate(
+                                DemoRoutes.call(
+                                    userId = effect.userId,
+                                    nickname = effect.nickname,
+                                    age = effect.age,
+                                    avatarUrl = effect.avatarUrl,
+                                    videoUrl = effect.videoUrl,
+                                    coverUrl = effect.coverUrl,
+                                ),
+                            )
                         }
                         CallRecordsEffect.OpenStore -> navController.navigate(DemoRoutes.Store)
                         CallRecordsEffect.OpenMatch -> navController.navigate(DemoRoutes.Match)
@@ -338,8 +396,8 @@ private fun DemoNavHost() {
                 onOpenPeerProfile = { externalUserId ->
                     navController.navigate(DemoRoutes.profileUser(externalUserId))
                 },
-                onStartVideoCall = {
-                    navController.navigate(DemoRoutes.Call)
+                onStartVideoCall = { peerUserId ->
+                    navController.navigate(DemoRoutes.call(userId = peerUserId))
                 },
                 onOpenStore = { navController.navigate(DemoRoutes.Store) },
             )
@@ -348,9 +406,56 @@ private fun DemoNavHost() {
             val vm: MatchViewModel = viewModel(factory = factory)
             MatchScreen(viewModel = vm, onBack = { navController.popBackStack() })
         }
-        composable(DemoRoutes.Call) {
-            val vm: CallViewModel = viewModel(factory = factory)
-            CallScreen(viewModel = vm, onBack = { navController.popBackStack() })
+        composable(
+            route = DemoRoutes.Call,
+            arguments = listOf(
+                navArgument("userId") { type = NavType.StringType },
+                navArgument("nickname") { type = NavType.StringType },
+                navArgument("age") { type = NavType.IntType },
+                navArgument("avatar") { type = NavType.StringType },
+                navArgument("video") { type = NavType.StringType },
+                navArgument("cover") { type = NavType.StringType },
+            ),
+        ) { entry ->
+            fun decodeArg(key: String): String {
+                val raw = URLDecoder.decode(
+                    entry.arguments?.getString(key).orEmpty(),
+                    StandardCharsets.UTF_8.toString(),
+                )
+                return raw.takeUnless { it == "_" }.orEmpty()
+            }
+            val userId = decodeArg("userId")
+            val nickname = decodeArg("nickname")
+            val age = entry.arguments?.getInt("age") ?: 0
+            val avatarUrl = decodeArg("avatar")
+            val videoUrl = decodeArg("video")
+            val coverUrl = decodeArg("cover")
+            val callFactory = remember(app, userId, nickname, age, avatarUrl, videoUrl, coverUrl) {
+                object : ViewModelProvider.Factory {
+                    @Suppress("UNCHECKED_CAST")
+                    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                        require(modelClass.isAssignableFrom(CallViewModel::class.java))
+                        return CallViewModel(
+                            application = app,
+                            targetUserId = userId,
+                            initialNickname = nickname,
+                            initialAvatarUrl = avatarUrl,
+                            initialAge = age,
+                            initialVideoUrl = videoUrl,
+                            initialCoverUrl = coverUrl,
+                        ) as T
+                    }
+                }
+            }
+            val vm: CallViewModel = viewModel(
+                key = "call-$userId-$nickname-$age",
+                factory = callFactory,
+            )
+            CallScreen(
+                viewModel = vm,
+                onBack = { navController.popBackStack() },
+                onOpenStore = { navController.navigate(DemoRoutes.Store) },
+            )
         }
         composable(DemoRoutes.Store) {
             val vm: StoreViewModel = viewModel(factory = factory)
@@ -432,7 +537,7 @@ private fun DemoNavHost() {
                             )
                         }
                         is RelationshipListEffect.StartVideoCall -> {
-                            navController.navigate(DemoRoutes.Call)
+                            navController.navigate(DemoRoutes.call(userId = effect.userId))
                         }
                     }
                 }

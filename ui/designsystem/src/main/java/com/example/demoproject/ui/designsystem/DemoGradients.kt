@@ -6,6 +6,10 @@ object DemoGradients {
     val primaryButton: Brush = Brush.horizontalGradient(
         colors = listOf(DemoColors.gradientStart, DemoColors.gradientEnd),
     )
+    /** Video show Video Chat CTA — Figma #00E384 → #00D7E6. */
+    val videoShowCta: Brush = Brush.horizontalGradient(
+        colors = listOf(DemoColors.videoShowCtaStart, DemoColors.videoShowCtaEnd),
+    )
     val storeVipCard: Brush = Brush.horizontalGradient(
         colors = listOf(
             DemoColors.storeVipCardStart,

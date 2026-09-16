@@ -13,5 +13,6 @@ android {
 }
 dependencies {
     implementation(project(":platform:common"))
+    implementation(libs.androidx.core.ktx)
     implementation(libs.kotlinx.coroutines.android)
 }

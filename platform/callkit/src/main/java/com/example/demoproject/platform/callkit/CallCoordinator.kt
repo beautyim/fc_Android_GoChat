@@ -8,6 +8,7 @@ import com.example.demoproject.platform.callkit.signaling.SignalingEvent
 import com.example.demoproject.platform.common.log.AppLogger
 import com.example.demoproject.platform.rtc.api.RtcClient
 import com.example.demoproject.platform.rtc.api.RtcEvent
+import com.example.demoproject.platform.rtc.api.RtcInitConfig
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -19,6 +20,12 @@ import kotlinx.coroutines.launch
  * 1v1 call state machine that bridges signaling (MQTT) and RTC (Agora).
  *
  * Intentionally transport-agnostic: signaling is injected via [CallSignalingClient].
+ *
+ * Per product protocol:
+ * - Caller joins Agora while still in [CallState.OutgoingRinging].
+ * - [SignalingEvent.InviteAccepted] (MQTT a_type=14) moves caller to Connecting/InCall
+ *   without a second join when already in channel.
+ * - Callee [acceptIncoming] initializes + joins after `/call/success` succeeded in the VM.
  */
 class CallCoordinator(
     private val scope: CoroutineScope,
@@ -28,6 +35,9 @@ class CallCoordinator(
     private val _state = MutableStateFlow<CallState>(CallState.Idle)
     val state: StateFlow<CallState> = _state.asStateFlow()
     private var localHangupRequested: Boolean = false
+    /** Channel id after a successful local Agora join (may precede Connecting for caller). */
+    private var joinedChannelId: String? = null
+    private var joinedLocalUid: Int = 0
 
     init {
         scope.launch {
@@ -53,6 +63,8 @@ class CallCoordinator(
                 AppLogger.d(TAG, "resetIfTerminal: Ended -> Idle")
                 _state.value = CallState.Idle
                 localHangupRequested = false
+                joinedChannelId = null
+                joinedLocalUid = 0
             }
             else -> Unit
         }
@@ -64,35 +76,51 @@ class CallCoordinator(
             return
         }
         if (_state.value is CallState.Ended) _state.value = CallState.Idle
+        joinedChannelId = null
+        joinedLocalUid = 0
         AppLogger.d(
             TAG,
             "startOutgoingCall inviteId=${request.inviteId} channel=${request.channelId} " +
-                "uid=${request.rtcUid} tokenLen=${request.rtcToken.length}",
+                "uid=${request.rtcUid} tokenLen=${request.rtcToken.length} appIdLen=${request.rtcAppId.length}",
         )
         _state.value = CallState.OutgoingRinging(
             inviteId = request.inviteId,
             channelId = request.channelId,
             localRtcUid = request.rtcUid,
             localRtcToken = request.rtcToken,
+            rtcAppId = request.rtcAppId,
+            roomSessionId = request.roomSessionId,
+            fencingToken = request.fencingToken,
+            peerUserId = request.calleeUserId,
+            peerNickname = request.peerNickname,
+            peerAvatarUrl = request.peerAvatarUrl,
+            peerAge = request.peerAge,
+            peerVideoUrl = request.peerVideoUrl,
+            peerCoverUrl = request.peerCoverUrl,
         )
         scope.launch {
             signaling.sendInvite(request)
+            // Caller joins during ringing so remote can see/hear immediately after answer.
+            ensureRtcJoined(
+                appId = request.rtcAppId,
+                channelId = request.channelId,
+                uid = request.rtcUid,
+                token = request.rtcToken,
+            )
         }
     }
 
     /**
-     * Transition to [CallState.Connecting] after incoming accept.
-     *
-     * The actual RTC join is driven by `VideoCallViewModel.startCall()` after
-     * `AgoraRtcService.ensureEngine(...)` succeeds. This avoids a race where
-     * the incoming screen pushes coordinator state before Agora engine init.
+     * Transition to [CallState.Connecting] after callee `/call/success`, then join Agora.
      */
     fun acceptIncoming(
         inviteId: String,
         channelId: String,
         uid: Int,
         token: String,
+        rtcAppId: String = "",
         roomSessionId: Long = 0L,
+        fencingToken: String? = null,
     ) {
         val current = _state.value
         if (current !is CallState.IncomingRinging) {
@@ -104,7 +132,20 @@ class CallCoordinator(
             callId = inviteId,
             channelId = channelId,
             roomSessionId = roomSessionId.takeIf { it > 0L } ?: current.roomSessionId,
+            fencingToken = fencingToken ?: current.fencingToken,
+            rtcAppId = rtcAppId.ifBlank { current.rtcAppId },
+            localRtcUid = uid,
+            localRtcToken = token,
         )
+        scope.launch {
+            ensureRtcJoined(
+                appId = rtcAppId.ifBlank { current.rtcAppId },
+                channelId = channelId,
+                uid = uid,
+                token = token,
+            )
+            maybePromoteJoinedToInCall()
+        }
     }
 
     /**
@@ -139,7 +180,6 @@ class CallCoordinator(
                     )
                 }
             }
-            // If already in a call flow, keep current state unchanged.
             is CallState.OutgoingRinging,
             is CallState.IncomingRinging,
             is CallState.InCall,
@@ -148,10 +188,18 @@ class CallCoordinator(
     }
 
     /**
+     * Promote outgoing ringing to Connecting when answer-status reports answered
+     * (backup for missing MQTT a_type=14).
+     */
+    fun notifyPeerAnswered(inviteId: String, callId: String = inviteId) {
+        onSignalingEvent(SignalingEvent.InviteAccepted(inviteId = inviteId, callId = callId))
+    }
+
+    /**
      * Reject an incoming call and reset state to [CallState.Ended].
      *
      * **Signaling responsibility**: the caller is expected to send the reject signal
-     * BEFORE calling this (e.g. via `MqttCallSignalingClient.rejectTo`).
+     * BEFORE calling this (e.g. via `MqttCallSignalingClient.reject`).
      */
     fun rejectIncoming(inviteId: String, reason: RejectReason) {
         if (_state.value !is CallState.IncomingRinging) {
@@ -160,6 +208,7 @@ class CallCoordinator(
         }
         AppLogger.d(TAG, "rejectIncoming inviteId=$inviteId reason=$reason")
         _state.value = CallState.Ended(reason = EndReason.Unknown)
+        clearJoined()
         rtc.leave()
     }
 
@@ -171,30 +220,31 @@ class CallCoordinator(
         when (s) {
             is CallState.OutgoingRinging -> {
                 scope.launch {
-                    AppLogger.d("CallCoordinator", "hangup -> cancel inviteId=${s.inviteId}")
+                    AppLogger.d(TAG, "hangup -> cancel inviteId=${s.inviteId}")
                     signaling.cancel(s.inviteId)
                 }
             }
             is CallState.IncomingRinging -> {
                 scope.launch {
-                    AppLogger.d("CallCoordinator", "hangup -> reject inviteId=${s.inviteId}")
+                    AppLogger.d(TAG, "hangup -> reject inviteId=${s.inviteId}")
                     signaling.reject(s.inviteId, RejectReason.Declined)
                 }
             }
             is CallState.Connecting -> {
                 scope.launch {
-                    AppLogger.d("CallCoordinator", "hangup -> end connecting callId=${s.callId}")
+                    AppLogger.d(TAG, "hangup -> end connecting callId=${s.callId}")
                     signaling.end(s.callId, EndReason.Hangup)
                 }
             }
             is CallState.InCall -> {
                 scope.launch {
-                    AppLogger.d("CallCoordinator", "hangup -> end inCall callId=${s.callId}")
+                    AppLogger.d(TAG, "hangup -> end inCall callId=${s.callId}")
                     signaling.end(s.callId, EndReason.Hangup)
                 }
             }
             else -> Unit
         }
+        clearJoined()
         rtc.leave()
     }
 
@@ -213,6 +263,7 @@ class CallCoordinator(
         AppLogger.d(TAG, "endBySystem from state=$s reason=$reason")
         localHangupRequested = false
         _state.value = CallState.Ended(reason = reason)
+        clearJoined()
         rtc.leave()
     }
 
@@ -223,6 +274,42 @@ class CallCoordinator(
         is CallState.InCall,
         -> true
         else -> false
+    }
+
+    private fun clearJoined() {
+        joinedChannelId = null
+        joinedLocalUid = 0
+    }
+
+    private fun ensureRtcJoined(appId: String, channelId: String, uid: Int, token: String) {
+        if (channelId.isBlank()) {
+            AppLogger.w(TAG, "ensureRtcJoined skipped blank channel")
+            return
+        }
+        if (joinedChannelId == channelId) {
+            AppLogger.d(TAG, "ensureRtcJoined already joined channel=$channelId")
+            return
+        }
+        if (appId.isNotBlank()) {
+            rtc.initialize(RtcInitConfig(appId = appId))
+        } else {
+            AppLogger.w(TAG, "ensureRtcJoined blank appId — join may fail if engine not initialized")
+        }
+        rtc.join(channelId = channelId, uid = uid, token = token, enableVideo = true)
+    }
+
+    private fun maybePromoteJoinedToInCall() {
+        val channel = joinedChannelId ?: return
+        val current = _state.value
+        if (current is CallState.Connecting && current.channelId == channel) {
+            _state.value = CallState.InCall(
+                callId = current.callId,
+                channelId = channel,
+                localUid = joinedLocalUid,
+                roomSessionId = current.roomSessionId,
+                fencingToken = current.fencingToken,
+            )
+        }
     }
 
     private fun onSignalingEvent(e: SignalingEvent) {
@@ -238,9 +325,6 @@ class CallCoordinator(
                     else -> false
                 }
                 if (busy) {
-                    // Some backends re-deliver the same invite / connect envelope on the caller's
-                    // MQTT topic after the callee answers. Treating it as a second invite would
-                    // call `reject` → `POST /call/end` on the *active* room_id and drop the live call.
                     val duplicateForActiveSession = when (val cur = _state.value) {
                         is CallState.InCall ->
                             matchesCallRoomId(cur.callId, cur.roomSessionId, e.inviteId)
@@ -263,11 +347,15 @@ class CallCoordinator(
                     scope.launch { signaling.reject(e.inviteId, RejectReason.Busy) }
                     return
                 }
+                // New invite after Ended/Idle: clear leftover join flags from the prior session.
+                clearJoined()
+                localHangupRequested = false
                 _state.value = CallState.IncomingRinging(
                     inviteId = e.inviteId,
                     callerUserId = e.callerUserId,
                     callerName = e.callerName,
                     callerAvatar = e.callerAvatar,
+                    callerAge = e.callerAge,
                     callType = e.callType,
                     channelId = e.channelId,
                     rtcUid = e.rtcUid,
@@ -275,6 +363,9 @@ class CallCoordinator(
                     rtcAppId = e.rtcAppId,
                     roomSessionId = e.roomSessionId,
                     callFreeMin = e.callFreeMin,
+                    fencingToken = e.fencingToken,
+                    peerVideoUrl = e.peerVideoUrl,
+                    peerCoverUrl = e.peerCoverUrl,
                 )
             }
 
@@ -287,15 +378,13 @@ class CallCoordinator(
                         callId = e.callId.ifBlank { current.inviteId },
                         channelId = current.channelId,
                         roomSessionId = current.roomSessionId,
+                        fencingToken = current.fencingToken,
+                        rtcAppId = current.rtcAppId,
+                        localRtcUid = current.localRtcUid,
+                        localRtcToken = current.localRtcToken,
                     )
-                    // Caller joins the channel after the callee accepts.
-                    scope.launch {
-                        rtc.join(
-                            channelId = current.channelId,
-                            uid = current.localRtcUid,
-                            token = current.localRtcToken,
-                        )
-                    }
+                    // Caller already joined during ringing — promote if join completed.
+                    maybePromoteJoinedToInCall()
                 }
             }
 
@@ -305,6 +394,7 @@ class CallCoordinator(
                     matchesCallRoomId(current.inviteId, current.roomSessionId, e.inviteId)
                 ) {
                     _state.value = CallState.Ended(reason = EndReason.Unknown)
+                    clearJoined()
                     rtc.leave()
                 }
             }
@@ -315,6 +405,7 @@ class CallCoordinator(
                     matchesCallRoomId(current.inviteId, current.roomSessionId, e.inviteId)
                 ) {
                     _state.value = CallState.Ended(reason = EndReason.Timeout)
+                    clearJoined()
                     rtc.leave()
                 }
             }
@@ -331,8 +422,9 @@ class CallCoordinator(
                             return
                         }
                         if (matchesCallRoomId(current.callId, current.roomSessionId, e.callId)) {
-                            AppLogger.d("CallCoordinator", "CallEnded matched InCall callId=${e.callId}")
+                            AppLogger.d(TAG, "CallEnded matched InCall callId=${e.callId}")
                             _state.value = CallState.Ended(reason = e.reason)
+                            clearJoined()
                             rtc.leave()
                         }
                     }
@@ -345,20 +437,23 @@ class CallCoordinator(
                             return
                         }
                         if (matchesCallRoomId(current.callId, current.roomSessionId, e.callId)) {
-                            AppLogger.d("CallCoordinator", "CallEnded matched Connecting callId=${e.callId}")
+                            AppLogger.d(TAG, "CallEnded matched Connecting callId=${e.callId}")
                             _state.value = CallState.Ended(reason = e.reason)
+                            clearJoined()
                             rtc.leave()
                         }
                     }
                     is CallState.OutgoingRinging -> {
                         if (matchesCallRoomId(current.inviteId, current.roomSessionId, e.callId)) {
                             _state.value = CallState.Ended(reason = e.reason)
+                            clearJoined()
                             rtc.leave()
                         }
                     }
                     is CallState.IncomingRinging -> {
                         if (matchesCallRoomId(current.inviteId, current.roomSessionId, e.callId)) {
                             _state.value = CallState.Ended(reason = e.reason)
+                            clearJoined()
                             rtc.leave()
                         }
                     }
@@ -367,12 +462,18 @@ class CallCoordinator(
             }
 
             is SignalingEvent.Error -> {
-                // Ignore stale transport errors when we are not in an active call flow.
                 if (isCallActiveState(_state.value)) {
                     AppLogger.w(TAG, "SignalingError activeState=${_state.value} message=${e.message}")
                     _state.value = CallState.Ended(reason = EndReason.NetworkError)
+                    clearJoined()
                 }
             }
+
+            // In-call UX events are consumed by CallViewModel, not the state machine.
+            is SignalingEvent.BalanceAlert,
+            is SignalingEvent.InCallChat,
+            is SignalingEvent.PeerMaskStatus,
+            -> Unit
         }
     }
 
@@ -380,23 +481,16 @@ class CallCoordinator(
         AppLogger.d(TAG, "onRtcEvent event=$e currentState=${_state.value}")
         when (e) {
             is RtcEvent.JoinedChannel -> {
-                val current = _state.value
-                if (current is CallState.Connecting && current.channelId == e.channelId) {
-                    _state.value = CallState.InCall(
-                        callId = current.callId,
-                        channelId = e.channelId,
-                        localUid = e.localUid,
-                        roomSessionId = current.roomSessionId,
-                    )
-                }
+                joinedChannelId = e.channelId
+                joinedLocalUid = e.localUid
+                maybePromoteJoinedToInCall()
             }
 
             is RtcEvent.Error -> {
-                // RTC emits late errors during teardown/release; they must not force-close
-                // a newly opened call screen when coordinator is idle.
                 if (_state.value is CallState.InCall) {
                     AppLogger.w(TAG, "RtcError in call code=${e.code} message=${e.message}")
                     _state.value = CallState.Ended(reason = EndReason.NetworkError)
+                    clearJoined()
                 }
             }
 
@@ -413,7 +507,15 @@ sealed interface CallState {
         val channelId: String,
         val localRtcUid: Int = 0,
         val localRtcToken: String = "",
+        val rtcAppId: String = "",
         val roomSessionId: Long = 0L,
+        val fencingToken: String? = null,
+        val peerUserId: String = "",
+        val peerNickname: String = "",
+        val peerAvatarUrl: String = "",
+        val peerAge: Int = 0,
+        val peerVideoUrl: String = "",
+        val peerCoverUrl: String = "",
     ) : CallState
 
     data class IncomingRinging(
@@ -421,6 +523,7 @@ sealed interface CallState {
         val callerUserId: String,
         val callerName: String = "",
         val callerAvatar: String = "",
+        val callerAge: Int = 0,
         val callType: Int = CallMediaType.Video,
         val channelId: String,
         val rtcToken: String,
@@ -432,12 +535,20 @@ sealed interface CallState {
          * free, per product rule. Fixed at invite time, never re-derived later.
          */
         val callFreeMin: Int = 0,
+        val fencingToken: String? = null,
+        /** `user_info.video` — peer video show for the ringing background. */
+        val peerVideoUrl: String = "",
+        val peerCoverUrl: String = "",
     ) : CallState
 
     data class Connecting(
         val callId: String,
         val channelId: String,
         val roomSessionId: Long = 0L,
+        val fencingToken: String? = null,
+        val rtcAppId: String = "",
+        val localRtcUid: Int = 0,
+        val localRtcToken: String = "",
     ) : CallState
 
     data class InCall(
@@ -445,6 +556,7 @@ sealed interface CallState {
         val channelId: String,
         val localUid: Int,
         val roomSessionId: Long = 0L,
+        val fencingToken: String? = null,
     ) : CallState
 
     data class Ended(val reason: EndReason) : CallState
@@ -465,4 +577,3 @@ fun matchesCallRoomId(
 }
 
 private const val TAG = "CallCoordinator"
-
