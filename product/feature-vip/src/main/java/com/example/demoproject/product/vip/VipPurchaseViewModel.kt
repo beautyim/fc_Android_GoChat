@@ -159,6 +159,15 @@ class VipPurchaseViewModel(
                             )
                         }
                     }
+                    is StorePurchaseResult.ExternalCheckoutOpened -> {
+                        viewModelScope.launch {
+                            _effects.send(
+                                VipPurchaseEffect.ShowMessage(
+                                    str(R.string.vip_status_external_checkout_opened),
+                                ),
+                            )
+                        }
+                    }
                     is StorePurchaseResult.Failed -> {
                         viewModelScope.launch {
                             _effects.send(

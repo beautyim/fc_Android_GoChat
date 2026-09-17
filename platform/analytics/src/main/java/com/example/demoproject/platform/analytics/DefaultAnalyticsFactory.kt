@@ -7,6 +7,7 @@ import com.example.demoproject.platform.analytics.adjust.AdjustAnalyticsConfig
 import com.example.demoproject.platform.analytics.adjust.AdjustAnalyticsTracker
 import com.example.demoproject.platform.analytics.adjust.AnalyticsEventStore
 import com.example.demoproject.platform.analytics.adjust.DefaultAdjustAttributionProvider
+import com.example.demoproject.platform.analytics.adjust.PayAnalyticsOutbox
 import com.example.demoproject.platform.analytics.firebase.FirebaseAnalyticsTracker
 
 /**
@@ -22,11 +23,17 @@ object DefaultAnalyticsFactory {
         )
         val firebase = FirebaseAnalyticsTracker(FirebaseAnalytics.getInstance(application))
         val attributionProvider = DefaultAdjustAttributionProvider(application.applicationContext)
+        val payReporter = PayAnalyticsReporter(
+            outbox = PayAnalyticsOutbox(application.applicationContext),
+            adjustTracker = adjust,
+            firebaseTracker = firebase,
+        )
         return DefaultAnalytics(
             tracker = CompositeAnalyticsTracker(listOf(adjust, firebase)),
             initializer = CompositeAnalyticsInitializer(listOf(adjust, firebase)),
             adjustAttributionProvider = attributionProvider,
             adjustTracker = adjust,
+            payReporter = payReporter,
         )
     }
 }
@@ -36,4 +43,5 @@ data class DefaultAnalytics(
     val initializer: AnalyticsInitializer,
     val adjustAttributionProvider: AdjustAttributionProvider,
     val adjustTracker: AdjustAnalyticsTracker,
+    val payReporter: PayAnalyticsReporter,
 )

@@ -95,4 +95,28 @@ object DemoGradients {
     val matchSearchingArc: Brush = Brush.verticalGradient(
         colors = listOf(DemoColors.matchSearchingArcStart, DemoColors.matchSearchingArcEnd),
     )
+    /** Free-video welfare CTA — Figma 1:5513 #F352BD → #FC2472. */
+    val welfareFreeVideoCta: Brush = Brush.horizontalGradient(
+        colors = listOf(DemoColors.welfareFreeVideoCtaStart, DemoColors.welfareFreeVideoCtaEnd),
+    )
+    /**
+     * Free-video CTA underlay — soft top fade into footer, solid under the pill
+     * so baked-in button art is covered without a hard band.
+     */
+    val welfareFreeVideoCtaCover: Brush = Brush.verticalGradient(
+        colorStops = arrayOf(
+            0.0f to DemoColors.welfareFreeVideoCtaCoverEdge,
+            0.32f to DemoColors.welfareFreeVideoCtaCoverMid,
+            0.55f to DemoColors.welfareFreeVideoCtaCover,
+            1.0f to DemoColors.welfareFreeVideoCtaCover,
+        ),
+    )
+    /** Treasure CTA text cover — Figma #C84FFD → #A33BFE. */
+    val treasureCtaCover: Brush = Brush.verticalGradient(
+        colors = listOf(DemoColors.treasureCtaCoverStart, DemoColors.treasureCtaCoverEnd),
+    )
+    /** Prize-win CTA — Figma 1:5741 #F352BD → #FC2472. */
+    val prizeCta: Brush = Brush.horizontalGradient(
+        colors = listOf(DemoColors.prizeCtaStart, DemoColors.prizeCtaEnd),
+    )
 }

@@ -23,6 +23,7 @@
     <string name="store_status_launching_play">Google Play açılıyor…</string>
     <string name="store_status_purchase_verified">Satın alma doğrulandı</string>
     <string name="store_status_purchase_canceled">Satın alma iptal edildi</string>
+    <string name="store_status_external_checkout_opened">Ödemeyi tarayıcıda tamamlayın, ardından uygulamaya dönün</string>
     <string name="store_status_purchase_failed_fmt">Satın alma başarısız: %1$s</string>
     <string name="store_guide_my_coins">Jetonlarım: %1$d</string>
     <string name="store_guide_low_balance">Bakiyeniz düşük, lütfen yükleme yapın</string>

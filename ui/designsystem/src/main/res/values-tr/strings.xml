@@ -8,4 +8,27 @@
     <string name="media_viewer_cd_play">Oynat</string>
     <string name="media_viewer_cd_pause">Duraklat</string>
     <string name="media_viewer_cd_loading">Yükleniyor</string>
+    <string name="welfare_free_title">Ücretsiz</string>
+    <string name="welfare_free_video_reward">Görüntülü Sohbet</string>
+    <string name="welfare_free_match_reward">Görüntülü Eşleşme</string>
+    <string name="welfare_free_times_prefix">x</string>
+    <string name="welfare_free_video_cta">Görüntülü sohbet başlat</string>
+    <string name="welfare_free_match_cta">Görüntülü eşleşme başlat</string>
+    <string name="welfare_cd_close">Kapat</string>
+
+    <string name="treasure_cta_get_offer">Teklifi al</string>
+    <string name="treasure_coins_fmt">+%1$d  jeton</string>
+    <string name="treasure_bonus_coins_fmt">+%1$d</string>
+    <string name="treasure_extra_bonus">EKSTRA BONUS</string>
+    <string name="treasure_match_label">Eşleşme</string>
+    <string name="treasure_match_count_fmt">x%1$d</string>
+    <string name="treasure_plus">+</string>
+    <string name="treasure_cd_close">Kapat</string>
+
+    <string name="prize_cta_claim">Şimdi al</string>
+    <string name="prize_coins_unit">Jeton</string>
+    <string name="prize_cd_close">Kapat</string>
+
+    <string name="treasure_entry_cd">Sınırlı süreli hazine teklifi</string>
+    <string name="treasure_entry_special_offer">ÖZEL TEKLİF</string>
 </resources>

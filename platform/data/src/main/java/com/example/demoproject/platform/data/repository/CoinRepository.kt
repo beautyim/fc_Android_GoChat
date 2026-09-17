@@ -77,6 +77,87 @@ data class RechargeVipPayItem(
     val badgeLabel: String? = null,
 )
 
+/**
+ * Treasure / promo offer from `promo/goods` (or MQTT treasure callback).
+ */
+data class PromoGoods(
+    val remainSeconds: Long,
+    val originalPrice: String,
+    val salePrice: String,
+    val content: PromoGoodsContent,
+    val goodsId: Long,
+    val sku: String,
+    val productType: BillingProductType,
+    val fromType: Int,
+    val fromId: Long,
+    val orderFrom: Int,
+    val sid: Int,
+    val saveDesc: String = "",
+)
+
+sealed interface PromoGoodsContent {
+    data class SmallCoins(
+        val coins: Int,
+        val coinIconUrl: String? = null,
+    ) : PromoGoodsContent
+
+    data class Vip(
+        val vipTitle: String,
+        val bonusCoins: Int,
+        val matchCount: Int,
+        val coinIconUrl: String? = null,
+    ) : PromoGoodsContent
+
+    data class DualCoins(
+        val leftCoins: Int,
+        val rightCoins: Int,
+        val leftIconUrl: String? = null,
+        val rightIconUrl: String? = null,
+        val matchCount: Int = 0,
+    ) : PromoGoodsContent
+}
+
+/**
+ * Winning / prize-claim offer from `vip/event` or MQTT `winning_recharge_alert`.
+ */
+data class WinningOffer(
+    val remainSeconds: Long,
+    val originalPrice: String,
+    val salePrice: String,
+    val baseCoins: Int,
+    val bonusCoins: Int,
+    val baseCoinIconUrl: String? = null,
+    val bonusCoinIconUrl: String? = null,
+    val goodsId: Long,
+    val sku: String,
+    val productType: BillingProductType,
+    val fromType: Int,
+    val fromId: Long,
+    val orderFrom: Int,
+    val sid: Int,
+    val hasPurchasableSku: Boolean,
+)
+
 interface CoinRepository {
     suspend fun getRechargePage(): AppResult<RechargePageData>
+
+    /** `promo/goods` — treasure-box eligibility and offer payload; null when ineligible. */
+    suspend fun getPromoGoods(
+        tier: com.example.demoproject.platform.data.promotion.TreasureUserTier =
+            com.example.demoproject.platform.data.promotion.TreasureUserTier.Unpaid,
+    ): AppResult<PromoGoods?>
+
+    /**
+     * `vip/event` — winning offer for [sid].
+     * [forceWinningSkin] maps any func_name as winning (HTTP path).
+     * [needPrice] `1` when CTA must refill goods/sku.
+     */
+    suspend fun reportVipEvent(
+        sid: Int,
+        needPrice: Int = 0,
+        fromId: Long = 0L,
+        forceWinningSkin: Boolean = true,
+        tier: com.example.demoproject.platform.data.promotion.TreasureUserTier =
+            com.example.demoproject.platform.data.promotion.TreasureUserTier.Unpaid,
+    ): AppResult<WinningOffer?>
 }

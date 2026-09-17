@@ -12,6 +12,8 @@ object DemoColors {
     val orLabel = Color(0x99666666)
     val divider = Color(0xFFE0E0E5)
     val inputBorder = Color(0xFFE0E0E5)
+    /** Bind/change-email field stroke — #999 @ 20% (Figma 1:3191). */
+    val emailFieldBorder = Color(0x33999999)
     /** Input placeholder — #999 @ 60% (Figma auth inputs). */
     val inputPlaceholder = Color(0x99999999)
     /** Auxiliary label — #999999 (Figma Online chips / helper). */
@@ -46,6 +48,61 @@ object DemoColors {
     val onlineAction = Color(0xFF00D670)
     /** FREE badge — #FF6A00. */
     val freeBadge = Color(0xFFFF6A00)
+    /** Welfare dialog "Free" title — #FF3292 (Figma 1:5515 / 1:5563). */
+    val welfareFreeTitle = Color(0xFFFF3292)
+    /** Free-video reward label — #FFDAEB (Figma 1:5516). */
+    val welfareFreeVideoReward = Color(0xFFFFDAEB)
+    /** Free-match reward label — #FF3493 (Figma 1:5565). */
+    val welfareFreeMatchReward = Color(0xFFFF3493)
+    /** Free-match reward "x" — #FF3995 (Figma 1:5566). */
+    val welfareFreeMatchTimes = Color(0xFFFF3995)
+    /** Free-match reward count — #FF429A (Figma 1:5567). */
+    val welfareFreeMatchCount = Color(0xFFFF429A)
+    /** Free-video CTA gradient start — #F352BD (Figma 1:5513). */
+    val welfareFreeVideoCtaStart = Color(0xFFF352BD)
+    /** Free-video CTA gradient end — #FC2472 (Figma 1:5513). */
+    val welfareFreeVideoCtaEnd = Color(0xFFFC2472)
+    /** Free-video CTA underlay — Figma 1:5512 #17081E, matches footer so ghost button art is hidden. */
+    val welfareFreeVideoCtaCover = Color(0xFF17081E)
+    /** Free-video CTA underlay fade mid stop — #17081E @ ~72%. */
+    val welfareFreeVideoCtaCoverMid = Color(0xB817081E)
+    /** Free-video CTA underlay top edge (fully transparent) for soft fade. */
+    val welfareFreeVideoCtaCoverEdge = Color(0x0017081E)
+    /** Treasure reward / price accent — #9D41FF. */
+    val treasureAccent = Color(0xFF9D41FF)
+    /** Treasure original price — #999999. */
+    val treasureOriginalPrice = Color(0xFF999999)
+    /** Treasure VIP / Match body — #333333. */
+    val treasureBody = Color(0xFF333333)
+    /** Treasure EXTRA BONUS panel fill — #FFF0E7. */
+    val treasureExtraBonusFill = Color(0xFFFFF0E7)
+    /** Treasure price-strip fill. */
+    val treasurePriceStrip = Color(0xFFFFFFFF)
+    /** Treasure original-price strike — red. */
+    val treasureStrike = Color(0xFFFF3535)
+    /** Treasure coin-glow disc — purple soft. */
+    /** Treasure CTA text cover wash — #C84FFD → #A33BFE. */
+    val treasureCtaCoverStart = Color(0xFFC84FFD)
+    val treasureCtaCoverEnd = Color(0xFFA33BFE)
+    /** Prize bonus / sale accent — #FF2E6E (Figma 1:5749 / 1:5753). */
+    val prizeAccent = Color(0xFFFF2E6E)
+    /** Prize body text — #333333. */
+    val prizeBody = Color(0xFF333333)
+    /** Prize original price — #999999. */
+    val prizeOriginalPrice = Color(0xFF999999)
+    /** Prize price strip — #FFEBF7 (Figma 1:5751). */
+    val prizePriceStrip = Color(0xFFFFEBF7)
+    /** Prize CTA cover wash — #FBD4FB (Figma 1:5740). */
+    val prizeCtaCover = Color(0xFFFBD4FB)
+    /** Prize CTA cover edge — transparent for soft rim. */
+    val prizeCtaCoverEdge = Color(0x00FBD4FB)
+    /** Prize dashed divider — #F978A0 (Figma 1:5743). */
+    val prizeDashedDivider = Color(0xFFF978A0)
+    /** Prize CTA gradient — #F352BD → #FC2472 (Figma 1:5741). */
+    val prizeCtaStart = Color(0xFFF352BD)
+    val prizeCtaEnd = Color(0xFFFC2472)
+    /** Prize strike — red. */
+    val prizeStrike = Color(0xFFFF3535)
     /** Video show CTA gradient start — Figma #00E384. */
     val videoShowCtaStart = Color(0xFF00E384)
     /** Video show CTA gradient end — Figma #00D7E6. */
@@ -177,6 +234,14 @@ object DemoColors {
     val meCameraBadge = Color(0xFFF0E2FF)
     /** Me menu icon circle — #9D41FF @ 10%. */
     val meMenuIconBg = Color(0x1A9D41FF)
+    /** Report reason icon well — #EEDEFF. */
+    val reportReasonIconBg = Color(0xFFEEDEFF)
+    /** Report reason row border — #999 @ 30%. */
+    val reportReasonBorder = Color(0x4D999999)
+    /** Report online status label — #858692. */
+    val reportOnlineLabel = Color(0xFF858692)
+    /** Report screenshot remove chip — black @ 30%. */
+    val reportShotRemoveBg = Color(0x4D000000)
     /** Settings logout icon circle — #FF4144 @ 10%. */
     val settingsLogoutIconBg = Color(0x1AFF4144)
     /** Me tab chat unread badge — #FF3838. */

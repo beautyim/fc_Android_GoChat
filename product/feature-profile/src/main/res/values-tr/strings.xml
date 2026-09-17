@@ -62,4 +62,18 @@
     <string name="profile_message_gift_soon">Hediyeler yakında</string>
     <string name="profile_message_chat_soon">Sohbet yakında</string>
     <string name="profile_message_video_soon">Görüntülü sohbet yakında</string>
+<string name="report_title">Bildir</string>
+    <string name="report_reason_title">Bu kullanıcıyı neden bildiriyorsun?</string>
+    <string name="report_reason_hint">Lütfen bir neden seç</string>
+    <string name="report_screenshots_title">Ekran görüntüsü ekle</string>
+    <string name="report_screenshots_hint">En fazla 3 görsel yükleyebilirsin</string>
+    <string name="report_submit">Bildirimi Gönder</string>
+    <string name="report_submit_success">Bildirim gönderildi</string>
+    <string name="report_retry">Yeniden dene</string>
+    <string name="report_status_online">Çevrimiçi</string>
+    <string name="report_user_placeholder">Kullanıcı</string>
+    <string name="report_error_invalid_user">Geçersiz kullanıcı</string>
+    <string name="report_cd_back">Geri</string>
+    <string name="report_cd_add_photo">Ekran görüntüsü ekle</string>
+    <string name="report_cd_remove_photo">Ekran görüntüsünü kaldır</string>
 </resources>

@@ -49,6 +49,11 @@ class AboutUsViewModel(
             _uiState.update { it.copy(isDeletingAccount = true) }
             when (val result = runtime.profileRepository.disbandAccount()) {
                 is AppResult.Success -> {
+                    // Guest re-register often reuses the same userId; drop local promo schedule
+                    // so cold-start can seed treasure entry again for the new account.
+                    runtime.sessionManager.currentUserId?.let { uid ->
+                        runtime.promotionPopupStore.clear(uid)
+                    }
                     runtime.sessionManager.clearSession()
                 }
                 is AppResult.Failure -> {

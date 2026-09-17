@@ -115,6 +115,23 @@ interface ProfileRepository {
     /** `user/disband` — deregister and disband the current logged-in account. */
     suspend fun disbandAccount(): AppResult<Unit>
 
+    /** `profile/update-email-code` — send a verification code to [email]. */
+    suspend fun sendUpdateEmailCode(email: String): AppResult<Unit>
+
+    /**
+     * `profile/update-email` — bind [email] to the signed-in account.
+     *
+     * @param emailCode numeric code from the verification email.
+     */
+    suspend fun bindEmail(email: String, password: String, emailCode: Int): AppResult<Unit>
+
+    /**
+     * `profile/modify-email` — replace the bound email with [email].
+     *
+     * @param emailCode numeric code from the verification email.
+     */
+    suspend fun modifyEmail(email: String, emailCode: Int, password: String? = null): AppResult<Unit>
+
     /**
      * `user/update-info` — edits the current profile. Every argument is
      * optional; passing `null` means "leave this field untouched".

@@ -93,6 +93,7 @@ sealed interface ProfileEffect {
     data object NavigateBack : ProfileEffect
     data object OpenStore : ProfileEffect
     data class OpenChatDetail(val conversationId: String, val nickname: String) : ProfileEffect
+    data class OpenReport(val userId: String, val age: Int = 0) : ProfileEffect
     data class StartVideoCall(
         val userId: String,
         val nickname: String,

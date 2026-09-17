@@ -166,6 +166,15 @@ class StoreViewModel(
                             )
                         }
                     }
+                    is StorePurchaseResult.ExternalCheckoutOpened -> {
+                        viewModelScope.launch {
+                            _effects.send(
+                                StoreEffect.ShowMessage(
+                                    str(R.string.store_status_external_checkout_opened),
+                                ),
+                            )
+                        }
+                    }
                     is StorePurchaseResult.Failed -> {
                         viewModelScope.launch {
                             _effects.send(

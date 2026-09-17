@@ -8,4 +8,27 @@
     <string name="media_viewer_cd_play">Play</string>
     <string name="media_viewer_cd_pause">Pause</string>
     <string name="media_viewer_cd_loading">Loading</string>
+    <string name="welfare_free_title">Free</string>
+    <string name="welfare_free_video_reward">Video Chat</string>
+    <string name="welfare_free_match_reward">Video Match</string>
+    <string name="welfare_free_times_prefix">x</string>
+    <string name="welfare_free_video_cta">Start Video Chat</string>
+    <string name="welfare_free_match_cta">Start Video Match</string>
+    <string name="welfare_cd_close">Close</string>
+
+    <string name="treasure_cta_get_offer">Get Offer</string>
+    <string name="treasure_coins_fmt">+%1$d  coins</string>
+    <string name="treasure_bonus_coins_fmt">+%1$d</string>
+    <string name="treasure_extra_bonus">EXTRA BONUS</string>
+    <string name="treasure_match_label">Match</string>
+    <string name="treasure_match_count_fmt">x%1$d</string>
+    <string name="treasure_plus">+</string>
+    <string name="treasure_cd_close">Close</string>
+
+    <string name="prize_cta_claim">Claim Now</string>
+    <string name="prize_coins_unit">Coins</string>
+    <string name="prize_cd_close">Close</string>
+
+    <string name="treasure_entry_cd">Limited-time treasure offer</string>
+    <string name="treasure_entry_special_offer">SPECIAL OFFER</string>
 </resources>

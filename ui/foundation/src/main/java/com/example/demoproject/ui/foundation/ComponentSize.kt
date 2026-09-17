@@ -58,6 +58,18 @@ object ComponentSize {
     val onlineMatchTab = 52.dp
     /** Figma match glow blur radius — 7.4px. */
     val onlineMatchGlowBlur = 7.4.dp
+    /** Online treasure floating entry — Figma 37:4005 / 100×66.67. */
+    val onlineTreasureEntryWidth = 100.dp
+    val onlineTreasureEntryHeight = 66.67.dp
+    /**
+     * Gap from entry bottom to tab chrome top — Figma 702 − (584.67+66.67) ≈ 50.7dp.
+     * Combined with [onlineTabBarBodyHeight] + nav-bar inset via layout padding.
+     */
+    val onlineTreasureAboveTab = 50.dp
+    /** Countdown / SPECIAL OFFER band — Figma 37:4004 y=53.92 within 66.67. */
+    val onlineTreasureCountdownTop = 53.92.dp
+    /** Countdown label line box — Figma 37:4004 height 9. */
+    val onlineTreasureCountdownHeight = 9.dp
     /** Figma profile banner — 195dp. */
     val profileBanner = 195.dp
     /** Figma banner→page fade — 50dp. */
@@ -78,6 +90,31 @@ object ComponentSize {
     val profileFollowButton = 36.dp
     /** Follow sits 20dp below the nickname top (requested vs name row). */
     val profileFollowTopInset = 20.dp
+    /** Follow shifts 5dp toward the trailing edge. */
+    val profileFollowEndShift = 5.dp
+    /** Report page avatar — Figma 60dp. */
+    val reportAvatar = 60.dp
+    /** Report reason glyph leaf — Figma 14dp. */
+    val reportReasonIcon = 14.dp
+    /** Report reason icon pad circle outer — 14 + 6*2. */
+    val reportReasonIconWell = 26.dp
+    /** Report select / radio glyph — Figma 14dp. */
+    val reportRadio = 14.dp
+    /** Report screenshot slot — Figma 100×120. */
+    val reportShotWidth = 100.dp
+    val reportShotHeight = 120.dp
+    /** Report screenshot remove chip — Figma ~16dp. */
+    val reportShotRemove = 16.dp
+    /** Report screenshot remove glyph — Figma 12dp. */
+    val reportShotRemoveIcon = 12.dp
+    /** Report online status dot — Figma 7dp. */
+    val reportOnlineDot = 7.dp
+    /** Report top bar height — Figma 53dp. */
+    val reportTopBar = 53.dp
+    /** Report dashed upload stroke — 1dp. */
+    val reportShotDashStroke = 1.dp
+    /** Report reason row stroke — 0.5dp. */
+    val reportReasonStroke = 0.5.dp
     /** Identity block (name / country / stats) drop below avatar top. */
     val profileIdentityTopInset = 20.dp
     /** Reserve for Follow / Following pill so nickname does not draw underneath. */
@@ -219,6 +256,18 @@ object ComponentSize {
     val relationshipStatusDot = 6.dp
     /** Following / Followers back icon — Figma 24dp. */
     val relationshipBackIcon = 24.dp
+    /** Bind-email hero frame — Figma 164×147 (image 234 @3x). */
+    val emailBindHeroWidth = 164.dp
+    val emailBindHeroHeight = 147.dp
+    /** Change-email hero frame — Figma 201×134 (image 235 @3x). */
+    val emailChangeHeroWidth = 201.dp
+    val emailChangeHeroHeight = 134.dp
+    /** Email editable input — Figma 42dp. */
+    val emailInputHeight = 42.dp
+    /** Email readonly current-email field — Figma 40dp. */
+    val emailReadonlyHeight = 40.dp
+    /** Email form leading glyph — Figma 16dp. */
+    val emailFieldIcon = 16.dp
     /** Blocked users row avatar — Figma 50dp. */
     val blockedAvatar = 50.dp
     /** Blocked users card — 50dp avatar + 8dp vertical padding. */
@@ -793,4 +842,150 @@ object ComponentSize {
     val matchSearchingHeartWhiteHeight = 12.67.dp
     /** Matching band hairline at the outermost ring — Figma 1dp. */
     val matchSearchingRingStroke = 1.dp
+
+    /** Free-video / free-match welfare dialog — Figma 343dp board. */
+    val welfareDialogWidth = 343.dp
+    /** Free-video card aspect — Figma 343×523. */
+    val welfareFreeVideoAspect = 343f / 523f
+    /** Free-video hero crop — Figma 343×431. */
+    val welfareFreeVideoHeroAspect = 343f / 431f
+    /** Free-video footer crop — Figma 343×106. */
+    val welfareFreeVideoFooterAspect = 343f / 106f
+    /** Free-video CTA horizontal inset — Figma (343−319)/2 ≈ 12dp. */
+    val welfareFreeVideoCtaHorizontal = 12.dp
+    /** Free-video CTA bottom inset — Figma 19dp. */
+    val welfareFreeVideoCtaBottom = 19.dp
+    /** Free-video CTA height — Figma 1:5513 = 51dp. */
+    val welfareFreeVideoCtaHeight = 51.dp
+    /** Free-video CTA underlay height — Figma 1:5512 = 70dp. */
+    val welfareFreeVideoCtaCoverHeight = 70.dp
+    /** Free-video CTA underlay horizontal inset — Figma 11dp. */
+    val welfareFreeVideoCtaCoverHorizontal = 11.dp
+    /** Free-video CTA underlay bottom inset — Figma 523−(444+70) = 9dp. */
+    val welfareFreeVideoCtaCoverBottom = 9.dp
+    /**
+     * Free-video title/reward stack bottom inset so CTA stays pinned to the art button:
+     * Figma [ctaBottom] + [ctaHeight] + [rewardToCta] − 30dp + 13dp = 19+51+49−30+13.
+     */
+    val welfareFreeVideoTextBottom = 102.dp
+    /** Free-video / free-match close glyph — Figma 32dp. */
+    val welfareClose = 32.dp
+    /** Free-video close top / end inset — Figma 10 / 10dp. */
+    val welfareFreeVideoCloseInset = 10.dp
+    /** Free → reward-line gap — Figma 366−(309+53) = 4dp. */
+    val welfareFreeVideoTitleToReward = 4.dp
+    /** Reward line → CTA gap — Figma 453−(366+38) = 49dp. */
+    val welfareFreeVideoRewardToCta = 49.dp
+    /** Reward label → "x" — Figma video 223−(81+130) = 12dp. */
+    val welfareFreeVideoRewardLabelToTimes = 12.dp
+    /** Free-match card aspect — Figma 343×528. */
+    val welfareFreeMatchAspect = 343f / 528f
+    /** Free-match close top / end inset — Figma ≈10dp. */
+    val welfareFreeMatchCloseInset = 10.dp
+    /** Free-match CTA height — Figma 12 9 ≈61dp. */
+    val welfareFreeMatchCtaHeight = 61.dp
+    /** Free-match CTA horizontal inset — Figma 17dp. */
+    val welfareFreeMatchCtaHorizontal = 17.dp
+    /** Free-match CTA bottom inset — Figma 528−(451+61) ≈ 16dp. */
+    val welfareFreeMatchCtaBottom = 16.dp
+    /**
+     * Free-match title/reward stack bottom inset so CTA stays pinned to the art button:
+     * Figma [ctaBottom] + [ctaHeight] + [rewardToCta] − 8dp optical shift = 16+61+18−8.
+     */
+    val welfareFreeMatchTextBottom = 87.dp
+    /** Free → reward-line gap — Figma 395−(342+53) = 0dp. */
+    val welfareFreeMatchTitleToReward = 0.dp
+    /** Reward line → CTA gap — Figma 451−(395+38) = 18dp. */
+    val welfareFreeMatchRewardToCta = 18.dp
+    /** Reward label → "x" — Figma match 234−(70+148) = 16dp. */
+    val welfareFreeMatchRewardLabelToTimes = 16.dp
+    /** Reward "x" → count — Figma 4dp. */
+    val welfareFreeRewardTimesToCount = 4.dp
+    /** Welfare "Free" white outline — ~3dp around 44sp. */
+    val welfareFreeTitleStroke = 3.dp
+
+    /** Treasure / limited-offer dialog — Figma 340dp. */
+    val treasureDialogWidth = 340.dp
+    /** Standard treasure card — Figma 340×589. */
+    val treasureDialogAspect = 340f / 589f
+    /** Tall treasure (with EXTRA BONUS) — Figma 340×645. */
+    val treasureDialogTallAspect = 340f / 645f
+    /** Content panel inside hero — Figma 310×257. */
+    val treasureContentWidth = 310.dp
+    val treasureContentHeight = 257.dp
+    /** Content panel top inset — Figma 254dp, nudged up 15dp total. */
+    val treasureContentTop = 239.dp
+    /** CTA button — Figma 318×57. */
+    val treasureCtaWidth = 318.dp
+    val treasureCtaHeight = 57.dp
+    /** CTA bottom inset — Figma ≈10dp on 589 card. */
+    val treasureCtaBottom = 10.dp
+    /** Tall CTA bottom inset — Figma 645−(582+57) ≈ 6dp; use 10 for parity. */
+    val treasureTallCtaBottom = 6.dp
+    /** Close hit target — Figma ≈32dp. */
+    val treasureClose = 32.dp
+    val treasureCloseInset = 12.dp
+    /** Reward icon with glow — Figma 80dp. */
+    val treasureRewardGlow = 80.dp
+    /**
+     * Purple glow asset (Group 51) outer box — Figma inset −15.45% on 80dp
+     * → ≈105dp.
+     */
+    val treasureRewardGlowExtent = 105.dp
+    /** Coin bag leaf inside glow — Figma 60dp. */
+    val treasureRewardIcon = 60.dp
+    /** VIP badge — Figma 80dp. */
+    val treasureVipBadge = 80.dp
+    /** Small coin next to +829 — Figma 28dp. */
+    val treasureVipCoin = 28.dp
+    /** Match bonus heart — Figma 32dp. */
+    val treasureMatchIcon = 32.dp
+    /** EXTRA BONUS panel — Figma 279×68. */
+    val treasureExtraBonusWidth = 279.dp
+    val treasureExtraBonusHeight = 68.dp
+    /** EXTRA BONUS tag — Figma 102×16. */
+    val treasureExtraTagWidth = 102.dp
+    val treasureExtraTagHeight = 16.dp
+    /** Price row height — Figma white strip 64dp. */
+    val treasurePriceStripHeight = 64.dp
+    /** Original-price strike — Figma ≈61dp wide. */
+    val treasureStrikeWidth = 61.dp
+    val treasureStrikeStroke = 1.dp
+
+    /** Prize-win dialog — Figma 343×553. */
+    val prizeDialogWidth = 343.dp
+    val prizeDialogAspect = 343f / 553f
+    /** Coin rows block top inset — Figma ≈267dp. */
+    val prizeCoinBlockTop = 267.dp
+    /** Coin row width — Figma 255dp. */
+    val prizeCoinRowWidth = 255.dp
+    /** Base coin glyph — Figma 48dp. */
+    val prizeBaseCoinIcon = 48.dp
+    /** Bonus coin glyph — Figma 44dp. */
+    val prizeBonusCoinIcon = 44.dp
+    /** Coin row outer frame — Figma ≈56.4 (py + content). */
+    val prizeCoinFrameHeight = 56.dp
+    /** Price strip — Figma 319×64. */
+    val prizePriceStripHeight = 64.dp
+    /**
+     * Price strip insets — Figma x=11; visual QA: −2dp then +1dp start-ward
+     * → start 10 / end 12 (keeps width 319).
+     */
+    val prizePriceStripStart = 10.dp
+    val prizePriceStripEnd = 12.dp
+    /** CTA height — Figma 51dp. */
+    val prizeCtaHeight = 51.dp
+    /** CTA bottom inset — Figma ≈25, then +8 +8 down → 9. */
+    val prizeCtaBottom = 9.dp
+    /** CTA horizontal inset — Figma (343−319)/2 ≈ 12dp. */
+    val prizeCtaHorizontal = 12.dp
+    /** CTA pink wash — Figma ≈80, +20dp extend, −12dp retract → 88. */
+    val prizeCtaCoverHeight = 88.dp
+    val prizeCtaCoverHorizontal = 8.dp
+    /** Close hit target — Figma ≈32dp. */
+    val prizeClose = 32.dp
+    val prizeCloseInset = 12.dp
+    /** Original-price strike — same as treasure. */
+    val prizeStrikeWidth = 61.dp
+    val prizeStrikeStroke = 1.dp
 }

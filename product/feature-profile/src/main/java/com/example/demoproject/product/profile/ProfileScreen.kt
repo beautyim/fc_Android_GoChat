@@ -30,6 +30,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -186,6 +187,7 @@ fun ProfileScreen(
     onBack: () -> Unit = {},
     onOpenStore: () -> Unit = {},
     onOpenChatDetail: (conversationId: String, nickname: String) -> Unit = { _, _ -> },
+    onOpenReport: (userId: String, age: Int) -> Unit = { _, _ -> },
     onStartVideoCall: (
         userId: String,
         nickname: String,
@@ -204,6 +206,7 @@ fun ProfileScreen(
                 is ProfileEffect.OpenChatDetail -> {
                     onOpenChatDetail(effect.conversationId, effect.nickname)
                 }
+                is ProfileEffect.OpenReport -> onOpenReport(effect.userId, effect.age)
                 is ProfileEffect.StartVideoCall -> {
                     onStartVideoCall(
                         effect.userId,
@@ -648,7 +651,8 @@ private fun ProfileHeader(
                             onClick = { onIntent(ProfileIntent.ToggleFollow) },
                             modifier = Modifier
                                 .align(Alignment.TopEnd)
-                                .padding(top = ComponentSize.profileFollowTopInset),
+                                .padding(top = ComponentSize.profileFollowTopInset)
+                                .offset(x = ComponentSize.profileFollowEndShift),
                         )
                     }
                 }

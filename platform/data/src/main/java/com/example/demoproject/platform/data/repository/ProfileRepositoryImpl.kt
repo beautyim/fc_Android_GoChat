@@ -17,6 +17,8 @@ import com.example.demoproject.platform.data.network.dto.FocusFollowRequestDto
 import com.example.demoproject.platform.data.network.dto.FocusListRequestDto
 import com.example.demoproject.platform.data.network.dto.HomeInfoRequestDto
 import com.example.demoproject.platform.data.network.dto.HomeListRequestDto
+import com.example.demoproject.platform.data.network.dto.ProfileEmailCodeRequestDto
+import com.example.demoproject.platform.data.network.dto.ProfileUpdateEmailRequestDto
 import com.example.demoproject.platform.data.network.toChatBinaryUrlOrNull
 import com.example.demoproject.platform.data.network.toPicUrlOrNull
 import com.example.demoproject.platform.data.network.toRelativeMediaPathOrNull
@@ -365,6 +367,41 @@ class ProfileRepositoryImpl @Inject constructor(
 
     override suspend fun disbandAccount(): AppResult<Unit> =
         safeApiCallUnit { profileApi.disbandAccount() }
+
+    override suspend fun sendUpdateEmailCode(email: String): AppResult<Unit> =
+        safeApiCallNullable {
+            profileApi.sendUpdateEmailCode(ProfileEmailCodeRequestDto(email = email.trim()))
+        }.map { Unit }
+
+    override suspend fun bindEmail(
+        email: String,
+        password: String,
+        emailCode: Int,
+    ): AppResult<Unit> =
+        safeApiCallUnit {
+            profileApi.updateEmail(
+                ProfileUpdateEmailRequestDto(
+                    email = email.trim(),
+                    password = password,
+                    emailCode = emailCode,
+                ),
+            )
+        }
+
+    override suspend fun modifyEmail(
+        email: String,
+        emailCode: Int,
+        password: String?,
+    ): AppResult<Unit> =
+        safeApiCallNullable {
+            profileApi.modifyEmail(
+                ProfileUpdateEmailRequestDto(
+                    email = email.trim(),
+                    password = password,
+                    emailCode = emailCode,
+                ),
+            )
+        }.map { Unit }
 
     override suspend fun followUser(id: String): AppResult<Unit> {
         val uid = id.toLongOrNull() ?: return AppResult.BizError(

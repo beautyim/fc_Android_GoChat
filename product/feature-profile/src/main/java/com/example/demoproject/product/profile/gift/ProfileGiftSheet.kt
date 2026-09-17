@@ -64,6 +64,7 @@ import com.example.demoproject.product.profile.ProfileGiftUi
 import com.example.demoproject.product.profile.R
 import com.example.demoproject.ui.designsystem.DemoColors
 import com.example.demoproject.ui.designsystem.DemoGradients
+import com.example.demoproject.ui.designsystem.DemoTextAutoSize
 import com.example.demoproject.ui.designsystem.DemoTheme
 import com.example.demoproject.ui.foundation.ComponentSize
 import com.example.demoproject.ui.foundation.Radius
@@ -462,6 +463,8 @@ private fun GiftCard(
                         fontSize = TextSize.giftPrice,
                         fontWeight = FontWeight.Bold,
                         maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        autoSize = DemoTextAutoSize.price(TextSize.giftPrice),
                         lineHeight = GiftPriceSlotHeight.value.sp,
                     )
                     Image(
@@ -538,6 +541,8 @@ private fun GiftSheetActions(
                 fontSize = TextSize.md,
                 fontWeight = FontWeight.SemiBold,
                 maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                autoSize = DemoTextAutoSize.price(TextSize.md),
             )
             Image(
                 painter = painterResource(R.drawable.profile_ic_coin),

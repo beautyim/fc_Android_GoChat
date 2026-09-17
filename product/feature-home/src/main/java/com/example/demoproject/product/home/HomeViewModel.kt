@@ -31,7 +31,6 @@ class HomeViewModel(
     val effects = _effects.receiveAsFlow()
 
     private val tabJobs = mutableMapOf<OnlineFilter, Job>()
-
     /** After LoadMore succeeds, advance video-show to the next user with a show. */
     private var pendingVideoShowNext: Boolean = false
 
@@ -58,8 +57,22 @@ class HomeViewModel(
             is HomeIntent.OpenUserProfile -> openUserProfile(intent.user)
             is HomeIntent.OpenUserAction -> openUserAction(intent.user)
             HomeIntent.OpenCoins -> viewModelScope.launch { _effects.send(HomeEffect.OpenStore) }
-            is HomeIntent.ReportUser -> viewModelScope.launch {
-                _effects.send(HomeEffect.ShowMessage(str(R.string.home_online_report_coming_soon)))
+            is HomeIntent.ReportUser -> {
+                val user = _uiState.value.currentPage.users.firstOrNull { it.id == intent.userId }
+                    ?: _uiState.value.videoShowUser?.takeIf { it.id == intent.userId }
+                viewModelScope.launch {
+                    if (user == null) {
+                        _effects.send(HomeEffect.ShowMessage(str(R.string.home_online_report_coming_soon)))
+                    } else {
+                        _effects.send(
+                            HomeEffect.OpenReport(
+                                userId = user.profileRouteUserId,
+                                age = user.age,
+                                isOnline = user.presence == OnlinePresence.Online,
+                            ),
+                        )
+                    }
+                }
             }
             HomeIntent.CloseVideoShow -> closeVideoShow()
             HomeIntent.NextVideoShow -> nextVideoShow()
@@ -82,6 +95,7 @@ class HomeViewModel(
             HomeIntent.StartVideoShowCall -> startVideoShowCall()
         }
     }
+
 
     private fun openUserProfile(user: OnlineUserUi) {
         if (user.videoShow != null) {

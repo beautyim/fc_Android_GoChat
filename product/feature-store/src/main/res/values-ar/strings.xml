@@ -23,6 +23,7 @@
     <string name="store_status_launching_play">جارٍ فتح Google Play…</string>
     <string name="store_status_purchase_verified">تم التحقق من الشراء</string>
     <string name="store_status_purchase_canceled">تم إلغاء الشراء</string>
+    <string name="store_status_external_checkout_opened">أكمل الدفع في المتصفح ثم عد إلى التطبيق</string>
     <string name="store_status_purchase_failed_fmt">فشل الشراء: %1$s</string>
     <string name="store_guide_my_coins">عملاتي: %1$d</string>
     <string name="store_guide_low_balance">رصيد منخفض، يرجى إعادة الشحن</string>

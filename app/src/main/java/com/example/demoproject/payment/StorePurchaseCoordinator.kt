@@ -18,6 +18,7 @@ import com.android.billingclient.api.QueryPurchasesParams
 import com.example.demoproject.BuildConfig
 import com.example.demoproject.platform.analytics.AnalyticsEvent
 import com.example.demoproject.platform.analytics.AnalyticsTracker
+import com.example.demoproject.platform.analytics.PayAnalyticsReporter
 import com.example.demoproject.platform.common.log.AppLogger
 import com.example.demoproject.platform.data.repository.BillingOrderStatus
 import com.example.demoproject.platform.data.repository.BillingOrderStore
@@ -67,6 +68,7 @@ class StorePurchaseCoordinator(
     /** Debug-only hook, toggled from Settings, that skips real Google Play Billing and simulates a success. */
     private val isFakePaymentEnabled: suspend () -> Boolean = { false },
     private val analyticsTracker: AnalyticsTracker? = null,
+    private val payAnalyticsReporter: PayAnalyticsReporter? = null,
     private val selectPaymentMethod: suspend (BillingPaymentCheck) -> BillingPaymentType? = {
         BillingPaymentType.GooglePlay
     },
@@ -230,14 +232,16 @@ class StorePurchaseCoordinator(
                     orderNo = order.tranNo,
                 ),
             )
-            finishWithoutPending(onResult, StorePurchaseResult.Canceled)
+            finishWithoutPending(onResult, StorePurchaseResult.ExternalCheckoutOpened)
             return
         }
-        repository.cancelOrder(
-            tranNo = order.tranNo,
-            appErrorCode = APP_ERROR_EXTERNAL_URL_MISSING,
-            googleCode = BillingClient.BillingResponseCode.ERROR,
-        )
+        if (order.tranNo.isNotBlank()) {
+            repository.cancelOrder(
+                tranNo = order.tranNo,
+                appErrorCode = APP_ERROR_EXTERNAL_URL_MISSING,
+                googleCode = BillingClient.BillingResponseCode.ERROR,
+            )
+        }
         finishWithoutPending(onResult, StorePurchaseResult.Failed(genericPaymentError()))
     }
 
@@ -407,17 +411,29 @@ class StorePurchaseCoordinator(
         )
         return when (result) {
             is AppResult.Success -> {
-                orderStore.remove(order.tranNo)
-                analyticsTracker?.track(
-                    AnalyticsEvent.Pay(
-                        goodsId = order.goodsId,
-                        productId = order.productId,
-                        orderNo = order.tranNo,
-                        revenue = order.price.toDoubleOrNull(),
-                        currency = order.currency.ifBlank { null },
-                        isSandboxData = order.purchaseToken.startsWith(FAKE_PURCHASE_TOKEN_PREFIX),
-                    ),
+                val payEvent = AnalyticsEvent.Pay(
+                    goodsId = order.goodsId,
+                    productId = order.productId,
+                    orderNo = order.tranNo,
+                    revenue = order.price.toDoubleOrNull(),
+                    currency = order.currency.ifBlank { null },
+                    isSandboxData = order.purchaseToken.startsWith(FAKE_PURCHASE_TOKEN_PREFIX),
                 )
+                // Durable outbox before dropping the billing row so process death cannot lose ROI `pay`.
+                val reporter = payAnalyticsReporter
+                if (reporter != null) {
+                    try {
+                        reporter.reportPay(payEvent)
+                        orderStore.remove(order.tranNo)
+                    } catch (error: Throwable) {
+                        AppLogger.e(TAG, "pay analytics outbox failed; keeping order for retry", error)
+                        orderStore.upsert(order.copy(status = BillingOrderStatus.Unknown))
+                        BillingOrderRetryWorker.enqueueImmediate(appContext)
+                    }
+                } else {
+                    analyticsTracker?.track(payEvent)
+                    orderStore.remove(order.tranNo)
+                }
                 markVipStatusIfNeeded(order)
                 onPurchaseVerified?.invoke()
                 runCatching { onPaymentSucceeded?.invoke() }

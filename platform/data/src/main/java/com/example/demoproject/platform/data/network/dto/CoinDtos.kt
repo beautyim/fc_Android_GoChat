@@ -126,6 +126,8 @@ data class CoinVipPayItemDto(
     @SerialName("give_coins")
     @Serializable(with = LenientIntSerializer::class)
     val giveCoins: Int = 0,
+    @SerialName("coin_icon")
+    val coinIcon: String = "",
     @SerialName("save_rate")
     val saveRate: String = "",
     @SerialName("sale_icon")

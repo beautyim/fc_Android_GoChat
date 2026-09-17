@@ -64,6 +64,7 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.demoproject.ui.designsystem.DemoColors
 import com.example.demoproject.ui.designsystem.DemoGradients
+import com.example.demoproject.ui.designsystem.DemoTextAutoSize
 import com.example.demoproject.ui.designsystem.DemoTheme
 import com.example.demoproject.ui.foundation.ComponentSize
 import com.example.demoproject.ui.foundation.Radius
@@ -521,6 +522,8 @@ private fun VipPayGuidePlanCard(
                 color = DemoColors.textPrimary,
                 style = VipGuidePlanPriceStyle,
                 maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                autoSize = DemoTextAutoSize.price(TextSize.md),
             )
             plan.originalPrice?.takeIf { it.isNotBlank() }?.let { original ->
                 Text(
@@ -529,6 +532,8 @@ private fun VipPayGuidePlanCard(
                     style = VipGuidePlanOriginalStyle,
                     textDecoration = TextDecoration.LineThrough,
                     maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    autoSize = DemoTextAutoSize.price(TextSize.xs),
                 )
             }
         }
@@ -568,10 +573,17 @@ private fun VipPayGuideCta(
                 fontSize = TextSize.md,
                 fontWeight = FontWeight.SemiBold,
                 lineHeight = TextSize.vipGuidePlanLine,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                autoSize = DemoTextAutoSize.label(TextSize.md),
+                textAlign = TextAlign.Center,
                 style = TextStyle(
                     platformStyle = PlatformTextStyle(includeFontPadding = false),
                     lineHeightStyle = VipGuideTightLineHeight,
                 ),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = Spacing.md),
             )
         }
     }

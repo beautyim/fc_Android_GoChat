@@ -246,7 +246,7 @@ fun resolveVipPayItemDto(
     return matched ?: vipPayItem
 }
 
-private val CoinVipPayItemDto.isVisibleVipCandidate: Boolean
+internal val CoinVipPayItemDto.isVisibleVipCandidate: Boolean
     get() = hidden != 1 &&
         (
             productType == 2 ||

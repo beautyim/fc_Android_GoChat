@@ -72,6 +72,7 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.demoproject.ui.designsystem.DemoColors
+import com.example.demoproject.ui.designsystem.DemoTextAutoSize
 import com.example.demoproject.ui.designsystem.DemoTheme
 import com.example.demoproject.ui.foundation.ComponentSize
 import com.example.demoproject.ui.foundation.IconSize
@@ -302,6 +303,9 @@ private fun CallRecordsHeader(
                     color = DemoColors.textPrimary,
                     fontSize = TextSize.sm,
                     fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    autoSize = DemoTextAutoSize.price(TextSize.sm),
                 )
                 Image(
                     painter = painterResource(R.drawable.call_records_ic_coin),

@@ -80,8 +80,13 @@ class ProfileViewModel(
                 }
             }
             ProfileIntent.MoreReport -> {
+                val state = _uiState.value
                 _uiState.update { it.copy(isMoreSheetVisible = false) }
-                emit(ProfileEffect.ShowMessage(str(R.string.profile_message_report_soon)))
+                if (state.userId.isBlank()) {
+                    emit(ProfileEffect.ShowMessage(str(R.string.report_error_invalid_user)))
+                } else {
+                    emit(ProfileEffect.OpenReport(userId = state.userId, age = state.age))
+                }
             }
             ProfileIntent.DismissConfirmDialog -> _uiState.update {
                 it.copy(confirmDialog = null)

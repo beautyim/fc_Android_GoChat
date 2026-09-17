@@ -12,6 +12,7 @@ import com.example.demoproject.platform.data.network.dto.LoginResponseDto
 import com.example.demoproject.platform.data.network.dto.SendEmailCodeRequestDto
 import com.example.demoproject.platform.data.network.dto.ThirdPartyLoginUserInfoDto
 import com.example.demoproject.platform.data.network.mapper.toDomain
+import com.example.demoproject.platform.data.promotion.PromotionPopupStore
 import com.example.demoproject.platform.data.session.SessionManager
 import com.example.demoproject.platform.network.crypto.md5Hex
 import com.example.demoproject.platform.network.result.AppResult
@@ -28,6 +29,7 @@ class AuthRepositoryImpl @Inject constructor(
     private val sessionManager: SessionManager,
     private val matchQuotaStore: MatchQuotaStore,
     private val callFreeMinStore: CallFreeMinStore,
+    private val promotionPopupStore: PromotionPopupStore,
 ) : AuthRepository {
 
     override suspend fun loginWithEmail(email: String, password: String): AppResult<AuthLoginResult> =
@@ -105,9 +107,15 @@ class AuthRepositoryImpl @Inject constructor(
             )
         }
         val user = userInfo?.toDomain()
+        val userId = userInfo?.uid?.takeIf { it > 0L }?.toString().orEmpty()
+        // New registration (incl. delete+reregister with reused guest uid) must not keep
+        // a consumed treasure schedule from the previous account on this device.
+        if (isRegister == 1 && userId.isNotBlank()) {
+            promotionPopupStore.clear(userId)
+        }
         sessionManager.saveSession(
             Session(
-                userId = userInfo?.uid?.takeIf { it > 0L }?.toString().orEmpty(),
+                userId = userId,
                 token = token,
                 profileComplete = userInfo?.sex != 0,
             ),

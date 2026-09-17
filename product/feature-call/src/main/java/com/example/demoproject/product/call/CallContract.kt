@@ -228,6 +228,7 @@ sealed interface CallEffect {
     data class ShowMessage(val message: String) : CallEffect
     data object OpenStore : CallEffect
     data class OpenChatDetail(val conversationId: String, val nickname: String) : CallEffect
+    data class OpenReport(val userId: String, val age: Int = 0) : CallEffect
     data class RestartVideoCall(
         val userId: String,
         val nickname: String,

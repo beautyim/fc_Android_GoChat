@@ -23,6 +23,7 @@
     <string name="store_status_launching_play">Opening Google Play…</string>
     <string name="store_status_purchase_verified">Purchase verified</string>
     <string name="store_status_purchase_canceled">Purchase canceled</string>
+    <string name="store_status_external_checkout_opened">Complete payment in the browser, then return to the app</string>
     <string name="store_status_purchase_failed_fmt">Purchase failed: %1$s</string>
     <string name="store_guide_my_coins">My coins: %1$d</string>
     <string name="store_guide_low_balance">Low balance, please recharge</string>

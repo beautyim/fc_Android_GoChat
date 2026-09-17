@@ -85,6 +85,14 @@ class AdjustAnalyticsTracker constructor(
             TAG,
             "track requested ${event.logSummary()} initialized=$initialized enabled=${config.enabled}",
         )
+        if (event is AnalyticsEvent.Pay) {
+            // Purchase ROI must go through PayAnalyticsReporter (durable outbox + dedupe).
+            AppLogger.w(
+                TAG,
+                "pay via AnalyticsTracker.track is best-effort; prefer PayAnalyticsReporter " +
+                    event.logSummary(),
+            )
+        }
         if (!config.enabled) {
             AppLogger.i(TAG, "track skipped reason=disabled ${event.logSummary()}")
             return
@@ -108,16 +116,48 @@ class AdjustAnalyticsTracker constructor(
         trackNow(event)
     }
 
-    private fun trackNow(event: AnalyticsEvent) {
+    /**
+     * Submits a `pay` event to Adjust for [PayAnalyticsReporter]. Does not touch the outbox.
+     */
+    fun submitPay(event: AnalyticsEvent.Pay): PaySubmitResult {
+        AppLogger.d(
+            TAG,
+            "submitPay requested ${event.logSummary()} initialized=$initialized enabled=${config.enabled}",
+        )
+        if (!config.enabled) {
+            AppLogger.i(TAG, "submitPay skipped reason=disabled ${event.logSummary()}")
+            return PaySubmitResult.SkippedTerminal
+        }
+        if (event.isSandboxData) {
+            AppLogger.i(TAG, "submitPay skipped reason=sandbox_data ${event.logSummary()}")
+            return PaySubmitResult.SkippedTerminal
+        }
+        if (!initialized) {
+            AppLogger.w(TAG, "submitPay skipped reason=not_initialized ${event.logSummary()}")
+            return PaySubmitResult.SkippedRetryable
+        }
+        val token = config.eventToken(event)
+        if (token.isBlank()) {
+            AppLogger.w(TAG, "submitPay skipped reason=missing_event_token ${event.logSummary()}")
+            return PaySubmitResult.SkippedTerminal
+        }
+        return if (trackNow(event)) {
+            PaySubmitResult.Submitted
+        } else {
+            PaySubmitResult.Failed
+        }
+    }
+
+    private fun trackNow(event: AnalyticsEvent): Boolean {
         if (!initialized) {
             AppLogger.w(TAG, "track skipped reason=not_initialized ${event.logSummary()}")
-            return
+            return false
         }
 
         val token = config.eventToken(event)
         if (token.isBlank()) {
             AppLogger.w(TAG, "track skipped reason=missing_event_token ${event.logSummary()}")
-            return
+            return false
         }
 
         val callbackParameters = event.callbackParameters()
@@ -136,7 +176,7 @@ class AdjustAnalyticsTracker constructor(
                 setRevenue(event.revenue, event.currency)
             }
         }
-        runCatching {
+        return runCatching {
             Adjust.trackEvent(adjustEvent)
         }.onSuccess {
             AppLogger.i(
@@ -150,7 +190,7 @@ class AdjustAnalyticsTracker constructor(
                 "track failed ${event.logSummary()} eventToken=${token.toFingerprint()} error=${error.message}",
                 error,
             )
-        }
+        }.isSuccess
     }
 
     private fun AnalyticsEvent.callbackParameters(): Map<String, String> = when (this) {

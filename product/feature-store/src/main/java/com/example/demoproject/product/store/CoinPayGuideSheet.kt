@@ -58,6 +58,7 @@ import androidx.compose.ui.tooling.preview.PreviewFontScale
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
 import androidx.compose.ui.unit.dp
 import com.example.demoproject.ui.designsystem.DemoColors
+import com.example.demoproject.ui.designsystem.DemoTextAutoSize
 import com.example.demoproject.ui.designsystem.DemoTheme
 import com.example.demoproject.ui.foundation.ComponentSize
 import com.example.demoproject.ui.foundation.Radius
@@ -232,6 +233,7 @@ private fun CoinPayGuideHeader(
                 fontWeight = FontWeight.SemiBold,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
+                autoSize = DemoTextAutoSize.label(TextSize.md),
             )
             Image(
                 painter = painterResource(R.drawable.store_ic_coin),

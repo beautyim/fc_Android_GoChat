@@ -23,6 +23,7 @@
     <string name="store_status_launching_play">Abriendo Google Play…</string>
     <string name="store_status_purchase_verified">Compra verificada</string>
     <string name="store_status_purchase_canceled">Compra cancelada</string>
+    <string name="store_status_external_checkout_opened">Completa el pago en el navegador y vuelve a la app</string>
     <string name="store_status_purchase_failed_fmt">Error de compra: %1$s</string>
     <string name="store_guide_my_coins">Mis monedas: %1$d</string>
     <string name="store_guide_low_balance">Saldo bajo, por favor recarga</string>

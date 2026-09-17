@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="14dp"
+    android:height="14dp"
+    android:viewportWidth="14"
+    android:viewportHeight="14">
+    <!-- Megaphone — political / sensitive speech -->
+    <path
+        android:pathData="M3.5,6.4h1.6l4.2,-2.6v6.4L5.1,7.6H3.5c-0.6,0 -1.1,-0.5 -1.1,-1.1v0C2.4,6.9 2.9,6.4 3.5,6.4z"
+        android:strokeWidth="1.17"
+        android:strokeColor="#9D41FF"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:fillColor="#00000000" />
+    <path
+        android:pathData="M10.3,5.2c0.5,0.4 0.8,1 0.8,1.7s-0.3,1.3 -0.8,1.7"
+        android:strokeWidth="1.17"
+        android:strokeColor="#9D41FF"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000" />
+    <path
+        android:pathData="M4.2,7.6v2.1c0,0.5 0.4,0.9 0.9,0.9h0.3"
+        android:strokeWidth="1.17"
+        android:strokeColor="#9D41FF"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:fillColor="#00000000" />
+</vector>

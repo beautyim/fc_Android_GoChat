@@ -46,7 +46,16 @@ data class StorePurchaseRequest(
 
 sealed interface StorePurchaseResult {
     data class Success(val purchasedId: String) : StorePurchaseResult
+
+    /** User dismissed payment-method selection or canceled the Play Billing sheet. */
     data object Canceled : StorePurchaseResult
+
+    /**
+     * Third-party checkout URL was opened successfully. Payment is still pending outside the app;
+     * balance/VIP refresh arrives via server pay-event, not this callback.
+     */
+    data object ExternalCheckoutOpened : StorePurchaseResult
+
     data class Failed(val message: String) : StorePurchaseResult
 }
 

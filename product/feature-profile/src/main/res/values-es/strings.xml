@@ -62,4 +62,18 @@
     <string name="profile_message_gift_soon">Regalos próximamente</string>
     <string name="profile_message_chat_soon">Chat próximamente</string>
     <string name="profile_message_video_soon">Videollamada próximamente</string>
+<string name="report_title">Reportar</string>
+    <string name="report_reason_title">¿Por qué reportas a este usuario?</string>
+    <string name="report_reason_hint">Selecciona un motivo</string>
+    <string name="report_screenshots_title">Añadir capturas</string>
+    <string name="report_screenshots_hint">Puedes subir hasta 3 imágenes</string>
+    <string name="report_submit">Enviar reporte</string>
+    <string name="report_submit_success">Reporte enviado</string>
+    <string name="report_retry">Reintentar</string>
+    <string name="report_status_online">En línea</string>
+    <string name="report_user_placeholder">Usuario</string>
+    <string name="report_error_invalid_user">Usuario no válido</string>
+    <string name="report_cd_back">Atrás</string>
+    <string name="report_cd_add_photo">Añadir captura</string>
+    <string name="report_cd_remove_photo">Quitar captura</string>
 </resources>

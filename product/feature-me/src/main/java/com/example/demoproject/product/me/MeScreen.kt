@@ -68,6 +68,7 @@ import coil.request.ImageRequest
 import com.example.demoproject.platform.data.model.Gender
 import com.example.demoproject.ui.designsystem.DemoColors
 import com.example.demoproject.ui.designsystem.DemoGradients
+import com.example.demoproject.ui.designsystem.DemoTextAutoSize
 import com.example.demoproject.ui.designsystem.DemoTheme
 import com.example.demoproject.ui.foundation.ComponentSize
 import com.example.demoproject.ui.foundation.IconSize
@@ -453,6 +454,9 @@ private fun MeBalanceCard(
                     color = DemoColors.textPrimary,
                     fontSize = TextSize.meBalance,
                     fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    autoSize = DemoTextAutoSize.price(TextSize.meBalance),
                 )
                 Image(
                     painter = painterResource(R.drawable.me_ic_coin),
@@ -485,6 +489,8 @@ private fun MeBalanceCard(
                 fontSize = TextSize.sm,
                 fontWeight = FontWeight.Bold,
                 maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                autoSize = DemoTextAutoSize.label(TextSize.sm),
             )
         }
     }

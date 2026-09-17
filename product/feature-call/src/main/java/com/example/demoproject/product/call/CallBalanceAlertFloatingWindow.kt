@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -44,6 +45,7 @@ import androidx.compose.ui.tooling.preview.PreviewFontScale
 import androidx.compose.ui.unit.dp
 import com.example.demoproject.ui.designsystem.DemoColors
 import com.example.demoproject.ui.designsystem.DemoGradients
+import com.example.demoproject.ui.designsystem.DemoTextAutoSize
 import com.example.demoproject.ui.designsystem.DemoTheme
 import com.example.demoproject.ui.foundation.ComponentSize
 import com.example.demoproject.ui.foundation.Radius
@@ -141,6 +143,7 @@ fun CallBalanceAlertFloatingWindow(
             fontStyle = FontStyle.Italic,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
+            autoSize = DemoTextAutoSize.label(TextSize.callBalanceFloatMeta),
             textAlign = TextAlign.Center,
             style = TextStyle(
                 platformStyle = PlatformTextStyle(includeFontPadding = false),
@@ -220,6 +223,8 @@ private fun CallBalanceFloatTimerChip(
                 fontWeight = FontWeight.Black,
                 fontStyle = FontStyle.Italic,
                 maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                autoSize = DemoTextAutoSize.label(TextSize.callBalanceFloatMeta),
                 style = TextStyle(
                     shadow = Shadow(
                         color = DemoColors.scrim,
@@ -247,6 +252,8 @@ private fun CallBalanceFloatVipTitle(modifier: Modifier = Modifier) {
             lineHeight = TextSize.callBalanceFloatTitleLine,
             fontWeight = FontWeight.Black,
             maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            autoSize = DemoTextAutoSize.label(TextSize.callBalanceFloatTitle),
             style = TextStyle(
                 platformStyle = PlatformTextStyle(includeFontPadding = false),
                 lineHeightStyle = CallBalanceFloatTightLineHeight,
@@ -259,6 +266,8 @@ private fun CallBalanceFloatVipTitle(modifier: Modifier = Modifier) {
             fontWeight = FontWeight.Black,
             fontStyle = FontStyle.Italic,
             maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            autoSize = DemoTextAutoSize.label(TextSize.callBalanceFloatVip),
             style = TextStyle(
                 brush = DemoGradients.callBalanceFloatVipTitle,
                 shadow = Shadow(
@@ -287,6 +296,8 @@ private fun CallBalanceFloatCoinTitle(modifier: Modifier = Modifier) {
             lineHeight = TextSize.callBalanceFloatTitleLine,
             fontWeight = FontWeight.Black,
             maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            autoSize = DemoTextAutoSize.label(TextSize.callBalanceFloatTitle),
             style = TextStyle(
                 platformStyle = PlatformTextStyle(includeFontPadding = false),
                 lineHeightStyle = CallBalanceFloatTightLineHeight,
@@ -300,6 +311,8 @@ private fun CallBalanceFloatCoinTitle(modifier: Modifier = Modifier) {
             fontStyle = FontStyle.Italic,
             letterSpacing = TextSize.callBalanceFloatCoinsTracking,
             maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            autoSize = DemoTextAutoSize.label(TextSize.callBalanceFloatVip),
             style = TextStyle(
                 brush = DemoGradients.callBalanceFloatVipTitle,
                 shadow = Shadow(
@@ -356,6 +369,8 @@ private fun CallBalanceFloatOffBadge(
         Text(
             text = labeled,
             maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            autoSize = DemoTextAutoSize.label(TextSize.callBalanceFloatMeta),
             textAlign = TextAlign.Center,
             style = TextStyle(
                 shadow = Shadow(
@@ -365,6 +380,9 @@ private fun CallBalanceFloatOffBadge(
                 platformStyle = PlatformTextStyle(includeFontPadding = false),
                 lineHeightStyle = CallBalanceFloatTightLineHeight,
             ),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = Spacing.xxs),
         )
     }
 }
@@ -416,6 +434,8 @@ private fun CallBalanceFloatVipProductContent(offer: CallBalanceOffer) {
                     lineHeight = TextSize.callBalanceFloatBodyLine,
                     fontWeight = FontWeight.Bold,
                     maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    autoSize = DemoTextAutoSize.price(TextSize.callBalanceFloatBody),
                     style = TextStyle(
                         platformStyle = PlatformTextStyle(includeFontPadding = false),
                         lineHeightStyle = CallBalanceFloatTightLineHeight,
@@ -443,6 +463,9 @@ private fun CallBalanceFloatVipProductContent(offer: CallBalanceOffer) {
                     fontSize = TextSize.callBalanceFloatBody,
                     lineHeight = TextSize.callBalanceFloatBodyLine,
                     fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    autoSize = DemoTextAutoSize.label(TextSize.callBalanceFloatBody),
                     style = TextStyle(
                         platformStyle = PlatformTextStyle(includeFontPadding = false),
                         lineHeightStyle = CallBalanceFloatTightLineHeight,
@@ -464,6 +487,8 @@ private fun CallBalanceFloatVipProductContent(offer: CallBalanceOffer) {
                     lineHeight = TextSize.callBalanceFloatBodyLine,
                     fontWeight = FontWeight.Bold,
                     maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    autoSize = DemoTextAutoSize.label(TextSize.callBalanceFloatBody),
                     style = TextStyle(
                         platformStyle = PlatformTextStyle(includeFontPadding = false),
                         lineHeightStyle = CallBalanceFloatTightLineHeight,
@@ -495,6 +520,9 @@ private fun CallBalanceFloatCoinProductContent(amount: Int) {
                 lineHeight = TextSize.callBalanceFloatBodyLine,
                 fontWeight = FontWeight.Bold,
                 maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                autoSize = DemoTextAutoSize.price(TextSize.callBalanceFloatBody),
+                textAlign = TextAlign.Center,
                 style = TextStyle(
                     platformStyle = PlatformTextStyle(includeFontPadding = false),
                     lineHeightStyle = CallBalanceFloatTightLineHeight,
@@ -538,6 +566,9 @@ private fun CallBalanceFloatPriceButton(
                     lineHeight = TextSize.callBalanceFloatMetaLine,
                     fontWeight = FontWeight.SemiBold,
                     maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    autoSize = DemoTextAutoSize.price(TextSize.callBalanceFloatMeta),
+                    textAlign = TextAlign.Center,
                     style = TextStyle(
                         platformStyle = PlatformTextStyle(includeFontPadding = false),
                         lineHeightStyle = CallBalanceFloatTightLineHeight,
@@ -560,6 +591,8 @@ private fun CallBalanceFloatPriceButton(
             fontStyle = FontStyle.Italic,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
+            autoSize = DemoTextAutoSize.price(TextSize.callBalanceFloatBody),
+            textAlign = TextAlign.Center,
             style = TextStyle(
                 platformStyle = PlatformTextStyle(includeFontPadding = false),
                 lineHeightStyle = CallBalanceFloatTightLineHeight,

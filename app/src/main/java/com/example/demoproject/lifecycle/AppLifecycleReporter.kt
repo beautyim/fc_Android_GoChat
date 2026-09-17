@@ -131,38 +131,68 @@ class AppLifecycleReporter(
     ) {
         val runtime = NetworkRuntime.get(application)
         val token = runtime.sessionManager.accessTokenSnapshot
-        if (token.isNullOrBlank()) {
+        val userIdAtStart = runtime.sessionManager.currentUserId
+        if (token.isNullOrBlank() || userIdAtStart.isNullOrBlank()) {
             AppLogger.d(TAG, "skip open/init ($reason): no session")
             return
         }
         when (val init = runtime.appSessionRepository.initApp()) {
             is AppResult.Success -> {
-                saveMqttConfig(init.data.socket)
-                runtime.accountBalanceStore.update(init.data.accountMoney)
-                runtime.chatUnreadStore.update(init.data.messageUnread)
-                AppLogger.i(TAG, "/app/init ok ($reason)")
-                reportInstallStatIfNeeded()
+                if (!isSameAuthenticatedSession(runtime, token, userIdAtStart)) {
+                    AppLogger.w(TAG, "skip init apply ($reason): session changed during /app/init")
+                } else {
+                    saveMqttConfig(init.data.socket)
+                    runtime.accountBalanceStore.update(init.data.accountMoney)
+                    runtime.chatUnreadStore.update(init.data.messageUnread)
+                    // Explicit 0 when user snapshot omits recharge_money after delete+reregister.
+                    runtime.paidStatusStore.update(init.data.user?.rechargeMoney ?: 0)
+                    AppLogger.i(TAG, "/app/init ok ($reason)")
+                    reportInstallStatIfNeeded()
+                    com.example.demoproject.platform.data.promotion.PromotionTriggerBus.emit(
+                        com.example.demoproject.platform.data.promotion.PromotionTrigger.SessionBound,
+                    )
+                }
             }
             is AppResult.Failure -> {
                 AppLogger.w(TAG, "/app/init failed ($reason): ${init.message}")
+                // Still bind promotion schedule so treasure entry can appear after re-login
+                // even when init is flaky (paid status stays cleared/0 until a later init).
+                if (isSameAuthenticatedSession(runtime, token, userIdAtStart)) {
+                    com.example.demoproject.platform.data.promotion.PromotionTriggerBus.emit(
+                        com.example.demoproject.platform.data.promotion.PromotionTrigger.SessionBound,
+                    )
+                }
             }
         }
         if (!reportOpen) return
         if (generation != foregroundGeneration) return
-        if (runtime.sessionManager.accessTokenSnapshot.isNullOrBlank()) return
+        if (!isSameAuthenticatedSession(runtime, token, userIdAtStart)) return
         val fingerprint = DefaultDeviceFingerprint(application)
         val risks = fingerprint.riskSignals()
         runtime.appSessionRepository.openApp(
             hasProxy = (risks["has_proxy"] as? Number)?.toInt() == 1,
             hasVpn = (risks["has_vpn"] as? Number)?.toInt() == 1,
         ).let { open ->
+            if (!isSameAuthenticatedSession(runtime, token, userIdAtStart)) return
             if (open is AppResult.Success) {
                 open.data?.let { data ->
                     runtime.matchQuotaStore.update(matchFreeCount = data.matchFreeCount)
                     runtime.callFreeMinStore.update(data.callFreeMin)
                 }
             }
+            com.example.demoproject.platform.data.promotion.PromotionTriggerBus.emit(
+                com.example.demoproject.platform.data.promotion.PromotionTrigger.AppOpenReady,
+            )
         }
+    }
+
+    private fun isSameAuthenticatedSession(
+        runtime: NetworkRuntime,
+        token: String,
+        userId: String,
+    ): Boolean {
+        val current = runtime.sessionManager.currentSessionSnapshot ?: return false
+        return current.token == token && current.userId == userId
     }
 
     private fun reportInstallStatIfNeeded() {

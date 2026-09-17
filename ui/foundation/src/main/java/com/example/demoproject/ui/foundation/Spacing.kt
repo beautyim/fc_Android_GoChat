@@ -14,6 +14,28 @@ object Spacing {
     val settingsRowGap = 10.dp
     /** Settings "To Bind" vertical padding — Figma 5dp. */
     val settingsBindVertical = 5.dp
+    /** Report card / section gaps — Figma 20dp. */
+    val reportSectionGap = 20.dp
+    /** Report reason list item gap — Figma 8dp. */
+    val reportReasonGap = 8.dp
+    /** Report reason row icon→label — Figma 8dp. */
+    val reportReasonIconGap = 8.dp
+    /** Report title→subtitle / section label→hint — Figma 6dp. */
+    val reportLabelGap = 6.dp
+    /** Report avatar→identity — Figma 13dp. */
+    val reportAvatarGap = 13.dp
+    /** Report card horizontal inset — Figma 12dp. */
+    val reportCardInset = 12.dp
+    /** Report card vertical inset — Figma 8dp. */
+    val reportCardVertical = 8.dp
+    /** Report reason row horizontal padding — Figma 8dp. */
+    val reportReasonPadH = 8.dp
+    /** Report reason row vertical padding — Figma 12dp. */
+    val reportReasonPadV = 12.dp
+    /** Report submit bottom inset above home indicator — Figma ~12dp. */
+    val reportSubmitBottom = 12.dp
+    /** Report screenshot remove chip inset — Figma 4dp. */
+    val reportShotRemoveInset = 4.dp
     /** Store coin grid column gap — Figma 7dp. */
     val storeCoinColumnGap = 7.dp
     /** Store coin grid row gap — Figma 12dp. */
@@ -118,6 +140,30 @@ object Spacing {
     val coinGuideBalanceIconGap = 4.dp
     /** Coin pay-guide bottom content inset. */
     val coinGuideBottom = 16.dp
+    /** Bind/change-email hero top under nav — Figma y 117 − 97 = 20. */
+    val emailHeroTop = 20.dp
+    /** Bind-email hero → title — Figma 280 − (117+147) = 16. */
+    val emailHeroToTitle = 16.dp
+    /** Change-email hero → title — Figma 280 − (124+134) = 22. */
+    val emailChangeHeroToTitle = 22.dp
+    /** Bind/change-email title → subtitle — Figma 307 − (280+19) = 8. */
+    val emailTitleToSubtitle = 8.dp
+    /** Bind/change-email subtitle → form — Figma 392 − (307+32) = 53. */
+    val emailSubtitleToForm = 53.dp
+    /** Email form field-group gap — Figma 99 − 71 = 28. */
+    val emailFieldGroupGap = 28.dp
+    /** Email form label → field — Figma 29 − 17 = 12. */
+    val emailLabelGap = 12.dp
+    /** Email form field padding — Figma icon inset 13. */
+    val emailFieldPadding = 13.dp
+    /** Email form icon → text — Figma 41 − (13+16) = 12. */
+    val emailFieldIconGap = 12.dp
+    /** Email CTA bottom inset — Figma 778 − (701+51) = 26. */
+    val emailCtaBottom = 26.dp
+    /** Bind-email form → CTA — Figma 701 − (392+269) = 40. */
+    val emailFormToCta = 40.dp
+    /** Change-email form → CTA — Figma 711 − (590+71) = 50. */
+    val emailChangeFormToCta = 50.dp
     /** Blocked users nav → first row — Figma 20dp (y 117 − 97). */
     val blockedListTop = 20.dp
     /** Blocked users row horizontal inset — Figma 10dp. */
@@ -267,6 +313,46 @@ object Spacing {
     val matchSearchingTitleToCaption = 9.dp
     /** Matching Cancel link above the home indicator — Figma 108.5−34 = 74.5dp. */
     val matchSearchingCancelBottom = 74.5.dp
+    /** Treasure SmallCoins glow top — Figma 301−254. */
+    val treasureRewardTop = 47.dp
+    /** Treasure DualCoins (no bonus) glow top — Figma 311−254. */
+    val treasureDualRewardTop = 57.dp
+    /** Treasure DualCoinsWithBonus glow top — Figma 282−254. */
+    val treasureDualBonusRewardTop = 28.dp
+    /** Treasure SmallCoins glow → label — Figma 402−(301+80). */
+    val treasureRewardToLabel = 21.dp
+    /** Treasure DualCoins glow → label — Figma ≈16dp. */
+    val treasureDualRewardToLabel = 16.dp
+    /** Treasure content panel horizontal inset — Figma (340−310)/2. */
+    val treasureContentInset = 15.dp
+    /** Treasure VIP row top inside content — Figma 268−254. */
+    val treasureVipRowTop = 14.dp
+    /** Treasure VIP title ↔ +coins centers 34 − 24 line = 10dp. */
+    val treasureVipTitleGap = 10.dp
+    /** Treasure VIP badge row → EXTRA BONUS — Figma 371−348. */
+    val treasureVipToBonus = 23.dp
+    /** Treasure DualCoinsWithBonus labels → EXTRA BONUS — Figma 420−394. */
+    val treasureDualToBonus = 26.dp
+    /** Treasure VIP EXTRA BONUS tag lift above panel. */
+    val treasureVipExtraTagLift = 5.dp
+    /** Prize coin row vertical pad — Figma py ≈4.7. */
+    val prizeCoinRowVertical = 5.dp
+    /** Prize coin frames gap (after dashed divider) — Figma ≈12. */
+    val prizeCoinRowGap = 12.dp
+    /** Prize base coin icon → amount — Figma ≈12 (105.8−46−48). */
+    val prizeBaseIconToText = 12.dp
+    /** Prize bonus coin icon → amount — Figma ≈8 (99.9−48−44). */
+    val prizeBonusIconToText = 8.dp
+    /** Prize original → sale price — Figma 83−3−57 = 23. */
+    val prizePriceGap = 23.dp
+    /** Prize bonus row → price strip — Figma 394−391 ≈ 3. */
+    val prizeCoinsToPrice = 3.dp
+    /** Prize price strip → pink CTA wash — Figma 462.6−458 ≈ 5. */
+    val prizePriceToCover = 5.dp
+    /** Pink CTA wash lift above its slot — visual QA 25dp. */
+    val prizeCtaCoverLift = 25.dp
+    /** Pink CTA wash soft rim — 3dp edge fade. */
+    val prizeCtaCoverEdgeFade = 3.dp
     val md = 16.dp
     val lg = 24.dp
     val xl = 28.dp

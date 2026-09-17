@@ -71,6 +71,7 @@ import coil.request.ImageRequest
 import com.example.demoproject.ui.designsystem.DemoColors
 import com.example.demoproject.ui.designsystem.DemoGradients
 import com.example.demoproject.ui.designsystem.DemoNavIconButton
+import com.example.demoproject.ui.designsystem.DemoTextAutoSize
 import com.example.demoproject.ui.designsystem.DemoTheme
 import com.example.demoproject.ui.foundation.ComponentSize
 import com.example.demoproject.ui.foundation.IconSize
@@ -578,6 +579,8 @@ private fun VipPlanCard(
                 textAlign = TextAlign.Center,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
+                autoSize = DemoTextAutoSize.price(TextSize.vipPlanPrice),
+                modifier = Modifier.fillMaxWidth(),
             )
             plan.originalPrice?.takeIf { it.isNotBlank() }?.let { original ->
                 Spacer(modifier = Modifier.height(Spacing.vipPlanPriceToOriginal))
@@ -590,6 +593,8 @@ private fun VipPlanCard(
                     textDecoration = TextDecoration.LineThrough,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
+                    autoSize = DemoTextAutoSize.price(TextSize.xs),
+                    modifier = Modifier.fillMaxWidth(),
                 )
             }
             if (plan.dayDesc.isNotBlank()) {
@@ -603,6 +608,8 @@ private fun VipPlanCard(
                     textAlign = TextAlign.Center,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
+                    autoSize = DemoTextAutoSize.label(TextSize.xs),
+                    modifier = Modifier.fillMaxWidth(),
                 )
             }
         }
@@ -748,6 +755,12 @@ private fun VipBottomBar(
                     color = DemoColors.onPrimaryButton,
                     fontSize = TextSize.md,
                     fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    autoSize = DemoTextAutoSize.label(TextSize.md),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = Spacing.md),
                 )
             }
         }

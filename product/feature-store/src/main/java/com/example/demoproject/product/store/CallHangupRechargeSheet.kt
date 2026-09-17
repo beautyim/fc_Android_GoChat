@@ -56,6 +56,7 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.demoproject.ui.designsystem.DemoColors
+import com.example.demoproject.ui.designsystem.DemoTextAutoSize
 import com.example.demoproject.ui.designsystem.DemoTheme
 import com.example.demoproject.ui.foundation.ComponentSize
 import com.example.demoproject.ui.foundation.Radius
@@ -148,8 +149,9 @@ internal fun CallHangupRechargeContent(
                 color = DemoColors.textPrimary,
                 fontSize = TextSize.sm,
                 fontWeight = FontWeight.SemiBold,
-                maxLines = 2,
+                maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
+                autoSize = DemoTextAutoSize.label(TextSize.sm),
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = Spacing.md),
@@ -207,6 +209,8 @@ private fun CallHangupRechargeHeader(
                 fontWeight = FontWeight.SemiBold,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
+                autoSize = DemoTextAutoSize.label(TextSize.callHangupPeerName),
+                modifier = Modifier.fillMaxWidth(),
             )
             CallHangupSpeechBubble(
                 text = stringResource(R.string.call_hangup_recharge_speech),

@@ -29,10 +29,12 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.demoproject.ui.designsystem.DemoColors
+import com.example.demoproject.ui.designsystem.DemoTextAutoSize
 import com.example.demoproject.ui.designsystem.DemoTheme
 import com.example.demoproject.ui.foundation.ComponentSize
 import com.example.demoproject.ui.foundation.Radius
@@ -110,6 +112,8 @@ private fun ChatGiftQuickItem(
                 color = DemoColors.chatGiftQuickPrice,
                 fontSize = TextSize.xs,
                 maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                autoSize = DemoTextAutoSize.price(TextSize.xs),
             )
             Image(
                 painter = painterResource(R.drawable.chat_ic_coin),

@@ -83,6 +83,7 @@ fun CallScreen(
     onOpenMatch: () -> Unit = {},
     onOpenStore: () -> Unit = {},
     onOpenChatDetail: (conversationId: String, nickname: String) -> Unit = { _, _ -> },
+    onOpenReport: (userId: String, age: Int) -> Unit = { _, _ -> },
     onRestartVideoCall: (
         userId: String,
         nickname: String,
@@ -151,6 +152,7 @@ fun CallScreen(
                 is CallEffect.OpenChatDetail -> {
                     onOpenChatDetail(effect.conversationId, effect.nickname)
                 }
+                is CallEffect.OpenReport -> onOpenReport(effect.userId, effect.age)
                 is CallEffect.RestartVideoCall -> {
                     onRestartVideoCall(
                         effect.userId,

@@ -46,13 +46,13 @@ class SettingsViewModel(
             SettingsIntent.Back -> viewModelScope.launch {
                 _effects.send(SettingsEffect.NavigateBack)
             }
-            SettingsIntent.OpenEmail -> emitComingSoon(
+            SettingsIntent.OpenEmail -> viewModelScope.launch {
                 if (_uiState.value.hasBoundEmail) {
-                    R.string.settings_message_email_soon
+                    _effects.send(SettingsEffect.OpenChangeEmail)
                 } else {
-                    R.string.settings_message_bind_soon
-                },
-            )
+                    _effects.send(SettingsEffect.OpenBindEmail)
+                }
+            }
             SettingsIntent.OpenLanguage -> emitComingSoon(R.string.settings_message_language_soon)
             SettingsIntent.OpenBlockedUsers -> viewModelScope.launch {
                 _effects.send(SettingsEffect.OpenBlockedUsers)

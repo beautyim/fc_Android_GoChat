@@ -40,6 +40,7 @@ import androidx.compose.ui.tooling.preview.PreviewFontScale
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
 import com.example.demoproject.ui.designsystem.DemoColors
 import com.example.demoproject.ui.designsystem.DemoGradientPillButton
+import com.example.demoproject.ui.designsystem.DemoTextAutoSize
 import com.example.demoproject.ui.designsystem.DemoTheme
 import com.example.demoproject.ui.foundation.ComponentSize
 import com.example.demoproject.ui.foundation.Radius
@@ -129,7 +130,9 @@ internal fun CallHangupContinueContent(
                 fontWeight = FontWeight.SemiBold,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
+                autoSize = DemoTextAutoSize.label(TextSize.md),
                 textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth(),
             )
             Spacer(modifier = Modifier.height(Spacing.callHangupContinueNameToTitle))
             Text(
@@ -137,9 +140,11 @@ internal fun CallHangupContinueContent(
                 color = DemoColors.textPrimary,
                 fontSize = TextSize.callHangupContinueTitle,
                 fontWeight = FontWeight.SemiBold,
-                maxLines = 2,
+                maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
+                autoSize = DemoTextAutoSize.label(TextSize.callHangupContinueTitle),
                 textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth(),
             )
             Spacer(modifier = Modifier.height(Spacing.callHangupContinueTitleToSubtitle))
             Text(
@@ -184,8 +189,11 @@ internal fun CallHangupContinueContent(
                     fontWeight = FontWeight.SemiBold,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
+                    autoSize = DemoTextAutoSize.label(TextSize.md),
                     textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(horizontal = Spacing.md),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = Spacing.md),
                 )
             }
         }

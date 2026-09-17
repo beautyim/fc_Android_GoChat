@@ -62,4 +62,18 @@
     <string name="profile_message_gift_soon">Presentes em breve</string>
     <string name="profile_message_chat_soon">Chat em breve</string>
     <string name="profile_message_video_soon">Videochamada em breve</string>
+<string name="report_title">Denunciar</string>
+    <string name="report_reason_title">Porque estás a denunciar este utilizador?</string>
+    <string name="report_reason_hint">Seleciona um motivo</string>
+    <string name="report_screenshots_title">Adicionar capturas</string>
+    <string name="report_screenshots_hint">Podes carregar até 3 imagens</string>
+    <string name="report_submit">Enviar denúncia</string>
+    <string name="report_submit_success">Denúncia enviada</string>
+    <string name="report_retry">Tentar novamente</string>
+    <string name="report_status_online">Online</string>
+    <string name="report_user_placeholder">Utilizador</string>
+    <string name="report_error_invalid_user">Utilizador inválido</string>
+    <string name="report_cd_back">Voltar</string>
+    <string name="report_cd_add_photo">Adicionar captura</string>
+    <string name="report_cd_remove_photo">Remover captura</string>
 </resources>

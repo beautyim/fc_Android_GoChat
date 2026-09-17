@@ -122,6 +122,11 @@ sealed interface HomeEffect {
         val coverUrl: String = "",
     ) : HomeEffect
     data object OpenStore : HomeEffect
+    data class OpenReport(
+        val userId: String,
+        val age: Int = 0,
+        val isOnline: Boolean? = null,
+    ) : HomeEffect
     data class ShowMessage(val message: String) : HomeEffect
 }
 

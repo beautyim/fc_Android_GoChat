@@ -18,6 +18,7 @@
     <string name="vip_status_launcher_missing">Satın alma kullanılamıyor</string>
     <string name="vip_status_purchase_verified">Satın alma doğrulandı</string>
     <string name="vip_status_purchase_canceled">Satın alma iptal edildi</string>
+    <string name="vip_status_external_checkout_opened">Ödemeyi tarayıcıda tamamlayın, ardından uygulamaya dönün</string>
     <string name="vip_status_purchase_failed_fmt">Satın alma başarısız: %1$s</string>
     <string name="vip_guide_cd_close">Kapat</string>
     <string name="vip_guide_title_line1">Tüm ücretsiz</string>

@@ -8,4 +8,27 @@
     <string name="media_viewer_cd_play">تشغيل</string>
     <string name="media_viewer_cd_pause">إيقاف مؤقت</string>
     <string name="media_viewer_cd_loading">جارٍ التحميل</string>
+    <string name="welfare_free_title">مجاني</string>
+    <string name="welfare_free_video_reward">محادثة فيديو</string>
+    <string name="welfare_free_match_reward">مطابقة فيديو</string>
+    <string name="welfare_free_times_prefix">x</string>
+    <string name="welfare_free_video_cta">بدء محادثة فيديو</string>
+    <string name="welfare_free_match_cta">بدء مطابقة فيديو</string>
+    <string name="welfare_cd_close">إغلاق</string>
+
+    <string name="treasure_cta_get_offer">احصل على العرض</string>
+    <string name="treasure_coins_fmt">+%1$d  عملات</string>
+    <string name="treasure_bonus_coins_fmt">+%1$d</string>
+    <string name="treasure_extra_bonus">مكافأة إضافية</string>
+    <string name="treasure_match_label">مطابقة</string>
+    <string name="treasure_match_count_fmt">x%1$d</string>
+    <string name="treasure_plus">+</string>
+    <string name="treasure_cd_close">إغلاق</string>
+
+    <string name="prize_cta_claim">استلم الآن</string>
+    <string name="prize_coins_unit">عملات</string>
+    <string name="prize_cd_close">إغلاق</string>
+
+    <string name="treasure_entry_cd">عرض كنز لفترة محدودة</string>
+    <string name="treasure_entry_special_offer">عرض خاص</string>
 </resources>

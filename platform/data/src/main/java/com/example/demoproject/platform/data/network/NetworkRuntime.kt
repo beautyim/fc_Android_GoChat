@@ -70,11 +70,14 @@ import com.example.demoproject.platform.s3.MediaUploadService
 import com.example.demoproject.platform.s3.S3Runtime
 import com.example.demoproject.platform.data.local.crypto.TinkAeadSessionCipher
 import com.example.demoproject.platform.data.local.pref.AppPrefs
+import com.example.demoproject.platform.data.message.ActiveConversationTracker
 import com.example.demoproject.platform.data.message.ChatUnreadStore
 import com.example.demoproject.platform.data.billing.PayEventStore
 import com.example.demoproject.platform.data.call.CallFreeMinStore
 import com.example.demoproject.platform.data.match.MatchQuotaStore
 import com.example.demoproject.platform.data.match.MatchSessionCoordinator
+import com.example.demoproject.platform.data.promotion.PaidStatusStore
+import com.example.demoproject.platform.data.promotion.PromotionPopupStore
 import com.example.demoproject.platform.data.vip.VipStatusStore
 import com.example.demoproject.platform.data.wallet.AccountBalanceStore
 import kotlinx.coroutines.CoroutineScope
@@ -152,7 +155,10 @@ class NetworkRuntime private constructor(
     val matchSessionCoordinator: MatchSessionCoordinator,
     val callFreeMinStore: CallFreeMinStore,
     val chatUnreadStore: ChatUnreadStore,
+    val activeConversationTracker: ActiveConversationTracker,
     val payEventStore: PayEventStore,
+    val paidStatusStore: PaidStatusStore,
+    val promotionPopupStore: PromotionPopupStore,
     val sessionPrefs: SessionPrefs,
 ) {
     companion object {
@@ -237,16 +243,21 @@ class NetworkRuntime private constructor(
             val matchSessionCoordinator = MatchSessionCoordinator()
             val callFreeMinStore = CallFreeMinStore()
             val chatUnreadStore = ChatUnreadStore()
+            val activeConversationTracker = ActiveConversationTracker()
             val payEventStore = PayEventStore()
+            val paidStatusStore = PaidStatusStore()
+            val promotionPopupStore = PromotionPopupStore(appContext)
             CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
                 sessionManager.sessionFlow.collect { session ->
                     if (session == null) {
                         chatUnreadStore.clear()
+                        activeConversationTracker.set(null)
                         accountBalanceStore.clear()
                         matchQuotaStore.clear()
                         matchSessionCoordinator.clear()
                         callFreeMinStore.clear()
                         vipStatusStore.clear()
+                        paidStatusStore.clear()
                     }
                 }
             }
@@ -255,6 +266,7 @@ class NetworkRuntime private constructor(
                 sessionManager = sessionManager,
                 matchQuotaStore = matchQuotaStore,
                 callFreeMinStore = callFreeMinStore,
+                promotionPopupStore = promotionPopupStore,
             )
             val appSessionRepository: AppSessionRepository = AppSessionRepositoryImpl(appApi)
             val profileRepository: ProfileRepository = ProfileRepositoryImpl(
@@ -271,7 +283,10 @@ class NetworkRuntime private constructor(
                 profileApi = profileApi,
                 blockedUsersStore = blockedUsersStore,
             )
-            val reportRepository: ReportRepository = ReportRepositoryImpl(reportApi)
+            val reportRepository: ReportRepository = ReportRepositoryImpl(
+                reportApi = reportApi,
+                mediaUploadService = mediaUploadService,
+            )
             val messageRepository: MessageRepository = MessageRepositoryNetworkImpl(
                 messageApi = messageApi,
                 translationApi = translationApi,
@@ -366,7 +381,10 @@ class NetworkRuntime private constructor(
                 matchSessionCoordinator = matchSessionCoordinator,
                 callFreeMinStore = callFreeMinStore,
                 chatUnreadStore = chatUnreadStore,
+                activeConversationTracker = activeConversationTracker,
                 payEventStore = payEventStore,
+                paidStatusStore = paidStatusStore,
+                promotionPopupStore = promotionPopupStore,
                 sessionPrefs = sessionPrefs,
             )
         }

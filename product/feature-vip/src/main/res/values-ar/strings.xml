@@ -18,6 +18,7 @@
     <string name="vip_status_launcher_missing">الشراء غير متاح</string>
     <string name="vip_status_purchase_verified">تم التحقق من الشراء</string>
     <string name="vip_status_purchase_canceled">تم إلغاء الشراء</string>
+    <string name="vip_status_external_checkout_opened">أكمل الدفع في المتصفح ثم عد إلى التطبيق</string>
     <string name="vip_status_purchase_failed_fmt">فشل الشراء: %1$s</string>
     <string name="vip_guide_cd_close">إغلاق</string>
     <string name="vip_guide_title_line1">لقد استخدمت كل</string>

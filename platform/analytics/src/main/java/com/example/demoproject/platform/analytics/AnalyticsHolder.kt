@@ -7,4 +7,8 @@ package com.example.demoproject.platform.analytics
 object AnalyticsHolder {
     @Volatile
     var tracker: AnalyticsTracker? = null
+
+    /** Durable pay / ROI reporter — prefer over [tracker] for [AnalyticsEvent.Pay]. */
+    @Volatile
+    var payReporter: PayAnalyticsReporter? = null
 }

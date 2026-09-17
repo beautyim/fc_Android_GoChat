@@ -2,6 +2,7 @@ import BrandConfig.optional
 
 plugins {
     alias(libs.plugins.android.library)
+    alias(libs.plugins.kotlin.serialization)
 }
 
 android {
@@ -45,6 +46,7 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.datastore.preferences)
+    implementation(libs.kotlinx.serialization.json)
     implementation(libs.adjust.android)
     implementation(libs.android.installreferrer)
     implementation(libs.play.services.ads.identifier)

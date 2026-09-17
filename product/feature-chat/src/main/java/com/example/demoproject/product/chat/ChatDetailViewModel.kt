@@ -115,6 +115,7 @@ class ChatDetailViewModel(
         AnalyticsHolder.tracker?.track(
             AnalyticsEvent.FirstDialog(userId = runtime.sessionManager.currentUserId.orEmpty()),
         )
+        runtime.activeConversationTracker.set(conversationId)
         viewModelScope.launch {
             runtime.accountBalanceStore.coins.collect { coins ->
                 _uiState.update {
@@ -126,6 +127,11 @@ class ChatDetailViewModel(
             }
         }
         bootstrap()
+    }
+
+    override fun onCleared() {
+        runtime.activeConversationTracker.clearIfMatch(conversationId)
+        super.onCleared()
     }
 
     fun bindActivity(activity: Activity?) {
@@ -609,6 +615,18 @@ class ChatDetailViewModel(
                             )
                         }
                     }
+                    is StorePurchaseResult.ExternalCheckoutOpened -> {
+                        _uiState.update {
+                            it.copy(vipPayGuide = it.vipPayGuide?.copy(isPurchasing = false))
+                        }
+                        viewModelScope.launch {
+                            _effects.send(
+                                ChatDetailEffect.ShowMessage(
+                                    strVip(VipR.string.vip_status_external_checkout_opened),
+                                ),
+                            )
+                        }
+                    }
                     is StorePurchaseResult.Failed -> {
                         _uiState.update {
                             it.copy(vipPayGuide = it.vipPayGuide?.copy(isPurchasing = false))
@@ -759,6 +777,20 @@ class ChatDetailViewModel(
                             _effects.send(
                                 ChatDetailEffect.ShowMessage(
                                     strStore(StoreR.string.store_status_purchase_canceled),
+                                ),
+                            )
+                        }
+                    }
+                    is StorePurchaseResult.ExternalCheckoutOpened -> {
+                        _uiState.update {
+                            it.copy(
+                                coinPayGuide = it.coinPayGuide?.copy(purchasingOfferId = null),
+                            )
+                        }
+                        viewModelScope.launch {
+                            _effects.send(
+                                ChatDetailEffect.ShowMessage(
+                                    strStore(StoreR.string.store_status_external_checkout_opened),
                                 ),
                             )
                         }

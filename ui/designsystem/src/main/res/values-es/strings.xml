@@ -8,4 +8,27 @@
     <string name="media_viewer_cd_play">Reproducir</string>
     <string name="media_viewer_cd_pause">Pausar</string>
     <string name="media_viewer_cd_loading">Cargando</string>
+    <string name="welfare_free_title">Gratis</string>
+    <string name="welfare_free_video_reward">Videollamada</string>
+    <string name="welfare_free_match_reward">Match de vídeo</string>
+    <string name="welfare_free_times_prefix">x</string>
+    <string name="welfare_free_video_cta">Iniciar videollamada</string>
+    <string name="welfare_free_match_cta">Iniciar match de vídeo</string>
+    <string name="welfare_cd_close">Cerrar</string>
+
+    <string name="treasure_cta_get_offer">Obtener oferta</string>
+    <string name="treasure_coins_fmt">+%1$d  monedas</string>
+    <string name="treasure_bonus_coins_fmt">+%1$d</string>
+    <string name="treasure_extra_bonus">BONO EXTRA</string>
+    <string name="treasure_match_label">Match</string>
+    <string name="treasure_match_count_fmt">x%1$d</string>
+    <string name="treasure_plus">+</string>
+    <string name="treasure_cd_close">Cerrar</string>
+
+    <string name="prize_cta_claim">Reclamar ahora</string>
+    <string name="prize_coins_unit">Monedas</string>
+    <string name="prize_cd_close">Cerrar</string>
+
+    <string name="treasure_entry_cd">Oferta de tesoro por tiempo limitado</string>
+    <string name="treasure_entry_special_offer">OFERTA ESPECIAL</string>
 </resources>

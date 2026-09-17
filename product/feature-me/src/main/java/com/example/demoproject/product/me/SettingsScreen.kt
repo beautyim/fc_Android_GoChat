@@ -46,7 +46,10 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewFontScale
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
 import androidx.compose.ui.unit.LayoutDirection
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.repeatOnLifecycle
 import com.example.demoproject.ui.designsystem.DemoColors
 import com.example.demoproject.ui.designsystem.DemoConfirmDialog
 import com.example.demoproject.ui.designsystem.DemoGradients
@@ -66,16 +69,26 @@ fun SettingsScreen(
     onBack: () -> Unit,
     onOpenBlockedUsers: () -> Unit,
     onOpenAbout: () -> Unit,
+    onOpenBindEmail: () -> Unit,
+    onOpenChangeEmail: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+    LaunchedEffect(lifecycleOwner, viewModel) {
+        lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+            viewModel.onIntent(SettingsIntent.Refresh)
+        }
+    }
     LaunchedEffect(viewModel) {
         viewModel.effects.collectLatest { effect ->
             when (effect) {
                 SettingsEffect.NavigateBack -> onBack()
                 SettingsEffect.OpenBlockedUsers -> onOpenBlockedUsers()
                 SettingsEffect.OpenAbout -> onOpenAbout()
+                SettingsEffect.OpenBindEmail -> onOpenBindEmail()
+                SettingsEffect.OpenChangeEmail -> onOpenChangeEmail()
                 is SettingsEffect.ShowMessage -> {
                     Toast.makeText(context, effect.message, Toast.LENGTH_SHORT).show()
                 }

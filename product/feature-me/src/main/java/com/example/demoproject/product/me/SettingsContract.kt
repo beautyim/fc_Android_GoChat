@@ -33,5 +33,7 @@ sealed interface SettingsEffect {
     data object NavigateBack : SettingsEffect
     data object OpenBlockedUsers : SettingsEffect
     data object OpenAbout : SettingsEffect
+    data object OpenBindEmail : SettingsEffect
+    data object OpenChangeEmail : SettingsEffect
     data class ShowMessage(val message: String) : SettingsEffect
 }

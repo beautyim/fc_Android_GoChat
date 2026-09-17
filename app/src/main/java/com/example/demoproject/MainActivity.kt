@@ -48,6 +48,12 @@ import com.example.demoproject.platform.data.model.Session
 import com.example.demoproject.platform.data.network.NetworkRuntime
 import com.example.demoproject.platform.data.session.SessionManager
 import com.example.demoproject.payment.PaymentMethodSheetHost
+import com.example.demoproject.promotion.PromotionPopupHost
+import com.example.demoproject.promotion.PromotionPopupViewModel
+import com.example.demoproject.platform.data.promotion.PromotionPurchasePageTracker
+import com.example.demoproject.platform.data.promotion.PromotionTrigger
+import com.example.demoproject.platform.data.promotion.PromotionTriggerBus
+import androidx.compose.runtime.DisposableEffect
 import com.example.demoproject.product.auth.AuthScreen
 import com.example.demoproject.product.auth.AuthViewModel
 import com.example.demoproject.product.call.CallRecordsEffect
@@ -68,8 +74,12 @@ import com.example.demoproject.product.match.MatchScreen
 import com.example.demoproject.product.match.MatchViewModel
 import com.example.demoproject.product.me.AboutUsScreen
 import com.example.demoproject.product.me.AboutUsViewModel
+import com.example.demoproject.product.me.BindEmailScreen
+import com.example.demoproject.product.me.BindEmailViewModel
 import com.example.demoproject.product.me.BlockedUsersScreen
 import com.example.demoproject.product.me.BlockedUsersViewModel
+import com.example.demoproject.product.me.ChangeEmailScreen
+import com.example.demoproject.product.me.ChangeEmailViewModel
 import com.example.demoproject.product.me.MeEffect
 import com.example.demoproject.product.me.MeScreen
 import com.example.demoproject.product.me.MeViewModel
@@ -81,6 +91,8 @@ import com.example.demoproject.product.me.SettingsScreen
 import com.example.demoproject.product.me.SettingsViewModel
 import com.example.demoproject.product.profile.ProfileScreen
 import com.example.demoproject.product.profile.ProfileViewModel
+import com.example.demoproject.product.profile.report.ReportScreen
+import com.example.demoproject.product.profile.report.ReportViewModel
 import com.example.demoproject.product.store.StoreScreen
 import com.example.demoproject.product.store.StoreViewModel
 import com.example.demoproject.product.vip.VipPurchaseScreen
@@ -111,8 +123,11 @@ object DemoRoutes {
     const val Settings = "settings"
     const val AboutUs = "settings/about-us"
     const val BlockedUsers = "settings/blocked-users"
+    const val BindEmail = "settings/bind-email"
+    const val ChangeEmail = "settings/change-email"
     const val RelationshipList = "profile/relationships/{type}/{count}"
     const val ProfileUser = "profile/user/{userId}"
+    const val Report = "report/{userId}/{age}/{online}"
 
     fun chatDetail(conversationId: String, nickname: String): String {
         val id = URLEncoder.encode(conversationId, StandardCharsets.UTF_8.toString())
@@ -139,6 +154,14 @@ object DemoRoutes {
     fun profileUser(externalUserId: String): String {
         val id = URLEncoder.encode(externalUserId, StandardCharsets.UTF_8.toString())
         return "profile/user/$id"
+    }
+
+    /**
+     * @param online -1 unknown, 0 offline, 1 online
+     */
+    fun report(userId: String, age: Int = 0, online: Int = -1): String {
+        val id = URLEncoder.encode(userId, StandardCharsets.UTF_8.toString())
+        return "report/$id/${age.coerceAtLeast(0)}/$online"
     }
 
     fun relationshipList(type: RelationshipListType, count: Int): String =
@@ -212,8 +235,12 @@ private fun DemoNavHost() {
                     modelClass.isAssignableFrom(MeViewModel::class.java) -> MeViewModel(app) as T
                     modelClass.isAssignableFrom(SettingsViewModel::class.java) -> SettingsViewModel(app) as T
                     modelClass.isAssignableFrom(AboutUsViewModel::class.java) -> AboutUsViewModel(app) as T
+                    modelClass.isAssignableFrom(BindEmailViewModel::class.java) -> BindEmailViewModel(app) as T
+                    modelClass.isAssignableFrom(ChangeEmailViewModel::class.java) -> ChangeEmailViewModel(app) as T
                     modelClass.isAssignableFrom(BlockedUsersViewModel::class.java) -> BlockedUsersViewModel(app) as T
                     modelClass.isAssignableFrom(ProfileViewModel::class.java) -> ProfileViewModel(app) as T
+                    modelClass.isAssignableFrom(PromotionPopupViewModel::class.java) ->
+                        PromotionPopupViewModel(app) as T
                     else -> error("Unknown ViewModel: ${modelClass.name}")
                 }
             }
@@ -248,6 +275,7 @@ private fun DemoNavHost() {
             }
     }
 
+    Box(modifier = Modifier.fillMaxSize()) {
     NavHost(navController = navController, startDestination = destination) {
         composable(DemoRoutes.Home) {
             val vm: HomeViewModel = viewModel(factory = factory)
@@ -276,6 +304,19 @@ private fun DemoNavHost() {
                             )
                         }
                         HomeEffect.OpenStore -> navController.navigate(DemoRoutes.Store)
+                        is HomeEffect.OpenReport -> {
+                            navController.navigate(
+                                DemoRoutes.report(
+                                    userId = effect.userId,
+                                    age = effect.age,
+                                    online = when (effect.isOnline) {
+                                        true -> 1
+                                        false -> 0
+                                        null -> -1
+                                    },
+                                ),
+                            )
+                        }
                         is HomeEffect.ShowMessage -> {
                             Toast.makeText(context, effect.message, Toast.LENGTH_SHORT).show()
                         }
@@ -520,6 +561,9 @@ private fun DemoNavHost() {
                     navController.popBackStack()
                     navController.navigate(DemoRoutes.chatDetail(conversationId, nickname))
                 },
+                onOpenReport = { userId, age ->
+                    navController.navigate(DemoRoutes.report(userId = userId, age = age))
+                },
                 onRestartVideoCall = { userId, nickname, age, avatarUrl, videoUrl, coverUrl ->
                     navController.popBackStack()
                     navController.navigate(
@@ -536,10 +580,28 @@ private fun DemoNavHost() {
             )
         }
         composable(DemoRoutes.Store) {
+            DisposableEffect(Unit) {
+                PromotionPurchasePageTracker.markOpened()
+                onDispose {
+                    if (PromotionPurchasePageTracker.consumeClosedWithoutPurchase()) {
+                        PromotionTriggerBus.emit(PromotionTrigger.PurchasePageClosedWithoutPurchase)
+                    }
+                }
+            }
+
             val vm: StoreViewModel = viewModel(factory = factory)
             StoreScreen(viewModel = vm, onBack = { navController.popBackStack() })
         }
         composable(DemoRoutes.Vip) {
+            DisposableEffect(Unit) {
+                PromotionPurchasePageTracker.markOpened()
+                onDispose {
+                    if (PromotionPurchasePageTracker.consumeClosedWithoutPurchase()) {
+                        PromotionTriggerBus.emit(PromotionTrigger.PurchasePageClosedWithoutPurchase)
+                    }
+                }
+            }
+
             val vm: VipPurchaseViewModel = viewModel(factory = factory)
             VipPurchaseScreen(viewModel = vm, onBack = { navController.popBackStack() })
         }
@@ -633,6 +695,28 @@ private fun DemoNavHost() {
                 onBack = { navController.popBackStack() },
                 onOpenBlockedUsers = { navController.navigate(DemoRoutes.BlockedUsers) },
                 onOpenAbout = { navController.navigate(DemoRoutes.AboutUs) },
+                onOpenBindEmail = { navController.navigate(DemoRoutes.BindEmail) },
+                onOpenChangeEmail = { navController.navigate(DemoRoutes.ChangeEmail) },
+            )
+        }
+        composable(DemoRoutes.BindEmail) {
+            val vm: BindEmailViewModel = viewModel(factory = factory)
+            BindEmailScreen(
+                viewModel = vm,
+                onBack = { navController.popBackStack() },
+                onSucceeded = {
+                    navController.popBackStack()
+                },
+            )
+        }
+        composable(DemoRoutes.ChangeEmail) {
+            val vm: ChangeEmailViewModel = viewModel(factory = factory)
+            ChangeEmailScreen(
+                viewModel = vm,
+                onBack = { navController.popBackStack() },
+                onSucceeded = {
+                    navController.popBackStack()
+                },
             )
         }
         composable(DemoRoutes.AboutUs) {
@@ -692,6 +776,9 @@ private fun DemoNavHost() {
                 onOpenChatDetail = { conversationId, nickname ->
                     navController.navigate(DemoRoutes.chatDetail(conversationId, nickname))
                 },
+                onOpenReport = { userId, age ->
+                    navController.navigate(DemoRoutes.report(userId = userId, age = age))
+                },
                 onStartVideoCall = { userId, nickname, age, avatarUrl ->
                     navController.navigate(
                         DemoRoutes.call(
@@ -704,6 +791,51 @@ private fun DemoNavHost() {
                 },
             )
         }
+        composable(
+            route = DemoRoutes.Report,
+            arguments = listOf(
+                navArgument("userId") { type = NavType.StringType },
+                navArgument("age") { type = NavType.IntType },
+                navArgument("online") { type = NavType.IntType },
+            ),
+        ) { entry ->
+            val userId = URLDecoder.decode(
+                entry.arguments?.getString("userId").orEmpty(),
+                StandardCharsets.UTF_8.toString(),
+            )
+            val age = entry.arguments?.getInt("age") ?: 0
+            val onlineFlag = entry.arguments?.getInt("online") ?: -1
+            val isOnline = when (onlineFlag) {
+                1 -> true
+                0 -> false
+                else -> null
+            }
+            val reportFactory = remember(app, userId, age, onlineFlag) {
+                object : ViewModelProvider.Factory {
+                    @Suppress("UNCHECKED_CAST")
+                    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                        require(modelClass.isAssignableFrom(ReportViewModel::class.java))
+                        return ReportViewModel(
+                            application = app,
+                            targetUserId = userId,
+                            initialAge = age,
+                            initialIsOnline = isOnline,
+                        ) as T
+                    }
+                }
+            }
+            val vm: ReportViewModel = viewModel(
+                key = "report-$userId-$age-$onlineFlag",
+                factory = reportFactory,
+            )
+            ReportScreen(
+                viewModel = vm,
+                onBack = { navController.popBackStack() },
+                onSubmitted = { navController.popBackStack() },
+            )
+        }
+    }
+    PromotionPopupHost(navController = navController)
     }
 }
 

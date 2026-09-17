@@ -75,6 +75,7 @@ import coil.request.ImageRequest
 import com.example.demoproject.ui.designsystem.DemoColors
 import com.example.demoproject.ui.designsystem.DemoGradients
 import com.example.demoproject.ui.designsystem.DemoNavIconButton
+import com.example.demoproject.ui.designsystem.DemoTextAutoSize
 import com.example.demoproject.ui.designsystem.DemoTheme
 import com.example.demoproject.ui.foundation.ComponentSize
 import com.example.demoproject.ui.foundation.IconSize
@@ -246,6 +247,9 @@ private fun StoreTopBar(
                 color = DemoColors.textPrimary,
                 fontSize = TextSize.sm,
                 fontWeight = FontWeight.SemiBold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                autoSize = DemoTextAutoSize.price(TextSize.sm),
             )
             Image(
                 painter = painterResource(R.drawable.store_ic_coin),
@@ -499,6 +503,7 @@ internal fun StoreVipCard(
                 fontWeight = FontWeight.Bold,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
+                autoSize = DemoTextAutoSize.label(TextSize.lg),
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth(),
             )
@@ -542,6 +547,9 @@ internal fun StoreVipCard(
                             fontSize = TextSize.lg,
                             lineHeight = TextSize.storeVipTitleLine,
                             fontWeight = FontWeight.Black,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            autoSize = DemoTextAutoSize.price(TextSize.lg),
                         )
                         offer.originalPrice?.takeIf { it.isNotBlank() }?.let { original ->
                             StorePromoOriginalPrice(text = original)
@@ -626,6 +634,7 @@ internal fun StoreSaleCard(
                 fontWeight = FontWeight.Bold,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
+                autoSize = DemoTextAutoSize.price(TextSize.lg),
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth(),
             )
@@ -659,6 +668,9 @@ internal fun StoreSaleCard(
                         fontSize = TextSize.lg,
                         lineHeight = TextSize.storeVipTitleLine,
                         fontWeight = FontWeight.Black,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        autoSize = DemoTextAutoSize.price(TextSize.lg),
                     )
                     offer.originalPrice?.takeIf { it.isNotBlank() }?.let { original ->
                         StorePromoOriginalPrice(
@@ -695,7 +707,8 @@ private fun StoreSaleOffBadge(
             fontSize = TextSize.sm,
             fontWeight = FontWeight.Bold,
             maxLines = 1,
-            softWrap = false,
+            overflow = TextOverflow.Ellipsis,
+            autoSize = DemoTextAutoSize.price(TextSize.sm),
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .padding(top = Spacing.xs),
@@ -706,7 +719,8 @@ private fun StoreSaleOffBadge(
             fontSize = TextSize.xs,
             fontWeight = FontWeight.Medium,
             maxLines = 1,
-            softWrap = false,
+            overflow = TextOverflow.Ellipsis,
+            autoSize = DemoTextAutoSize.label(TextSize.xs),
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .padding(top = ComponentSize.storeSaleOffLabelTop),
@@ -730,7 +744,8 @@ private fun StoreSaleExtraRow(
             fontSize = TextSize.xs,
             fontWeight = FontWeight.Medium,
             maxLines = 1,
-            softWrap = false,
+            overflow = TextOverflow.Ellipsis,
+            autoSize = DemoTextAutoSize.label(TextSize.xs),
         )
         Spacer(modifier = Modifier.width(ComponentSize.storeSaleExtraLabelToCoin))
         Image(
@@ -746,7 +761,8 @@ private fun StoreSaleExtraRow(
             fontSize = TextSize.sm,
             fontWeight = FontWeight.Bold,
             maxLines = 1,
-            softWrap = false,
+            overflow = TextOverflow.Ellipsis,
+            autoSize = DemoTextAutoSize.price(TextSize.sm),
         )
         Spacer(modifier = Modifier.width(Spacing.xxs))
         Text(
@@ -755,7 +771,8 @@ private fun StoreSaleExtraRow(
             fontSize = TextSize.sm,
             fontWeight = FontWeight.Normal,
             maxLines = 1,
-            softWrap = false,
+            overflow = TextOverflow.Ellipsis,
+            autoSize = DemoTextAutoSize.label(TextSize.sm),
         )
     }
 }
@@ -778,6 +795,7 @@ private fun StorePromoOriginalPrice(
             fontWeight = FontWeight.SemiBold,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
+            autoSize = DemoTextAutoSize.price(TextSize.xs),
         )
         Box(
             modifier = Modifier
@@ -847,7 +865,8 @@ private fun StoreBenefitLabeledValue(
             lineHeight = TextSize.storeVipBenefitLine,
             fontWeight = FontWeight.Bold,
             maxLines = 1,
-            softWrap = false,
+            overflow = TextOverflow.Ellipsis,
+            autoSize = DemoTextAutoSize.price(TextSize.sm),
         )
         Text(
             text = label,
@@ -856,7 +875,8 @@ private fun StoreBenefitLabeledValue(
             lineHeight = TextSize.storeVipBenefitLine,
             fontWeight = FontWeight.Normal,
             maxLines = 1,
-            softWrap = false,
+            overflow = TextOverflow.Ellipsis,
+            autoSize = DemoTextAutoSize.label(TextSize.sm),
         )
     }
 }
@@ -942,6 +962,8 @@ internal fun StoreCoinCard(
                 lineHeight = TextSize.storeCoinAmount,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
+                autoSize = DemoTextAutoSize.price(TextSize.storeCoinAmount),
+                textAlign = TextAlign.Center,
             )
             Spacer(modifier = Modifier.height(ComponentSize.storeCoinAmountToDiscount))
             if (hasDiscount) {
@@ -963,6 +985,7 @@ internal fun StoreCoinCard(
                         lineHeight = TextSize.storeDiscount,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
+                        autoSize = DemoTextAutoSize.label(TextSize.storeDiscount),
                     )
                 }
             } else {
@@ -1064,6 +1087,7 @@ private fun StorePriceButton(
                         textDecoration = TextDecoration.LineThrough,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
+                        autoSize = DemoTextAutoSize.price(TextSize.storePriceOriginal),
                     )
                 }
                 Text(
@@ -1074,6 +1098,7 @@ private fun StorePriceButton(
                     fontWeight = FontWeight.Black,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
+                    autoSize = DemoTextAutoSize.price(TextSize.storePrice),
                 )
             }
         }
@@ -1107,6 +1132,7 @@ private fun StoreRibbonBadge(
             lineHeight = TextSize.storeRibbonLine,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
+            autoSize = DemoTextAutoSize.label(TextSize.storeRibbon),
         )
     }
 }

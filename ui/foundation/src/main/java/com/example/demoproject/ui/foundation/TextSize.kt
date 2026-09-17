@@ -4,6 +4,15 @@ import androidx.compose.ui.unit.sp
 
 object TextSize {
     val caption = 10.sp
+    /**
+     * Floor for [TextAutoSize] on prices / body labels.
+     * Keeps long localized currency strings readable without clipping.
+     */
+    val autoSizeMin = 8.sp
+    /**
+     * Floor for very compact chips (gift price, treasure countdown, off badges).
+     */
+    val autoSizeMinTight = 6.sp
     /** Store price button original — Figma 10. */
     val storePriceOriginal = 10.sp
     /** Store discount chip — Figma 11. */
@@ -27,6 +36,8 @@ object TextSize {
     /** Call Records status line — Figma 11. */
     val callRecordsStatus = 11.sp
     val xs = 12.sp
+    /** Bind/change-email subtitle line box — Figma leading 16. */
+    val emailSubtitleLine = 16.sp
     /** Chat list name line box — Figma 1:1875 height 17. */
     val chatListNameLine = 17.sp
     /** Chat list preview line box — Figma 1:1876 height 14. */
@@ -140,4 +151,66 @@ object TextSize {
     /** Matching status caption line box — Figma leading 16. */
     val matchSearchingCaptionLine = 16.sp
     val xl = 28.sp
+    /** Welfare dialog "Free" — Figma 44. */
+    val welfareFreeTitle = 44.sp
+    /** Welfare dialog "Free" line box — Figma text height 53. */
+    val welfareFreeTitleLine = 53.sp
+    /** Welfare dialog reward label — Figma 24. */
+    val welfareFreeReward = 24.sp
+    /** Welfare dialog reward label / "x" line box — Figma text height 29. */
+    val welfareFreeRewardLine = 29.sp
+    /** Welfare dialog reward count — Figma 32. */
+    val welfareFreeCount = 32.sp
+    /** Welfare dialog reward count line box — Figma text height 38. */
+    val welfareFreeCountLine = 38.sp
+    /** Free-video CTA — Figma 16. */
+    val welfareFreeVideoCta = 16.sp
+    /** Free-match CTA — Figma 20. */
+    val welfareFreeMatchCta = 20.sp
+    /** Treasure reward coins — Figma 24 / Heavy. */
+    val treasureRewardCoins = 24.sp
+    /** Treasure reward coins line box — Figma 199:6621 height 29. */
+    val treasureRewardCoinsLine = 29.sp
+    /** Treasure dual-coin label — Figma 16. */
+    val treasureDualCoins = 16.sp
+    /** Treasure VIP title / +coins — Figma 24. */
+    val treasureVipTitle = 24.sp
+    /** Treasure sale price — Figma 28. */
+    val treasureSalePrice = 28.sp
+    /** Treasure original price — Figma 16. */
+    val treasureOriginalPrice = 16.sp
+    /** Treasure CTA — Figma 24. */
+    val treasureCta = 24.sp
+    /** Treasure EXTRA BONUS tag — Figma 10. */
+    val treasureExtraTag = 10.sp
+    /** Treasure Match label — Figma 20. */
+    val treasureMatchLabel = 20.sp
+    /** Treasure Match count — Figma 24. */
+    val treasureMatchCount = 24.sp
+    /** Online treasure entry countdown — Figma 37:4004 ≈7.35. */
+    val onlineTreasureCountdown = 7.35.sp
+    /** Online treasure entry countdown line box — Figma 37:4004 height 9. */
+    val onlineTreasureCountdownLine = 9.sp
+    /** Prize base coin amount — Figma ≈23.5. */
+    val prizeBaseCoins = 24.sp
+    /** Prize base amount line box — Figma text height 28. */
+    val prizeBaseCoinsLine = 28.sp
+    /** Prize bonus coin amount — Figma ≈28. */
+    val prizeBonusCoins = 28.sp
+    /** Prize bonus amount line box — Figma text height 34. */
+    val prizeBonusCoinsLine = 34.sp
+    /** Prize "Coins" unit — Figma ≈16.5. */
+    val prizeCoinsUnit = 16.sp
+    /** Prize sale price — Figma 28. */
+    val prizeSalePrice = 28.sp
+    /** Prize sale price line box — Figma text height 33. */
+    val prizeSalePriceLine = 33.sp
+    /** Prize original price — Figma 16. */
+    val prizeOriginalPrice = 16.sp
+    /** Prize original price line box — Figma text height 19. */
+    val prizeOriginalPriceLine = 19.sp
+    /** Prize CTA — Figma 16. */
+    val prizeCta = 16.sp
+    /** Prize CTA line box — Figma text height 19. */
+    val prizeCtaLine = 19.sp
 }

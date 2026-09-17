@@ -83,6 +83,7 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.demoproject.platform.data.model.OnlinePresence
 import com.example.demoproject.ui.designsystem.DemoColors
+import com.example.demoproject.ui.designsystem.DemoTextAutoSize
 import com.example.demoproject.ui.designsystem.DemoTheme
 import com.example.demoproject.ui.foundation.ComponentSize
 import com.example.demoproject.ui.foundation.IconSize
@@ -202,6 +203,7 @@ fun HomeScreen(
         }
     }
 }
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -364,6 +366,9 @@ private fun OnlineHeader(
                     color = DemoColors.textPrimary,
                     fontSize = TextSize.sm,
                     fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    autoSize = DemoTextAutoSize.price(TextSize.sm),
                 )
                 Image(
                     painter = painterResource(R.drawable.online_ic_coin),

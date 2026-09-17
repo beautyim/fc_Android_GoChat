@@ -116,9 +116,6 @@ private fun GooglePayCheckResponseDto.toDomain(): BillingPaymentCheck {
 }
 
 private fun GooglePayCreateResponseDto.toDomain(request: StorePurchaseRequest): AppResult<GooglePayOrder> {
-    if (tranNo.isBlank()) {
-        return AppResult.BizError(AppResult.CODE_EMPTY_PAYLOAD, AppResult.requestFailedMessage())
-    }
     val resolvedProductType = BillingProductType.fromApi(productType.takeIf { it > 0 } ?: request.productType.apiValue)
     val item = payItem
     val sku = productId.takeIf { it.isNotBlank() }
@@ -128,7 +125,9 @@ private fun GooglePayCreateResponseDto.toDomain(request: StorePurchaseRequest): 
     val externalUrl = sequenceOf(payUrl, url, link)
         .firstOrNull { it.isNotBlank() }
         ?: callback.findFirstString(EXTERNAL_URL_KEYS)
-    if (sku.isBlank() && externalUrl == null) {
+    // External checkout carries the whole order in its redirect URL and may omit tran_no /
+    // product_id entirely; only the Play path needs both to launch and later verify.
+    if (externalUrl == null && (tranNo.isBlank() || sku.isBlank())) {
         return AppResult.BizError(AppResult.CODE_EMPTY_PAYLOAD, AppResult.requestFailedMessage())
     }
     return AppResult.Success(

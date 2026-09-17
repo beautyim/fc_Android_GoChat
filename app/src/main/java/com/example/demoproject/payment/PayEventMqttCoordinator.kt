@@ -1,7 +1,7 @@
 package com.example.demoproject.payment
 
 import com.example.demoproject.platform.analytics.AnalyticsEvent
-import com.example.demoproject.platform.analytics.AnalyticsTracker
+import com.example.demoproject.platform.analytics.PayAnalyticsReporter
 import com.example.demoproject.platform.common.log.AppLogger
 import com.example.demoproject.platform.data.billing.PayEvent
 import com.example.demoproject.platform.data.billing.PayEventStore
@@ -9,12 +9,10 @@ import com.example.demoproject.platform.data.repository.BillingRepository
 import com.example.demoproject.platform.data.repository.CoinRepository
 import com.example.demoproject.platform.data.repository.VipRepository
 import com.example.demoproject.platform.mqtt.MqttManager
-import java.util.concurrent.ConcurrentHashMap
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
-import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.contentOrNull
@@ -26,12 +24,10 @@ class PayEventMqttCoordinator(
     private val billingRepository: BillingRepository,
     private val coinRepository: CoinRepository,
     private val vipRepository: VipRepository,
-    private val analyticsTracker: AnalyticsTracker,
+    private val payAnalyticsReporter: PayAnalyticsReporter,
     private val json: Json,
     private val scope: CoroutineScope,
 ) {
-    private val trackedEventIds = ConcurrentHashMap.newKeySet<Long>()
-
     fun start() {
         scope.launch {
             mqttManager.messageFlow.collect { inbound ->
@@ -47,21 +43,26 @@ class PayEventMqttCoordinator(
     }
 
     private suspend fun process(event: PayEvent) {
-        if (trackedEventIds.add(event.eventId)) {
-            analyticsTracker.track(
-                AnalyticsEvent.Pay(
+        val dedupeKey = event.transactionId.trim()
+            .ifBlank { "event:${event.eventId}" }
+        runCatching {
+            payAnalyticsReporter.reportPay(
+                event = AnalyticsEvent.Pay(
                     goodsId = event.goodsId,
                     productId = event.itemId,
                     orderNo = event.transactionId,
                     revenue = event.value,
                     currency = event.currency,
                 ),
+                dedupeKey = dedupeKey,
             )
-            runCatching {
-                coinRepository.getRechargePage()
-                vipRepository.getVipPage()
-            }.onFailure { AppLogger.w(TAG, "catalog refresh after pay event failed: ${it.message}") }
+        }.onFailure { error ->
+            AppLogger.w(TAG, "pay analytics failed: ${error.message}", error)
         }
+        runCatching {
+            coinRepository.getRechargePage()
+            vipRepository.getVipPage()
+        }.onFailure { AppLogger.w(TAG, "catalog refresh after pay event failed: ${it.message}") }
         billingRepository.acknowledgePayEvent(event.eventId)
     }
 

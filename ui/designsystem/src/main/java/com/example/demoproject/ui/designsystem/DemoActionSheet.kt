@@ -18,10 +18,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.sp
 import com.example.demoproject.ui.foundation.ComponentSize
 import com.example.demoproject.ui.foundation.Radius
 import com.example.demoproject.ui.foundation.Spacing
+import com.example.demoproject.ui.foundation.TextSize
 
 data class DemoActionSheetItem(
     val label: String,
@@ -89,6 +91,9 @@ private fun ActionGroup(actions: List<DemoActionSheetItem>) {
                     letterSpacing = ActionSheetTracking,
                     textAlign = TextAlign.Center,
                     maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    autoSize = DemoTextAutoSize.label(ActionSheetLabelSize),
+                    modifier = Modifier.fillMaxWidth(),
                 )
             }
         }

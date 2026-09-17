@@ -193,6 +193,7 @@ private fun PillContent(
             textAlign = TextAlign.Center,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
+            autoSize = DemoTextAutoSize.label(TextSize.md),
         )
     }
 }

@@ -2,6 +2,7 @@ package com.example.demoproject
 
 import android.app.Application
 import com.example.demoproject.chat.ChatMqttInbox
+import com.example.demoproject.chat.ChatMqttSyncCoordinator
 import com.example.demoproject.lifecycle.AppLifecycleReporter
 import com.example.demoproject.payment.BillingOrderRetryWorker
 import com.example.demoproject.payment.PaymentMethodSheetController
@@ -49,10 +50,16 @@ class DemoApplication : Application() {
             vipStatusStore = runtime.vipStatusStore,
             isFakePaymentEnabled = { runtime.appPrefs.isFakePaymentEnabled() },
             analyticsTracker = analytics.tracker,
+            payAnalyticsReporter = analytics.payReporter,
             selectPaymentMethod = paymentMethodSheetController::select,
             onPaymentSucceeded = {
                 runtime.coinRepository.getRechargePage()
                 runtime.vipRepository.getVipPage()
+                com.example.demoproject.platform.data.promotion.PromotionPurchasePageTracker.markPurchased()
+                com.example.demoproject.platform.data.promotion.PromotionRechargeGuideTracker.markPurchased()
+                com.example.demoproject.platform.data.promotion.PromotionTriggerBus.emit(
+                    com.example.demoproject.platform.data.promotion.PromotionTrigger.PurchaseVerifiedSuccess,
+                )
             },
         )
     }
@@ -68,8 +75,12 @@ class DemoApplication : Application() {
 
         analytics = DefaultAnalyticsFactory.create(this)
         AnalyticsHolder.tracker = analytics.tracker
+        AnalyticsHolder.payReporter = analytics.payReporter
         // Always initialize; AdjustAnalyticsTracker no-ops when disabled / token blank.
         analytics.initializer.initialize(this)
+        appScope.launch {
+            analytics.payReporter.flushPending()
+        }
 
         appLifecycleReporter = AppLifecycleReporter(
             application = this,
@@ -110,6 +121,14 @@ class DemoApplication : Application() {
             json = runtime.json,
             scope = appScope,
         ).start()
+        ChatMqttSyncCoordinator(
+            mqttManager = mqtt.manager,
+            messageRepository = runtime.messageRepository,
+            sessionManager = runtime.sessionManager,
+            activeConversationTracker = runtime.activeConversationTracker,
+            json = runtime.json,
+            scope = appScope,
+        ).start()
         AccountMqttInbox(
             mqttManager = mqtt.manager,
             accountBalanceStore = runtime.accountBalanceStore,
@@ -124,7 +143,7 @@ class DemoApplication : Application() {
             billingRepository = runtime.billingRepository,
             coinRepository = runtime.coinRepository,
             vipRepository = runtime.vipRepository,
-            analyticsTracker = analytics.tracker,
+            payAnalyticsReporter = analytics.payReporter,
             json = runtime.json,
             scope = appScope,
         ).start()

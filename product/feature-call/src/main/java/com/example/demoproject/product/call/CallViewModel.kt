@@ -179,7 +179,7 @@ class CallViewModel(
             CallIntent.Hangup -> hangup()
             CallIntent.NextMatch -> nextMatch()
             CallIntent.Answer -> answer()
-            CallIntent.Report -> openReportSheet()
+            CallIntent.Report -> openReportPage()
             CallIntent.DismissReport -> _uiState.update {
                 it.copy(isReportSheetVisible = false, report = null)
             }
@@ -1308,6 +1308,21 @@ class CallViewModel(
                             )
                         }
                     }
+                    is StorePurchaseResult.ExternalCheckoutOpened -> {
+                        _uiState.update {
+                            it.copy(
+                                hangupRecharge = it.hangupRecharge?.copy(purchasingOfferId = null),
+                            )
+                        }
+                        viewModelScope.launch {
+                            _effects.send(
+                                CallEffect.ShowMessage(
+                                    getApplication<Application>()
+                                        .getString(StoreR.string.store_status_external_checkout_opened),
+                                ),
+                            )
+                        }
+                    }
                     is StorePurchaseResult.Failed -> {
                         _uiState.update {
                             it.copy(
@@ -1559,6 +1574,7 @@ class CallViewModel(
             }
             return
         }
+        com.example.demoproject.platform.data.promotion.PromotionRechargeGuideTracker.markOpened()
         val guide = CallBalanceOfferGuideUiState(
             balance = state.coinBalance,
             remainingSeconds = offer.remainingSeconds,
@@ -1583,6 +1599,14 @@ class CallViewModel(
     }
 
     private fun dismissBalanceOfferGuide() {
+        if (com.example.demoproject.platform.data.promotion.PromotionRechargeGuideTracker
+                .consumeClosedWithoutPurchase()
+        ) {
+            com.example.demoproject.platform.data.promotion.PromotionTriggerBus.emit(
+                com.example.demoproject.platform.data.promotion.PromotionTrigger
+                    .RechargeGuideClosedWithoutPurchase,
+            )
+        }
         _uiState.update {
             it.copy(
                 isBalanceOfferGuideVisible = false,
@@ -1668,6 +1692,23 @@ class CallViewModel(
                             it.copy(
                                 balanceOfferGuide = it.balanceOfferGuide?.copy(
                                     purchasingOfferId = null,
+                                ),
+                            )
+                        }
+                    }
+                    is StorePurchaseResult.ExternalCheckoutOpened -> {
+                        _uiState.update {
+                            it.copy(
+                                balanceOfferGuide = it.balanceOfferGuide?.copy(
+                                    purchasingOfferId = null,
+                                ),
+                            )
+                        }
+                        viewModelScope.launch {
+                            _effects.send(
+                                CallEffect.ShowMessage(
+                                    getApplication<Application>()
+                                        .getString(StoreR.string.store_status_external_checkout_opened),
                                 ),
                             )
                         }
@@ -1784,6 +1825,19 @@ class CallViewModel(
                             it.copy(coinPayGuide = it.coinPayGuide?.copy(purchasingOfferId = null))
                         }
                     }
+                    is StorePurchaseResult.ExternalCheckoutOpened -> {
+                        _uiState.update {
+                            it.copy(coinPayGuide = it.coinPayGuide?.copy(purchasingOfferId = null))
+                        }
+                        viewModelScope.launch {
+                            _effects.send(
+                                CallEffect.ShowMessage(
+                                    getApplication<Application>()
+                                        .getString(StoreR.string.store_status_external_checkout_opened),
+                                ),
+                            )
+                        }
+                    }
                     is StorePurchaseResult.Failed -> {
                         _uiState.update {
                             it.copy(coinPayGuide = it.coinPayGuide?.copy(purchasingOfferId = null))
@@ -1794,6 +1848,15 @@ class CallViewModel(
                     }
                 }
             }
+        }
+    }
+
+    private fun openReportPage() {
+        val state = _uiState.value
+        val peerId = state.peerUserId.trim()
+        if (peerId.isEmpty()) return
+        viewModelScope.launch {
+            _effects.send(CallEffect.OpenReport(userId = peerId, age = state.peerAge))
         }
     }
 
@@ -1846,7 +1909,9 @@ class CallViewModel(
             when (
                 val result = runtime.reportRepository.submitReport(
                     targetUid = peerId,
-                    content = "",
+                    content = report.reasons
+                        .filter { it.id in report.selectedReasonIds }
+                        .joinToString(", ") { it.title },
                     reasonIds = report.selectedReasonIds.toList(),
                 )
             ) {

@@ -56,6 +56,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewFontScale
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
@@ -65,6 +66,7 @@ import com.example.demoproject.platform.data.network.dto.MATCH_SEX_FEMALE
 import com.example.demoproject.platform.data.network.dto.MATCH_SEX_MALE
 import com.example.demoproject.ui.designsystem.DemoColors
 import com.example.demoproject.ui.designsystem.DemoGradients
+import com.example.demoproject.ui.designsystem.DemoTextAutoSize
 import com.example.demoproject.ui.designsystem.DemoTheme
 import com.example.demoproject.ui.foundation.ComponentSize
 import com.example.demoproject.ui.foundation.IconSize
@@ -384,6 +386,8 @@ private fun MatchVipOffBadge(modifier: Modifier = Modifier) {
             fontSize = TextSize.matchVipOff,
             fontWeight = FontWeight.Medium,
             maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            autoSize = DemoTextAutoSize.label(TextSize.matchVipOff),
         )
     }
 }
@@ -406,6 +410,9 @@ private fun MatchPriceChip(
             color = DemoColors.onPrimaryButton,
             fontSize = TextSize.md,
             fontWeight = FontWeight.Medium,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            autoSize = DemoTextAutoSize.price(TextSize.md),
         )
         Image(
             painter = painterResource(R.drawable.match_ic_coin),
@@ -417,6 +424,9 @@ private fun MatchPriceChip(
             color = DemoColors.onPrimaryButton,
             fontSize = TextSize.md,
             fontWeight = FontWeight.Medium,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            autoSize = DemoTextAutoSize.label(TextSize.md),
         )
     }
 }
@@ -645,6 +655,8 @@ private fun MatchFilterOption(
             fontSize = TextSize.xs,
             fontWeight = FontWeight.SemiBold,
             maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            autoSize = DemoTextAutoSize.label(TextSize.xs),
         )
     }
 }

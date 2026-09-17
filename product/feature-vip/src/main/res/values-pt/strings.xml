@@ -18,6 +18,7 @@
     <string name="vip_status_launcher_missing">Compra indisponível</string>
     <string name="vip_status_purchase_verified">Compra verificada</string>
     <string name="vip_status_purchase_canceled">Compra cancelada</string>
+    <string name="vip_status_external_checkout_opened">Conclua o pagamento no navegador e volte ao app</string>
     <string name="vip_status_purchase_failed_fmt">Falha na compra: %1$s</string>
     <string name="vip_guide_cd_close">Fechar</string>
     <string name="vip_guide_title_line1">Você usou todas as suas</string>

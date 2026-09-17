@@ -62,4 +62,18 @@
     <string name="profile_message_gift_soon">الهدايا قريبًا</string>
     <string name="profile_message_chat_soon">المحادثة قريبًا</string>
     <string name="profile_message_video_soon">محادثة الفيديو قريبًا</string>
+<string name="report_title">إبلاغ</string>
+    <string name="report_reason_title">لماذا تُبلغ عن هذا المستخدم؟</string>
+    <string name="report_reason_hint">يرجى اختيار سبب</string>
+    <string name="report_screenshots_title">إضافة لقطات شاشة</string>
+    <string name="report_screenshots_hint">يمكنك رفع حتى 3 صور</string>
+    <string name="report_submit">إرسال البلاغ</string>
+    <string name="report_submit_success">تم إرسال البلاغ</string>
+    <string name="report_retry">إعادة المحاولة</string>
+    <string name="report_status_online">متصل</string>
+    <string name="report_user_placeholder">مستخدم</string>
+    <string name="report_error_invalid_user">مستخدم غير صالح</string>
+    <string name="report_cd_back">رجوع</string>
+    <string name="report_cd_add_photo">إضافة لقطة شاشة</string>
+    <string name="report_cd_remove_photo">إزالة لقطة الشاشة</string>
 </resources>

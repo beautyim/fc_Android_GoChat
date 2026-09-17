@@ -55,6 +55,7 @@ import androidx.compose.ui.tooling.preview.PreviewFontScale
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
 import com.example.demoproject.ui.designsystem.DemoColors
 import com.example.demoproject.ui.designsystem.DemoGradients
+import com.example.demoproject.ui.designsystem.DemoTextAutoSize
 import com.example.demoproject.ui.designsystem.DemoTheme
 import com.example.demoproject.ui.foundation.ComponentSize
 import com.example.demoproject.ui.foundation.Radius
@@ -147,6 +148,7 @@ internal fun CallBalanceOfferGuideContent(
                         fontWeight = FontWeight.SemiBold,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
+                        autoSize = DemoTextAutoSize.label(TextSize.md),
                     )
                     Image(
                         painter = painterResource(R.drawable.store_ic_coin),
@@ -200,6 +202,10 @@ internal fun CallBalanceOfferGuideContent(
                         fontWeight = FontWeight.SemiBold,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
+                        autoSize = DemoTextAutoSize.label(TextSize.md),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = Spacing.md),
                     )
                 }
                 Spacer(modifier = Modifier.height(Spacing.callBalanceOfferGuideCtaToMore))

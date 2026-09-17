@@ -226,6 +226,10 @@ private fun ConfirmDialogAction(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 textAlign = TextAlign.Center,
+                autoSize = DemoTextAutoSize.label(TextSize.sm),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = Spacing.xs),
             )
         }
     }

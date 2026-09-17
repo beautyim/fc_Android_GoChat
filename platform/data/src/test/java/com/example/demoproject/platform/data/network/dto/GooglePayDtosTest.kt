@@ -7,6 +7,7 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import org.junit.Test
 
 class GooglePayDtosTest {
@@ -35,6 +36,17 @@ class GooglePayDtosTest {
         assertEquals("T1", dto.tranNo)
         assertEquals("coin_1", dto.productId)
         assertEquals("https://pay.example/1", dto.payUrl)
+    }
+
+    @Test
+    fun create_decodesCallbackOnlyExternalCheckout() {
+        val dto = json.decodeFromString<GooglePayCreateResponseDto>(
+            """{"callback":{"func_name":"open","func_data":{"page_name":"webview","data":{"redirect_url":"https://testpay.example.com?product_id=200121"}}}}""",
+        )
+
+        assertEquals("", dto.tranNo)
+        assertEquals("", dto.productId)
+        assertNotNull(dto.callback)
     }
 
     @Test

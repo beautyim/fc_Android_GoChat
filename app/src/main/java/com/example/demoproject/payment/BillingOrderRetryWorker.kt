@@ -29,12 +29,14 @@ class BillingOrderRetryWorker(
             vipStatusStore = runtime.vipStatusStore,
             isFakePaymentEnabled = { runtime.appPrefs.isFakePaymentEnabled() },
             analyticsTracker = AnalyticsHolder.tracker,
+            payAnalyticsReporter = AnalyticsHolder.payReporter,
             onPaymentSucceeded = {
                 runtime.coinRepository.getRechargePage()
                 runtime.vipRepository.getVipPage()
             },
         )
         return runCatching {
+            AnalyticsHolder.payReporter?.flushPending()
             coordinator.retryPendingOrders()
             Result.success()
         }.getOrElse {

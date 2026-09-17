@@ -62,4 +62,18 @@
     <string name="profile_message_gift_soon">Gifts coming soon</string>
     <string name="profile_message_chat_soon">Chat coming soon</string>
     <string name="profile_message_video_soon">Video chat coming soon</string>
+<string name="report_title">Report</string>
+    <string name="report_reason_title">Why are you reporting this user?</string>
+    <string name="report_reason_hint">Please select a reason</string>
+    <string name="report_screenshots_title">Add screenshots</string>
+    <string name="report_screenshots_hint">You can upload up to 3 images</string>
+    <string name="report_submit">Submit Report</string>
+    <string name="report_submit_success">Report submitted</string>
+    <string name="report_retry">Retry</string>
+    <string name="report_status_online">Online</string>
+    <string name="report_user_placeholder">User</string>
+    <string name="report_error_invalid_user">Invalid user</string>
+    <string name="report_cd_back">Back</string>
+    <string name="report_cd_add_photo">Add screenshot</string>
+    <string name="report_cd_remove_photo">Remove screenshot</string>
 </resources>

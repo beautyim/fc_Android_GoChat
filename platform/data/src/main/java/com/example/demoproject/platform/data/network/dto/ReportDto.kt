@@ -39,6 +39,8 @@ data class ReportTypeDto(
     @Serializable(with = LenientIntSerializer::class)
     val id: Int = 0,
     val title: String = "",
+    /** Absolute or CDN-relative reason icon URL when provided by backend. */
+    val icon: String? = null,
     @Serializable(with = LenientIntSerializer::class)
     val unused: Int = 0,
 )
