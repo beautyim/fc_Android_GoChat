@@ -44,6 +44,12 @@ object TextSize {
     val chatListPreviewLine = 14.sp
     /** Chat list timestamp / unread digit line box — Figma 1:1877 height 13. */
     val chatListMetaLine = 13.sp
+    /** Chat notification banner title line box — Figma 1:1645 height 14. */
+    val chatNotifTitleLine = 14.sp
+    /** Chat notification banner subtitle line box — Figma 1:1646 height 12. */
+    val chatNotifSubtitleLine = 12.sp
+    /** Chat notification Turn On label line box — Figma 1:1651 height 12. */
+    val chatNotifCtaLine = 12.sp
     /** Me stats / country — Figma 11. */
     val meMeta = 11.sp
     /** Me nickname — Figma 17. */
@@ -61,6 +67,27 @@ object TextSize {
     val lg = 18.sp
     /** Me coin balance — Figma 20. */
     val meBalance = 20.sp
+    /** Real-person verify hero title — Figma 20 / leading 30. */
+    val verifyHeroTitle = 20.sp
+    val verifyHeroTitleLine = 30.sp
+    /** Real-person verify hero subtitle — Figma 12 / leading 16. */
+    val verifyHeroSubtitle = 12.sp
+    val verifyHeroSubtitleLine = 16.sp
+    /** Real-person verify benefit title — Figma 11 / leading normal ≈ 13. */
+    val verifyBenefitTitle = 11.sp
+    val verifyBenefitTitleLine = 13.sp
+    /** Real-person verify benefit body — Figma 10 / leading 13. */
+    val verifyBenefitBody = 10.sp
+    val verifyBenefitBodyLine = 13.sp
+    /** Real-person verify step title — Figma 12 / leading normal ≈ 16. */
+    val verifyStepTitle = 12.sp
+    val verifyStepTitleLine = 16.sp
+    /** Real-person verify step body — Figma 11 / leading 16. */
+    val verifyStepBody = 11.sp
+    val verifyStepBodyLine = 16.sp
+    /** Real-person verify section title — Figma 14 / leading normal ≈ 17. */
+    val verifySectionTitle = 14.sp
+    val verifySectionTitleLine = 17.sp
     /** Call ringing peer name — Figma 20. */
     val callRingingName = 20.sp
     /** Match-call connecting title stack — Figma 1:1529 / 1:1530. */
@@ -213,4 +240,40 @@ object TextSize {
     val prizeCta = 16.sp
     /** Prize CTA line box — Figma text height 19. */
     val prizeCtaLine = 19.sp
+
+    /** Notification permission guide title — Figma 83:4568 / 24. */
+    val notificationGuideTitle = 24.sp
+    /** Notification permission guide title line box — Figma height 29. */
+    val notificationGuideTitleLine = 29.sp
+    /** Notification permission guide body — Figma 83:4569 / 16. */
+    val notificationGuideBody = 16.sp
+    /** Body line box — Figma height 38 ÷ 2 lines (leading normal). */
+    val notificationGuideBodyLine = 19.sp
+    /** Notification permission guide dismiss — Figma 83:4570 / 14. */
+    val notificationGuideDismiss = 14.sp
+    /** Dismiss line box — Figma height 17. */
+    val notificationGuideDismissLine = 17.sp
+
+    /** Privacy unlock title — Figma 502:3653 / 20. */
+    val privacyUnlockTitle = 20.sp
+    /** Title line box — Figma Heading 3 height 28. */
+    val privacyUnlockTitleLine = 28.sp
+    /** Privacy unlock price row — Figma 502:3655 / 14. */
+    val privacyUnlockPrice = 14.sp
+    /** Price line box — Figma Group 82 height 17. */
+    val privacyUnlockPriceLine = 17.sp
+    /** Privacy unlock CTA — Figma 502:3660 / 16. */
+    val privacyUnlockCta = 16.sp
+    /** Privacy unlock don't-remind — Figma 502:3665 / 12. */
+    val privacyUnlockRemind = 12.sp
+
+    /** Chat VIP unlock title — Figma 1:2794 / 12, box h=14. */
+    val chatVipUnlockTitle = 12.sp
+    val chatVipUnlockTitleLine = 14.sp
+    /** Chat VIP unlock subtitle — Figma 1:2795 / 10, box h=12. */
+    val chatVipUnlockSubtitle = 10.sp
+    val chatVipUnlockSubtitleLine = 12.sp
+    /** Chat VIP unlock CTA — Figma 1:2793 / 12, box h=14. */
+    val chatVipUnlockCta = 12.sp
+    val chatVipUnlockCtaLine = 14.sp
 }

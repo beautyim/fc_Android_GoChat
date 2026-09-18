@@ -31,4 +31,18 @@
 
     <string name="treasure_entry_cd">عرض كنز لفترة محدودة</string>
     <string name="treasure_entry_special_offer">عرض خاص</string>
+
+    <string name="notification_guide_title">تفعيل الإشعارات</string>
+    <string name="notification_guide_body">فعّل الإشعارات لتلقي تنبيهات الرسائل الجديدة والمطابقات ومكالمات الفيديو.</string>
+    <string name="notification_guide_cta">تفعيل</string>
+    <string name="notification_guide_next_time">في المرة القادمة</string>
+
+    <string name="privacy_unlock_title_photo">فتح صورة خاصة</string>
+    <string name="privacy_unlock_title_video">فتح فيديو خاص</string>
+    <string name="privacy_unlock_price_prefix">استخدم %1$d</string>
+    <string name="privacy_unlock_price_suffix_photo">لكشف هذه الصورة</string>
+    <string name="privacy_unlock_price_suffix_video">لكشف هذا الفيديو</string>
+    <string name="privacy_unlock_cta">افتح الآن</string>
+    <string name="privacy_unlock_dont_remind">لا تذكّرني مرة أخرى</string>
+    <string name="privacy_unlock_cd_close">إغلاق</string>
 </resources>

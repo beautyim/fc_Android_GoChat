@@ -12,6 +12,7 @@ import com.example.demoproject.platform.data.network.dto.MessageSyncAckRequestDt
 import com.example.demoproject.platform.data.network.dto.MessageSyncRequestDto
 import com.example.demoproject.platform.data.network.dto.MsgSendRequestDto
 import com.example.demoproject.platform.data.network.dto.MsgSendResponseDto
+import com.example.demoproject.platform.data.network.dto.MsgSetRequestDto
 import com.example.demoproject.platform.data.network.dto.MsgUnreadRequestDto
 import com.example.demoproject.platform.data.network.dto.MsgUnreadResponseDto
 import com.example.demoproject.platform.network.dto.ApiResponse
@@ -51,6 +52,13 @@ interface MessageApi {
 
     @POST("msg/get-unread")
     suspend fun getUnread(@Body body: MsgUnreadRequestDto): ApiResponse<MsgUnreadResponseDto>
+
+    /**
+     * Pin / mute a conversation. Success may return an empty body (gateway bug);
+     * treat empty HTTP 2xx as success via the signing interceptor.
+     */
+    @POST("msg/set")
+    suspend fun setConversation(@Body body: MsgSetRequestDto): ApiResponse<Unit?>
 
     @POST("gift/config")
     suspend fun getGiftConfig(@Body body: List<String> = emptyList()): ApiResponse<GiftConfigResponseDto>

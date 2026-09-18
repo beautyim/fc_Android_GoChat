@@ -24,4 +24,7 @@
     <string name="match_searching_title">Eşleşiliyor...</string>
     <string name="match_searching_caption">Sana özel birini\narıyoruz 💜</string>
     <string name="match_searching_cancel">İptal</string>
+    <string name="match_gender_guide_message">Görüntülü sohbet etmek istediğin cinsiyeti seç…</string>
+    <string name="match_gender_guide_cta">Görüntülü sohbete başla</string>
+    <string name="match_gender_guide_cd_close">Cinsiyet rehberini kapat</string>
 </resources>

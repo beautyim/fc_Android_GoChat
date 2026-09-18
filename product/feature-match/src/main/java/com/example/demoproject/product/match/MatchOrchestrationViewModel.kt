@@ -1,22 +1,34 @@
 package com.example.demoproject.product.match
 
+import android.app.Activity
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.demoproject.platform.common.log.AppLogger
+import com.example.demoproject.platform.data.billing.StorePurchaseLauncherHolder
 import com.example.demoproject.platform.data.match.MatchCallEntry
 import com.example.demoproject.platform.data.match.MatchContinuation
 import com.example.demoproject.platform.data.network.NetworkRuntime
 import com.example.demoproject.platform.data.network.dto.MATCH_SEX_FEMALE
+import com.example.demoproject.platform.data.network.dto.MATCH_SEX_MALE
+import com.example.demoproject.platform.data.notification.MatchImmersiveStore
+import com.example.demoproject.platform.data.repository.BillingPaymentType
+import com.example.demoproject.platform.data.repository.BillingProductType
 import com.example.demoproject.platform.data.repository.MatchStartAction
 import com.example.demoproject.platform.data.repository.MatchStartInfo
 import com.example.demoproject.platform.data.repository.MatchStartResult
+import com.example.demoproject.platform.data.repository.RechargePageData
+import com.example.demoproject.platform.data.repository.StorePurchaseRequest
+import com.example.demoproject.platform.data.repository.StorePurchaseResult
 import com.example.demoproject.platform.mqtt.MatchSignal
 import com.example.demoproject.platform.mqtt.MatchSignalParser
 import com.example.demoproject.platform.mqtt.MatchSignalPeer
 import com.example.demoproject.platform.mqtt.MatchSignalRoom
 import com.example.demoproject.platform.mqtt.MqttRuntime
 import com.example.demoproject.platform.network.result.AppResult
+import com.example.demoproject.product.store.CoinPayGuideUiState
+import com.example.demoproject.product.store.toCoinPayGuideUiState
+import com.example.demoproject.product.store.R as StoreR
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
@@ -27,6 +39,7 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.yield
 
 class MatchViewModel(application: Application) : AndroidViewModel(application) {
     private val runtime = NetworkRuntime.get(application)
@@ -42,12 +55,25 @@ class MatchViewModel(application: Application) : AndroidViewModel(application) {
     private var roomWaitJob: Job? = null
     private var resetJob: Job? = null
     private var matchingStartedAtMs = 0L
+    private var hostActivity: Activity? = null
 
     init {
         collectGlobalState()
         collectMqtt()
         collectContinuation()
         loadInfo()
+        viewModelScope.launch {
+            _uiState.collect { MatchImmersiveStore.setImmersive(it.isSearching) }
+        }
+    }
+
+    override fun onCleared() {
+        MatchImmersiveStore.setImmersive(false)
+        super.onCleared()
+    }
+
+    fun bindActivity(activity: Activity?) {
+        hostActivity = activity
     }
 
     fun onIntent(intent: MatchIntent) {
@@ -64,21 +90,87 @@ class MatchViewModel(application: Application) : AndroidViewModel(application) {
             MatchIntent.ApplyFilters -> _uiState.update {
                 it.copy(
                     matchSex = it.draftMatchSex,
-                    hasAppliedFilters = true,
                     isFilterSheetVisible = false,
                 )
             }
             MatchIntent.ResetFilters ->
                 _uiState.update { it.copy(draftMatchSex = MATCH_SEX_ALL) }
-            MatchIntent.StartVideoMatch -> start()
+            MatchIntent.StartVideoMatch -> onStartVideoMatch()
             MatchIntent.CancelVideoMatch -> cancel()
+            MatchIntent.DismissGenderGuide ->
+                _uiState.update { it.copy(isGenderGuideVisible = false) }
+            is MatchIntent.SelectGenderGuideSex ->
+                _uiState.update { it.copy(guideMatchSex = intent.matchSex) }
+            MatchIntent.ConfirmGenderGuide -> confirmGenderGuide()
+            MatchIntent.DismissCoinPayGuide ->
+                _uiState.update { it.copy(coinPayGuide = null) }
+            is MatchIntent.PurchaseCoinPayGuideCoin ->
+                purchaseCoinPayGuide(intent.offerId, isSale = false)
+            is MatchIntent.PurchaseCoinPayGuideSale ->
+                purchaseCoinPayGuide(intent.offerId, isSale = true)
         }
+    }
+
+    private fun onStartVideoMatch() {
+        if (requestJob?.isActive == true || _uiState.value.isSearching) return
+        if (_uiState.value.isGenderGuideVisible) return
+        val sex = _uiState.value.matchSex
+        if (sex == MATCH_SEX_ALL || sex == MATCH_SEX_MALE) {
+            viewModelScope.launch {
+                if (!shouldShowGenderGuide()) {
+                    start()
+                    return@launch
+                }
+                markGenderGuideShown()
+                _uiState.update {
+                    it.copy(
+                        isGenderGuideVisible = true,
+                        guideMatchSex = MATCH_SEX_FEMALE,
+                    )
+                }
+            }
+            return
+        }
+        start()
+    }
+
+    private fun confirmGenderGuide() {
+        val selected = _uiState.value.guideMatchSex
+            .takeIf { it == MATCH_SEX_MALE || it == MATCH_SEX_FEMALE }
+            ?: MATCH_SEX_FEMALE
+        _uiState.update {
+            it.copy(
+                isGenderGuideVisible = false,
+                matchSex = selected,
+                draftMatchSex = selected,
+            )
+        }
+        start()
+    }
+
+    private suspend fun shouldShowGenderGuide(): Boolean {
+        val userId = runtime.sessionManager.currentUserId.orEmpty()
+        if (userId.isBlank()) return true
+        val lastShown = runtime.appPrefs.matchGenderGuideShownAtMs(userId)
+        if (lastShown <= 0L) return true
+        return System.currentTimeMillis() - lastShown >= GENDER_GUIDE_INTERVAL_MS
+    }
+
+    private suspend fun markGenderGuideShown() {
+        val userId = runtime.sessionManager.currentUserId.orEmpty()
+        if (userId.isBlank()) return
+        runtime.appPrefs.markMatchGenderGuideShown(userId)
     }
 
     private fun collectGlobalState() {
         viewModelScope.launch {
             runtime.accountBalanceStore.coins.collect { coins ->
-                _uiState.update { it.copy(coinBalance = coins) }
+                _uiState.update {
+                    it.copy(
+                        coinBalance = coins,
+                        coinPayGuide = it.coinPayGuide?.copy(balance = coins),
+                    )
+                }
             }
         }
         viewModelScope.launch {
@@ -137,10 +229,9 @@ class MatchViewModel(application: Application) : AndroidViewModel(application) {
                                 statusMessage = continuation.message,
                             )
                         }
-                        // Insufficient balance already surfaces as the recharge page; a toast on
-                        // top of it just repeats the same thing.
+                        // Insufficient balance opens the in-place coin guide; other failures toast.
                         if (continuation.rechargePageData != null) {
-                            send(MatchEffect.OpenStore)
+                            presentCoinPayGuide(continuation.rechargePageData)
                         } else if (continuation.message.isNotBlank()) {
                             send(MatchEffect.ShowMessage(continuation.message))
                         }
@@ -232,9 +323,158 @@ class MatchViewModel(application: Application) : AndroidViewModel(application) {
             _uiState.update {
                 it.copy(phase = MatchPhase.Ready, statusMessage = failure.message)
             }
-            send(MatchEffect.OpenStore)
+            presentCoinPayGuide(failure.rechargePageData)
         } else {
             fail(failure.message.ifBlank { text(R.string.match_status_started) })
+        }
+    }
+
+    private fun presentCoinPayGuide(fromCallback: RechargePageData?) {
+        val balance = _uiState.value.coinBalance
+        _uiState.update {
+            it.copy(
+                coinPayGuide = CoinPayGuideUiState(
+                    isLoading = true,
+                    balance = balance,
+                ),
+            )
+        }
+        viewModelScope.launch {
+            yield()
+            val page = resolveCoinPayGuidePage(fromCallback)
+            val fallbackLabel = text(StoreR.string.store_super_discount)
+            val ui = page?.toCoinPayGuideUiState(
+                fallbackSuperDiscountLabel = fallbackLabel,
+                fromType = MATCH_COIN_GUIDE_FROM_TYPE,
+            )
+            if (ui == null || ui.isCatalogEmpty) {
+                _uiState.update { state ->
+                    if (state.coinPayGuide?.isLoading == true) {
+                        state.copy(coinPayGuide = null)
+                    } else {
+                        state
+                    }
+                }
+                send(MatchEffect.OpenStore)
+                return@launch
+            }
+            _uiState.update {
+                it.copy(
+                    coinPayGuide = ui.copy(
+                        isLoading = false,
+                        balance = if (ui.balance > 0) ui.balance else balance,
+                    ),
+                )
+            }
+        }
+    }
+
+    private suspend fun resolveCoinPayGuidePage(
+        fromCallback: RechargePageData?,
+    ): RechargePageData? {
+        if (fromCallback != null && !fromCallback.isEmpty) {
+            return when (val full = runtime.coinRepository.getRechargePage()) {
+                is AppResult.Success -> fromCallback.withCarouselFrom(full.data)
+                is AppResult.Failure -> fromCallback
+            }
+        }
+        return when (val full = runtime.coinRepository.getRechargePage()) {
+            is AppResult.Success -> full.data.takeUnless { it.isEmpty }
+            is AppResult.Failure -> null
+        }
+    }
+
+    private fun purchaseCoinPayGuide(offerId: Long, isSale: Boolean) {
+        val guide = _uiState.value.coinPayGuide ?: return
+        if (guide.purchasingOfferId != null) return
+        val sale = guide.saleOffers.firstOrNull { it.id == offerId }
+        val coin = guide.coinOffers.firstOrNull { it.id == offerId }
+        val sku: String
+        val goodsId: Long
+        when {
+            isSale && sale != null -> {
+                sku = sale.sku
+                goodsId = sale.id
+            }
+            !isSale && coin != null -> {
+                sku = coin.sku
+                goodsId = coin.id
+            }
+            else -> return
+        }
+        val activity = hostActivity
+        if (activity == null) {
+            send(MatchEffect.ShowMessage(text(StoreR.string.store_status_no_activity)))
+            return
+        }
+        val launcher = StorePurchaseLauncherHolder.launcher
+        if (launcher == null) {
+            send(MatchEffect.ShowMessage(text(StoreR.string.store_status_launcher_missing)))
+            return
+        }
+        val request = StorePurchaseRequest(
+            uiId = "match-coin-guide-$goodsId",
+            goodsId = goodsId,
+            productId = sku,
+            productType = BillingProductType.Coins,
+            paymentType = BillingPaymentType.GooglePlay,
+            fromType = guide.fromType ?: MATCH_COIN_GUIDE_FROM_TYPE,
+        )
+        viewModelScope.launch {
+            _uiState.update {
+                it.copy(coinPayGuide = it.coinPayGuide?.copy(purchasingOfferId = offerId))
+            }
+            launcher.launch(activity, request) { result ->
+                when (result) {
+                    is StorePurchaseResult.Success -> {
+                        _uiState.update { it.copy(coinPayGuide = null) }
+                        send(
+                            MatchEffect.ShowMessage(
+                                text(StoreR.string.store_status_purchase_verified),
+                            ),
+                        )
+                    }
+                    is StorePurchaseResult.Canceled -> {
+                        _uiState.update {
+                            it.copy(
+                                coinPayGuide = it.coinPayGuide?.copy(purchasingOfferId = null),
+                            )
+                        }
+                        send(
+                            MatchEffect.ShowMessage(
+                                text(StoreR.string.store_status_purchase_canceled),
+                            ),
+                        )
+                    }
+                    is StorePurchaseResult.ExternalCheckoutOpened -> {
+                        _uiState.update {
+                            it.copy(
+                                coinPayGuide = it.coinPayGuide?.copy(purchasingOfferId = null),
+                            )
+                        }
+                        send(
+                            MatchEffect.ShowMessage(
+                                text(StoreR.string.store_status_external_checkout_opened),
+                            ),
+                        )
+                    }
+                    is StorePurchaseResult.Failed -> {
+                        _uiState.update {
+                            it.copy(
+                                coinPayGuide = it.coinPayGuide?.copy(purchasingOfferId = null),
+                            )
+                        }
+                        send(
+                            MatchEffect.ShowMessage(
+                                getApplication<Application>().getString(
+                                    StoreR.string.store_status_purchase_failed_fmt,
+                                    result.message,
+                                ),
+                            ),
+                        )
+                    }
+                }
+            }
         }
     }
 
@@ -424,5 +664,8 @@ class MatchViewModel(application: Application) : AndroidViewModel(application) {
         const val SOURCE_CLOSE = "feature_match_close"
         const val SOURCE_ROOM_TIMEOUT = "match_room_timeout"
         const val SOURCE_PREJOIN_END = "match_prejoin_end"
+        const val GENDER_GUIDE_INTERVAL_MS = 10 * 60_000L
+        /** Billing `from_type` for match-tab coin pay-guide purchases. */
+        const val MATCH_COIN_GUIDE_FROM_TYPE = 1
     }
 }

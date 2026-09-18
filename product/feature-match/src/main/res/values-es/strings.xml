@@ -24,4 +24,7 @@
     <string name="match_searching_title">Emparejando...</string>
     <string name="match_searching_caption">Buscando a alguien\nespecial para ti 💜</string>
     <string name="match_searching_cancel">Cancelar</string>
+    <string name="match_gender_guide_message">Selecciona el género con el que quieres chatear por video…</string>
+    <string name="match_gender_guide_cta">Empezar a chatear por video</string>
+    <string name="match_gender_guide_cd_close">Cerrar guía de género</string>
 </resources>

@@ -24,4 +24,7 @@
     <string name="match_searching_title">جارٍ المطابقة...</string>
     <string name="match_searching_caption">نبحث عن شخص\nمميز من أجلك 💜</string>
     <string name="match_searching_cancel">إلغاء</string>
+    <string name="match_gender_guide_message">اختر الجنس الذي تريد الدردشة المرئية معه…</string>
+    <string name="match_gender_guide_cta">ابدأ الدردشة المرئية</string>
+    <string name="match_gender_guide_cd_close">إغلاق دليل الجنس</string>
 </resources>

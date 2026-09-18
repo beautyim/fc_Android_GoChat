@@ -1,6 +1,7 @@
 package com.example.demoproject.product.match
 
 import com.example.demoproject.platform.data.network.dto.MATCH_SEX_FEMALE
+import com.example.demoproject.product.store.CoinPayGuideUiState
 
 /**
  * Match tab "All" chip. `/match/start` only accepts `match_sex` 1/2, so the
@@ -31,8 +32,13 @@ data class MatchUiState(
     val matchSex: Int = MATCH_SEX_FEMALE,
     /** Pending sheet selection; committed to [matchSex] on Apply. */
     val draftMatchSex: Int = MATCH_SEX_FEMALE,
-    val hasAppliedFilters: Boolean = false,
     val isFilterSheetVisible: Boolean = false,
+    /** Gender-guide popup shown before matching when filter is All/Male. */
+    val isGenderGuideVisible: Boolean = false,
+    /** Gender selected inside the guide; defaults to female. */
+    val guideMatchSex: Int = MATCH_SEX_FEMALE,
+    /** Coin pay-guide sheet after insufficient balance on match start. */
+    val coinPayGuide: CoinPayGuideUiState? = null,
     val statusMessage: String = "",
 ) {
     val isSearching: Boolean
@@ -49,6 +55,12 @@ sealed interface MatchIntent {
     data object ResetFilters : MatchIntent
     data object StartVideoMatch : MatchIntent
     data object CancelVideoMatch : MatchIntent
+    data object DismissGenderGuide : MatchIntent
+    data class SelectGenderGuideSex(val matchSex: Int) : MatchIntent
+    data object ConfirmGenderGuide : MatchIntent
+    data object DismissCoinPayGuide : MatchIntent
+    data class PurchaseCoinPayGuideCoin(val offerId: Long) : MatchIntent
+    data class PurchaseCoinPayGuideSale(val offerId: Long) : MatchIntent
 }
 
 sealed interface MatchEffect {

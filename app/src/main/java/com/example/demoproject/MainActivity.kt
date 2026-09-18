@@ -48,6 +48,7 @@ import com.example.demoproject.platform.data.model.Session
 import com.example.demoproject.platform.data.network.NetworkRuntime
 import com.example.demoproject.platform.data.session.SessionManager
 import com.example.demoproject.payment.PaymentMethodSheetHost
+import com.example.demoproject.notification.NotificationPermissionGuideHost
 import com.example.demoproject.promotion.PromotionPopupHost
 import com.example.demoproject.promotion.PromotionPopupViewModel
 import com.example.demoproject.platform.data.promotion.PromotionPurchasePageTracker
@@ -89,6 +90,9 @@ import com.example.demoproject.product.me.RelationshipListType
 import com.example.demoproject.product.me.RelationshipListViewModel
 import com.example.demoproject.product.me.SettingsScreen
 import com.example.demoproject.product.me.SettingsViewModel
+import com.example.demoproject.product.me.VerificationCaptureScreen
+import com.example.demoproject.product.me.VerificationScreen
+import com.example.demoproject.product.me.VerificationViewModel
 import com.example.demoproject.product.profile.ProfileScreen
 import com.example.demoproject.product.profile.ProfileViewModel
 import com.example.demoproject.product.profile.report.ReportScreen
@@ -125,6 +129,8 @@ object DemoRoutes {
     const val BlockedUsers = "settings/blocked-users"
     const val BindEmail = "settings/bind-email"
     const val ChangeEmail = "settings/change-email"
+    const val Verify = "settings/verify"
+    const val VerifyCapture = "settings/verify/capture"
     const val RelationshipList = "profile/relationships/{type}/{count}"
     const val ProfileUser = "profile/user/{userId}"
     const val Report = "report/{userId}/{age}/{online}"
@@ -238,6 +244,7 @@ private fun DemoNavHost() {
                     modelClass.isAssignableFrom(BindEmailViewModel::class.java) -> BindEmailViewModel(app) as T
                     modelClass.isAssignableFrom(ChangeEmailViewModel::class.java) -> ChangeEmailViewModel(app) as T
                     modelClass.isAssignableFrom(BlockedUsersViewModel::class.java) -> BlockedUsersViewModel(app) as T
+                    modelClass.isAssignableFrom(VerificationViewModel::class.java) -> VerificationViewModel(app) as T
                     modelClass.isAssignableFrom(ProfileViewModel::class.java) -> ProfileViewModel(app) as T
                     modelClass.isAssignableFrom(PromotionPopupViewModel::class.java) ->
                         PromotionPopupViewModel(app) as T
@@ -453,6 +460,7 @@ private fun DemoNavHost() {
                     navController.navigate(DemoRoutes.call(userId = peerUserId))
                 },
                 onOpenStore = { navController.navigate(DemoRoutes.Store) },
+                onOpenVip = { navController.navigate(DemoRoutes.Vip) },
             )
         }
         composable(DemoRoutes.Match) {
@@ -622,6 +630,7 @@ private fun DemoNavHost() {
                         MeEffect.OpenStore -> navController.navigate(DemoRoutes.Store)
                         MeEffect.OpenVip -> navController.navigate(DemoRoutes.Vip)
                         MeEffect.OpenSettings -> navController.navigate(DemoRoutes.Settings)
+                        MeEffect.OpenVerification -> navController.navigate(DemoRoutes.Verify)
                         is MeEffect.ShowMessage -> {
                             Toast.makeText(context, effect.message, Toast.LENGTH_SHORT).show()
                         }
@@ -697,6 +706,22 @@ private fun DemoNavHost() {
                 onOpenAbout = { navController.navigate(DemoRoutes.AboutUs) },
                 onOpenBindEmail = { navController.navigate(DemoRoutes.BindEmail) },
                 onOpenChangeEmail = { navController.navigate(DemoRoutes.ChangeEmail) },
+                onOpenVerification = { navController.navigate(DemoRoutes.Verify) },
+            )
+        }
+        composable(DemoRoutes.Verify) {
+            val vm: VerificationViewModel = viewModel(factory = factory)
+            VerificationScreen(
+                viewModel = vm,
+                onBack = { navController.popBackStack() },
+                onOpenCapture = { navController.navigate(DemoRoutes.VerifyCapture) },
+            )
+        }
+        composable(DemoRoutes.VerifyCapture) {
+            val vm: VerificationViewModel = viewModel(factory = factory)
+            VerificationCaptureScreen(
+                viewModel = vm,
+                onBack = { navController.popBackStack() },
             )
         }
         composable(DemoRoutes.BindEmail) {
@@ -836,6 +861,7 @@ private fun DemoNavHost() {
         }
     }
     PromotionPopupHost(navController = navController)
+    NotificationPermissionGuideHost(navController = navController)
     }
 }
 

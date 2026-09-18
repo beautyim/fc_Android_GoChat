@@ -8,6 +8,8 @@ import com.example.demoproject.platform.data.model.ChatSendLimitNotice
 import com.example.demoproject.platform.data.model.GiftFromType
 import com.example.demoproject.platform.data.network.NetworkRuntime
 import com.example.demoproject.platform.data.network.dto.TranslationSubmitRequestDto
+import com.example.demoproject.platform.data.notification.NotificationPermissionGuideTrigger
+import com.example.demoproject.platform.data.notification.NotificationPermissionGuideTriggerBus
 import com.example.demoproject.platform.data.repository.ProfileHomeDetail
 import com.example.demoproject.platform.network.result.AppResult
 import com.example.demoproject.ui.designsystem.gift.GiftSvgaPreloader
@@ -465,13 +467,24 @@ class ProfileViewModel(
                 runtime.profileRepository.followUser(state.userId)
             }
             when (result) {
-                is AppResult.Success -> _uiState.update {
-                    it.copy(
-                        isFollowBusy = false,
-                        isFollowing = !state.isFollowing,
-                        followerCount = (it.followerCount + if (state.isFollowing) -1 else 1)
-                            .coerceAtLeast(0),
-                    )
+                is AppResult.Success -> {
+                    val nowFollowing = !state.isFollowing
+                    _uiState.update {
+                        it.copy(
+                            isFollowBusy = false,
+                            isFollowing = nowFollowing,
+                            followerCount = (it.followerCount + if (state.isFollowing) -1 else 1)
+                                .coerceAtLeast(0),
+                        )
+                    }
+                    if (nowFollowing) {
+                        NotificationPermissionGuideTriggerBus.emit(
+                            NotificationPermissionGuideTrigger.FollowSuccess(
+                                peerAvatarUrl = state.avatarUrl.orEmpty(),
+                                peerNickname = state.nickname,
+                            ),
+                        )
+                    }
                 }
                 is AppResult.Failure -> {
                     _uiState.update { it.copy(isFollowBusy = false) }

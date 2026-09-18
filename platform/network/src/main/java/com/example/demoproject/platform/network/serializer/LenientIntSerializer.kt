@@ -6,7 +6,9 @@ import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
+import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonDecoder
+import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.intOrNull
@@ -56,12 +58,6 @@ object LenientIntSerializer : KSerializer<Int> {
 }
 
 /**
- * Lenient [Long] [KSerializer]. Same philosophy as [LenientIntSerializer],
- * needed for identifier fields (`uid`, `target_uid`, timestamps) which the
- * backend sometimes encodes as quoted strings to preserve precision on
- * JavaScript clients.
- */
-/**
  * Lenient [Double] [KSerializer] for price fields that may arrive as strings.
  */
 object LenientDoubleSerializer : KSerializer<Double> {
@@ -83,6 +79,13 @@ object LenientDoubleSerializer : KSerializer<Double> {
     }
 }
 
+/**
+ * Lenient [Long] [KSerializer]. Same philosophy as [LenientIntSerializer],
+ * needed for identifier fields (`uid`, `target_uid`, timestamps) which the
+ * backend sometimes encodes as quoted strings to preserve precision on
+ * JavaScript clients. Also accepts a single-element JSON array
+ * (e.g. `private-album/check` unlocked `origin_media_info.media_id`).
+ */
 object LenientLongSerializer : KSerializer<Long> {
     override val descriptor: SerialDescriptor =
         PrimitiveSerialDescriptor("LenientLong", PrimitiveKind.LONG)
@@ -93,13 +96,17 @@ object LenientLongSerializer : KSerializer<Long> {
 
     override fun deserialize(decoder: Decoder): Long {
         val jsonDecoder = decoder as? JsonDecoder ?: return decoder.decodeLong()
-        val element = jsonDecoder.decodeJsonElement()
-        if (element !is JsonPrimitive) return 0L
-        element.longOrNull?.let { return it }
-        val content = element.content.trim()
-        if (content.isEmpty()) return 0L
-        return content.toLongOrNull()
-            ?: content.toDoubleOrNull()?.toLong()
+        return jsonDecoder.decodeJsonElement().toLenientLong()
+    }
+}
+
+private fun JsonElement.toLenientLong(): Long = when (this) {
+    is JsonPrimitive -> {
+        longOrNull
+            ?: content.trim().takeIf { it.isNotEmpty() }?.toLongOrNull()
+            ?: content.trim().takeIf { it.isNotEmpty() }?.toDoubleOrNull()?.toLong()
             ?: 0L
     }
+    is JsonArray -> firstOrNull()?.toLenientLong() ?: 0L
+    else -> 0L
 }

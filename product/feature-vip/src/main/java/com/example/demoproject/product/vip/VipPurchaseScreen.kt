@@ -755,6 +755,7 @@ private fun VipBottomBar(
                     color = DemoColors.onPrimaryButton,
                     fontSize = TextSize.md,
                     fontWeight = FontWeight.SemiBold,
+                    textAlign = TextAlign.Center,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     autoSize = DemoTextAutoSize.label(TextSize.md),

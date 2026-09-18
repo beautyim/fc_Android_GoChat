@@ -21,9 +21,11 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
@@ -36,6 +38,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -52,6 +55,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
@@ -63,6 +67,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
@@ -91,6 +96,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewFontScale
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -98,6 +104,7 @@ import android.view.ViewGroup
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.demoproject.platform.callkit.CallKitHolder
+import kotlin.math.roundToInt
 import com.example.demoproject.ui.designsystem.DemoColors
 import com.example.demoproject.ui.designsystem.DemoGradients
 import com.example.demoproject.ui.designsystem.DemoTheme
@@ -251,7 +258,7 @@ private fun CallInCallLayout(
                     ),
             )
 
-            Box(
+            BoxWithConstraints(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
@@ -272,14 +279,45 @@ private fun CallInCallLayout(
                         },
                     ),
             ) {
+                val parentWidthPx = constraints.maxWidth.toFloat()
+                val parentHeightPx = constraints.maxHeight.toFloat()
+                val pipWidthPx = with(density) { ComponentSize.callInCallPipWidth.toPx() }
+                val pipHeightPx = with(density) { ComponentSize.callInCallPipHeight.toPx() }
+                val floatWidthPx = with(density) { ComponentSize.callBalanceFloatWidth.toPx() }
+                val floatHeightPx = with(density) { ComponentSize.callBalanceFloatHeight.toPx() }
+                val pipPadEndPx = with(density) { Spacing.callRingingReportEnd.toPx() }
+                val pipPadTopPx = with(density) { Spacing.md.toPx() }
+                val floatPadEndPx = with(density) { Spacing.callBalanceFloatEnd.toPx() }
+                val floatPadBottomPx = with(density) { Spacing.callBalanceFloatBottom.toPx() }
+                val isRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
+                val pipInitialX = if (isRtl) {
+                    pipPadEndPx
+                } else {
+                    (parentWidthPx - pipWidthPx - pipPadEndPx).coerceAtLeast(0f)
+                }
+                val floatInitialX = if (isRtl) {
+                    floatPadEndPx
+                } else {
+                    (parentWidthPx - floatWidthPx - floatPadEndPx).coerceAtLeast(0f)
+                }
+                val floatInitialY =
+                    (parentHeightPx - floatHeightPx - floatPadBottomPx).coerceAtLeast(0f)
+                val pipOffset = rememberDraggableWindowOffset()
+                val balanceFloatOffset = rememberDraggableWindowOffset()
+
                 CallInCallPip(
                     avatarUrl = state.peerAvatarUrl,
                     rtcActive = state.rtcSurfacesActive,
                     cameraEnabled = state.cameraEnabled && !state.isMatchReceiveOnly,
                     onFlipCamera = { onIntent(CallIntent.FlipCamera) },
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(end = Spacing.callRingingReportEnd, top = Spacing.md),
+                    modifier = Modifier.draggableWindowOffset(
+                        offsetState = pipOffset,
+                        parentWidthPx = parentWidthPx,
+                        parentHeightPx = parentHeightPx,
+                        childWidthPx = pipWidthPx,
+                        childHeightPx = pipHeightPx,
+                        defaultOffset = Offset(pipInitialX, pipPadTopPx),
+                    ),
                 )
 
                 val hasOtherOverlay = state.isMoreSheetVisible ||
@@ -296,12 +334,14 @@ private fun CallInCallLayout(
                             offer = offer,
                             onClick = { onIntent(CallIntent.OpenBalanceOfferGuide) },
                             onMoreOptions = { onIntent(CallIntent.OpenBalanceOfferGuide) },
-                            modifier = Modifier
-                                .align(Alignment.BottomEnd)
-                                .padding(
-                                    end = Spacing.callBalanceFloatEnd,
-                                    bottom = Spacing.callBalanceFloatBottom,
-                                ),
+                            modifier = Modifier.draggableWindowOffset(
+                                offsetState = balanceFloatOffset,
+                                parentWidthPx = parentWidthPx,
+                                parentHeightPx = parentHeightPx,
+                                childWidthPx = floatWidthPx,
+                                childHeightPx = floatHeightPx,
+                                defaultOffset = Offset(floatInitialX, floatInitialY),
+                            ),
                         )
                     }
                 }
@@ -584,6 +624,44 @@ private fun CallLikeChip(
             maxLines = 1,
         )
     }
+}
+
+/**
+ * Drag offset for an overlay window. `null` means "still parked at the default
+ * corner" so rotation / first layout can recompute [defaultOffset] until the
+ * user moves it.
+ */
+@Composable
+private fun rememberDraggableWindowOffset(): MutableState<Offset?> =
+    remember { mutableStateOf(null) }
+
+private fun Modifier.draggableWindowOffset(
+    offsetState: MutableState<Offset?>,
+    parentWidthPx: Float,
+    parentHeightPx: Float,
+    childWidthPx: Float,
+    childHeightPx: Float,
+    defaultOffset: Offset,
+): Modifier {
+    val maxX = (parentWidthPx - childWidthPx).coerceAtLeast(0f)
+    val maxY = (parentHeightPx - childHeightPx).coerceAtLeast(0f)
+    val effective = (offsetState.value ?: defaultOffset).let { raw ->
+        Offset(
+            x = raw.x.coerceIn(0f, maxX),
+            y = raw.y.coerceIn(0f, maxY),
+        )
+    }
+    return offset { IntOffset(effective.x.roundToInt(), effective.y.roundToInt()) }
+        .pointerInput(parentWidthPx, parentHeightPx, childWidthPx, childHeightPx, defaultOffset) {
+            detectDragGestures { change, dragAmount ->
+                change.consume()
+                val cur = offsetState.value ?: defaultOffset
+                offsetState.value = Offset(
+                    x = (cur.x + dragAmount.x).coerceIn(0f, maxX),
+                    y = (cur.y + dragAmount.y).coerceIn(0f, maxY),
+                )
+            }
+        }
 }
 
 @Composable

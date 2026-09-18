@@ -43,6 +43,7 @@ sealed interface ReportIntent {
 
 sealed interface ReportEffect {
     data object NavigateBack : ReportEffect
-    data object SubmitSucceeded : ReportEffect
+    /** Report submitted; UI should toast then leave the page. */
+    data class SubmitSucceeded(val message: String) : ReportEffect
     data class ShowMessage(val message: String) : ReportEffect
 }

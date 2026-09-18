@@ -406,6 +406,33 @@ internal fun isUnlockedMedia(raw: String): Boolean {
     }.getOrDefault(false)
 }
 
+/**
+ * Locked private-photo / private-video payload fields used by the unlock sheet.
+ * Returns null when [raw] is not a JSON object or has no usable [media_id].
+ */
+internal data class PrivateMediaUnlockPayload(
+    val mediaId: Long,
+    val price: Int,
+)
+
+internal fun extractPrivateMediaUnlockPayload(raw: String): PrivateMediaUnlockPayload? {
+    val trimmed = raw.trim()
+    if (!trimmed.startsWith("{")) return null
+    return runCatching {
+        val json = JSONObject(trimmed)
+        val mediaId = when {
+            json.has("media_id") -> json.optLong("media_id", 0L)
+            else -> 0L
+        }
+        if (mediaId <= 0L) return@runCatching null
+        val price = sequenceOf("view_price", "price", "coin", "gold")
+            .map { json.optInt(it, -1) }
+            .firstOrNull { it >= 0 }
+            ?: 0
+        PrivateMediaUnlockPayload(mediaId = mediaId, price = price)
+    }.getOrNull()
+}
+
 internal fun countryCodeToFlagEmoji(code: String?): String {
     val normalized = code?.trim()?.uppercase().orEmpty()
     if (normalized.length != 2 || !normalized.all { it in 'A'..'Z' }) return ""

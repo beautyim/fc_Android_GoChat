@@ -353,6 +353,39 @@ object Spacing {
     val prizeCtaCoverLift = 25.dp
     /** Pink CTA wash soft rim — 3dp edge fade. */
     val prizeCtaCoverEdgeFade = 3.dp
+    /** Real-person verify hero / benefits / steps horizontal inset — Figma 16dp. */
+    val verifyContentInset = 16.dp
+    /** Real-person verify hero art top under nav — Figma 121 − 97. */
+    val verifyHeroArtTop = 24.dp
+    /** Real-person verify hero title top under nav — Figma 139 − 97. */
+    val verifyHeroTitleTop = 42.dp
+    /** Real-person verify hero title → subtitle — Figma 208 − 199. */
+    val verifyHeroTitleToSubtitle = 9.dp
+    /** Real-person verify subtitle → benefits — Figma 293 − 256. */
+    val verifySubtitleToBenefits = 37.dp
+    /** Real-person verify benefits → “How it works” — Figma ≈20dp. */
+    val verifyBenefitsToHow = 20.dp
+    /** Real-person verify how-title → steps — Figma 461 − 449. */
+    val verifyHowToSteps = 12.dp
+    /** Real-person verify step cards gap — Figma 12dp. */
+    val verifyStepGap = 12.dp
+    /** Real-person verify benefit / step icon circle pad — Figma 8dp. */
+    val verifyIconPad = 8.dp
+    /** Real-person verify benefit column / step text gap — Figma 8dp / 4dp. */
+    val verifyBenefitTextGap = 8.dp
+    val verifyStepTextGap = 4.dp
+    /** Real-person verify step row icon → copy — Figma 12dp. */
+    val verifyStepIconGap = 12.dp
+    /** Real-person verify card padding — Figma 8 / 12. */
+    val verifyBenefitCardPadH = 8.dp
+    val verifyBenefitCardPadV = 12.dp
+    val verifyStepCardPad = 12.dp
+    /** Real-person verify CTA bottom inset — Figma 50 − 34 home ≈ 16. */
+    val verifyCtaBottom = 16.dp
+    /** Real-person verify oval lift above center — Figma top calc(50%−18). */
+    val verifyOvalCenterLift = 18.dp
+    /** Real-person verify hero text end inset so art can sit on the trailing edge. */
+    val verifyHeroTextEndInset = 152.dp
     val md = 16.dp
     val lg = 24.dp
     val xl = 28.dp

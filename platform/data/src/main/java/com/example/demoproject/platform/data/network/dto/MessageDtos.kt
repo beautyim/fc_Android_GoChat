@@ -63,6 +63,8 @@ data class ConversationDto(
     /** Legacy alias for [unread] used by older session-list payloads. */
     @Serializable(with = LenientIntSerializer::class)
     val badge: Int = 0,
+    /** Wire may quote this as a string (e.g. `"1789714807146085"`). */
+    @Serializable(with = LenientLongSerializer::class)
     val mtime: Long = 0,
     @SerialName("last_msg") val lastMessage: MessageDto? = null,
     @SerialName("msg_type") val msgType: Int = MsgSendRequestDto.MSG_TYPE_TEXT,
@@ -110,15 +112,30 @@ data class MessageDto(
     /** Accepts stringified JSON or nested objects (`image_url` / `url` media payloads). */
     @Serializable(with = JsonAnyAsStringSerializer::class)
     @SerialName("msg_content") val msgContent: String = "",
+    @Serializable(with = LenientLongSerializer::class)
     val mtime: Long = 0,
     @SerialName("msg_status") val msgStatus: Int = 0,
     @SerialName("is_read") val isReadRaw: Int = 0,
     @SerialName("is_del") val isDeletedRaw: Int = 0,
     @SerialName("room_id") val roomId: Long? = null,
+    /**
+     * Session pin flag carried on nested `msg/list` / `msg/sync` preview rows
+     * (`list[].list[].is_top`). `1` = pinned.
+     */
+    @Serializable(with = LenientIntSerializer::class)
+    @SerialName("is_top") val isTopRaw: Int = 0,
+    /**
+     * Session notification flag on the same nested rows (`msg_notice`).
+     * `1` = notify, `0` = muted. Default on when omitted.
+     */
+    @Serializable(with = LenientIntSerializer::class)
+    @SerialName("msg_notice") val msgNoticeRaw: Int = 1,
 ) {
     val isRead: Boolean get() = isReadRaw == 1 || msgStatus == 1
     val isDeleted: Boolean get() = isDeletedRaw == 1
     val wireBody: String get() = msgContent.ifBlank { body }
+    val isTop: Boolean get() = isTopRaw == 1
+    val isMuted: Boolean get() = msgNoticeRaw == 0
 }
 
 @Serializable
@@ -207,6 +224,36 @@ data class ConversationReadRequestDto(
     @SerialName("chat_id") val chatId: Long,
     @SerialName("chat_type") val chatType: Int = ConversationDto.CHAT_TYPE_PRIVATE,
 )
+
+/**
+ * Body for `POST /msg/set` — pin (`is_top`) or mute notification (`msg_notice`).
+ * Gateway only forwards `chat_id` / `key` / `value`.
+ */
+@Serializable
+data class MsgSetRequestDto(
+    @SerialName("chat_id") val chatId: Long,
+    val key: String,
+    val value: Int,
+) {
+    companion object {
+        const val KEY_IS_TOP: String = "is_top"
+        const val KEY_MSG_NOTICE: String = "msg_notice"
+
+        fun pin(chatId: Long, pinned: Boolean): MsgSetRequestDto =
+            MsgSetRequestDto(
+                chatId = chatId,
+                key = KEY_IS_TOP,
+                value = if (pinned) 1 else 0,
+            )
+
+        fun msgNotice(chatId: Long, noticeEnabled: Boolean): MsgSetRequestDto =
+            MsgSetRequestDto(
+                chatId = chatId,
+                key = KEY_MSG_NOTICE,
+                value = if (noticeEnabled) 1 else 0,
+            )
+    }
+}
 
 @Serializable
 data class MsgUnreadRequestDto(

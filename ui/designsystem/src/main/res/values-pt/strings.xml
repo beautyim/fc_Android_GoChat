@@ -31,4 +31,18 @@
 
     <string name="treasure_entry_cd">Oferta de tesouro por tempo limitado</string>
     <string name="treasure_entry_special_offer">OFERTA ESPECIAL</string>
+
+    <string name="notification_guide_title">Ativar notificações</string>
+    <string name="notification_guide_body">Ative as notificações para saber sobre novas mensagens, matches e videochamadas.</string>
+    <string name="notification_guide_cta">Ativar</string>
+    <string name="notification_guide_next_time">Próxima vez</string>
+
+    <string name="privacy_unlock_title_photo">Desbloquear foto privada</string>
+    <string name="privacy_unlock_title_video">Desbloquear vídeo privado</string>
+    <string name="privacy_unlock_price_prefix">Use %1$d</string>
+    <string name="privacy_unlock_price_suffix_photo">para revelar esta imagem</string>
+    <string name="privacy_unlock_price_suffix_video">para revelar este vídeo</string>
+    <string name="privacy_unlock_cta">Desbloquear agora</string>
+    <string name="privacy_unlock_dont_remind">Não lembrar novamente</string>
+    <string name="privacy_unlock_cd_close">Fechar</string>
 </resources>

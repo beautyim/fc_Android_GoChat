@@ -15,9 +15,14 @@ import com.example.demoproject.platform.data.model.MessageStatus
 import com.example.demoproject.platform.data.model.MessageType
 import com.example.demoproject.platform.data.model.User
 import com.example.demoproject.platform.data.model.giftMessageContent
+import com.example.demoproject.platform.data.message.withPrivateMediaUnlocked
 import com.example.demoproject.platform.data.network.NetworkRuntime
+import com.example.demoproject.platform.data.network.dto.PrivateAlbumUnlockRequestDto
+import com.example.demoproject.platform.data.network.dto.toVipGuideCallbackDtoOrNull
 import com.example.demoproject.platform.data.network.mapper.toRechargePageDataOrNull
 import com.example.demoproject.platform.data.network.mapper.toVipGuidePageDataOrNull
+import com.example.demoproject.platform.data.notification.NotificationPermissionGuideTrigger
+import com.example.demoproject.platform.data.notification.NotificationPermissionGuideTriggerBus
 import com.example.demoproject.platform.data.repository.BillingPaymentType
 import com.example.demoproject.platform.data.repository.BillingProductType
 import com.example.demoproject.platform.data.repository.RechargePageData
@@ -39,6 +44,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -75,6 +81,8 @@ class ChatDetailViewModel(
     private var cachedMessages: List<Message> = emptyList()
     private var profilePhotos: List<String> = emptyList()
     private var extraPhotoCount: Int = 0
+    /** True after a successful outbound send this visit — drives leave-after-send guide. */
+    private var sentOutboundThisVisit = false
 
     @Volatile
     private var hostActivity: Activity? = null
@@ -126,10 +134,27 @@ class ChatDetailViewModel(
                 }
             }
         }
+        viewModelScope.launch {
+            runtime.blockRepository.blockedUids.collect {
+                val peerId = _uiState.value.peerId.ifBlank { conversationId }
+                _uiState.update { state ->
+                    state.copy(isBlockedByMe = runtime.blockRepository.isBlocked(peerId))
+                }
+            }
+        }
         bootstrap()
     }
 
     override fun onCleared() {
+        if (sentOutboundThisVisit) {
+            val state = _uiState.value
+            NotificationPermissionGuideTriggerBus.emit(
+                NotificationPermissionGuideTrigger.ChatSentThenLeft(
+                    peerAvatarUrl = state.peerAvatarUrl.orEmpty(),
+                    peerNickname = state.nickname,
+                ),
+            )
+        }
         runtime.activeConversationTracker.clearIfMatch(conversationId)
         super.onCleared()
     }
@@ -214,6 +239,14 @@ class ChatDetailViewModel(
             ChatDetailIntent.DismissMediaPreview -> _uiState.update {
                 it.copy(mediaViewerItems = emptyList(), mediaViewerIndex = null)
             }
+            ChatDetailIntent.DismissPrivacyMediaUnlock -> _uiState.update {
+                it.copy(privacyMediaUnlock = null)
+            }
+            is ChatDetailIntent.PrivacyMediaUnlockDontRemindChanged -> _uiState.update { state ->
+                val unlock = state.privacyMediaUnlock ?: return@update state
+                state.copy(privacyMediaUnlock = unlock.copy(dontRemind = intent.checked))
+            }
+            ChatDetailIntent.ConfirmPrivacyMediaUnlock -> confirmPrivacyMediaUnlock()
             is ChatDetailIntent.PlayGiftAnimation -> playGiftAnimation(intent.messageId)
             ChatDetailIntent.DismissGiftAnimation -> _uiState.update {
                 it.copy(giftAnimationUrl = null)
@@ -222,6 +255,9 @@ class ChatDetailViewModel(
                 it.copy(vipPayGuide = null)
             }
             ChatDetailIntent.PurchaseVipPayGuide -> purchaseVipPayGuide()
+            ChatDetailIntent.UnlockPromptCtaClick -> viewModelScope.launch {
+                _effects.send(ChatDetailEffect.NavigateVipPurchase)
+            }
             ChatDetailIntent.DismissCoinPayGuide -> _uiState.update {
                 it.copy(coinPayGuide = null)
             }
@@ -239,11 +275,9 @@ class ChatDetailViewModel(
     private fun bootstrap() {
         observeJob?.cancel()
         viewModelScope.launch {
-            _uiState.update {
-                it.copy(isLoading = true, errorMessage = null, hasLoaded = false)
-            }
             runtime.messageRepository.failInterruptedSendingMessages()
-            // Bind Room first so local Failed/Sending rows stay visible while sync runs.
+            // Local-first: re-entry paints Room immediately; network only refreshes.
+            seedFromLocalCache()
             observeJob = viewModelScope.launch {
                 var lastMarkedPeerMessageId: String? = null
                 runtime.messageRepository.observeMessages(conversationId).collect { messages ->
@@ -264,15 +298,20 @@ class ChatDetailViewModel(
                     }
                 }
             }
-            when (val detail = runtime.messageRepository.getConversationDetail(conversationId)) {
-                is AppResult.Success -> applyDetail(detail.data.conversation.peer, detail.data)
-                is AppResult.Failure -> {
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            errorMessage = detail.message,
-                            hasLoaded = true,
-                        )
+            // Detail / profile / album / sync run without blocking the local UI.
+            launch {
+                when (val detail = runtime.messageRepository.getConversationDetail(conversationId)) {
+                    is AppResult.Success -> applyDetail(detail.data.conversation.peer, detail.data)
+                    is AppResult.Failure -> {
+                        if (_uiState.value.items.isEmpty()) {
+                            _uiState.update {
+                                it.copy(
+                                    isLoading = false,
+                                    errorMessage = detail.message,
+                                    hasLoaded = true,
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -285,11 +324,51 @@ class ChatDetailViewModel(
             launch { loadAlbumPhotos() }
             when (val sync = runtime.messageRepository.syncLatestMessages(conversationId)) {
                 is AppResult.Success -> _uiState.update { it.copy(hasMore = sync.data) }
-                is AppResult.Failure -> _uiState.update {
-                    it.copy(errorMessage = sync.message, hasMore = true)
+                is AppResult.Failure -> {
+                    if (_uiState.value.items.isEmpty()) {
+                        _uiState.update {
+                            it.copy(errorMessage = sync.message, hasMore = true)
+                        }
+                    } else {
+                        _uiState.update { it.copy(hasMore = true) }
+                    }
                 }
             }
             runtime.messageRepository.markConversationRead(conversationId)
+        }
+    }
+
+    /** Show cached messages + peer header before `/msg/detail` and `/msg/sync-detail`. */
+    private suspend fun seedFromLocalCache() {
+        val localMessages = runtime.messageRepository.observeMessages(conversationId).first()
+        cachedMessages = localMessages
+        if (localMessages.isNotEmpty()) {
+            publishItems()
+            _uiState.update {
+                it.copy(isLoading = false, hasLoaded = true, errorMessage = null)
+            }
+        } else {
+            _uiState.update {
+                it.copy(isLoading = true, errorMessage = null, hasLoaded = false)
+            }
+        }
+        val peer = runtime.messageRepository.observeConversations().first()
+            .firstOrNull { it.id == conversationId }
+            ?.peer
+            ?: return
+        _uiState.update {
+            it.copy(
+                peerId = peer.id.ifBlank { it.peerId },
+                peerExternalUserId = peer.externalUserId.ifBlank { peer.id }
+                    .ifBlank { it.peerExternalUserId },
+                nickname = peer.nickname.ifBlank { it.nickname },
+                age = peer.age.takeIf { age -> age > 0 } ?: it.age,
+                peerAvatarUrl = peer.avatar?.takeIf { url -> url.isNotBlank() } ?: it.peerAvatarUrl,
+                isOnline = peer.isOnline || peer.onlineStatusCode > 0 || it.isOnline,
+                countryFlag = countryCodeToFlagEmoji(peer.countryCode).ifBlank { it.countryFlag },
+                countryName = peer.countryName.orEmpty().ifBlank { it.countryName },
+                isFollowing = peer.isFollowing || it.isFollowing,
+            )
         }
     }
 
@@ -310,7 +389,9 @@ class ChatDetailViewModel(
                 peerHasReplied = detail.peerHasReplied,
                 isFollowing = detail.friendStatus == 1 || peer.isFollowing,
                 freeMessageCount = detail.freeMessageCount,
-                unlockFromType = detail.unlockFromType,
+                unlockPromptType = detail.unlockFromType.toChatUnlockPromptTypeOrNull(),
+                isBlockedByMe = runtime.blockRepository.isBlocked(peer.id) ||
+                    runtime.blockRepository.isBlocked(peer.externalUserId),
                 currentUserId = runtime.sessionManager.currentUserId.orEmpty(),
             )
         }
@@ -408,6 +489,7 @@ class ChatDetailViewModel(
                 )
             ) {
                 is AppResult.Success -> {
+                    sentOutboundThisVisit = true
                     val free = _uiState.value.freeMessageCount
                     if (free > 0) {
                         _uiState.update { it.copy(freeMessageCount = (free - 1).coerceAtLeast(0)) }
@@ -451,6 +533,7 @@ class ChatDetailViewModel(
                 )
             ) {
                 is AppResult.Success -> {
+                    sentOutboundThisVisit = true
                     val free = _uiState.value.freeMessageCount
                     if (free > 0) {
                         _uiState.update { it.copy(freeMessageCount = (free - 1).coerceAtLeast(0)) }
@@ -521,10 +604,17 @@ class ChatDetailViewModel(
     private fun maybeShowVipPayGuide(failure: AppResult.Failure) {
         if (!failure.isMsgSendRequireVip()) return
         val nickname = _uiState.value.nickname
+        val biz = failure as? AppResult.BizError
+        // Prefer raw callback so empty vip_list still updates unlock_from_type.
+        val callback = biz?.callback.toVipGuideCallbackDtoOrNull()
+        val unlockType = callback?.fromType.toChatUnlockPromptTypeOrNull()
         // Open the sheet immediately with a skeleton so the ModalBottomSheet entrance
         // is not an empty flash while the callback payload is mapped.
         _uiState.update {
             it.copy(
+                // Only rewrite the card when the VIP callback parsed; missing from_type
+                // hides it, but a decode failure must not wipe a detail-sourced card.
+                unlockPromptType = if (callback != null) unlockType else it.unlockPromptType,
                 vipPayGuide = VipPayGuideUiState(
                     isLoading = true,
                     peerNickname = nickname,
@@ -533,7 +623,6 @@ class ChatDetailViewModel(
         }
         viewModelScope.launch {
             yield()
-            val biz = failure as? AppResult.BizError
             val guide = biz?.callback.toVipGuidePageDataOrNull()
             val ui = guide?.toPayGuideUiState(
                 context = getApplication(),
@@ -546,6 +635,11 @@ class ChatDetailViewModel(
                     } else {
                         state
                     }
+                }
+                // No quick plan — fall through to the full VIP page when the sheet
+                // cannot be shown (doc: ok=3 without plan → NavigateVipPurchase).
+                if (unlockType != null || callback != null) {
+                    _effects.send(ChatDetailEffect.NavigateVipPurchase)
                 }
                 return@launch
             }
@@ -647,8 +741,11 @@ class ChatDetailViewModel(
         }
     }
 
-    private fun maybeShowCoinPayGuide(failure: AppResult.Failure) {
-        if (!failure.isInsufficientBalance()) return
+    private fun maybeShowCoinPayGuide(
+        failure: AppResult.Failure,
+        force: Boolean = false,
+    ) {
+        if (!force && !failure.isInsufficientBalance()) return
         val balance = _uiState.value.coinBalance
         _uiState.update {
             it.copy(
@@ -864,12 +961,27 @@ class ChatDetailViewModel(
 
     /** Opens the shared profile-style media viewer on the tapped bubble. */
     private fun openMediaPreview(messageId: String) {
+        val row = _uiState.value.items
+            .asSequence()
+            .filterIsInstance<ChatDetailListItem.MessageRow>()
+            .firstOrNull { it.message.id == messageId }
+            ?: return
+        val body = row.message.body
+        val locked = when (body) {
+            is ChatDetailMessageBody.Image -> body.locked
+            is ChatDetailMessageBody.Video -> body.locked
+            else -> false
+        }
+        if (locked) {
+            openPrivacyMediaUnlock(messageId)
+            return
+        }
         val mediaRows = _uiState.value.items
             .asSequence()
             .filterIsInstance<ChatDetailListItem.MessageRow>()
-            .mapNotNull { row ->
-                val item = row.message.toMediaViewerItem() ?: return@mapNotNull null
-                row.message.id to item
+            .mapNotNull { item ->
+                val viewer = item.message.toMediaViewerItem() ?: return@mapNotNull null
+                item.message.id to viewer
             }
             .toList()
         val index = mediaRows.indexOfFirst { it.first == messageId }
@@ -879,6 +991,273 @@ class ChatDetailViewModel(
                 mediaViewerItems = mediaRows.map { pair -> pair.second },
                 mediaViewerIndex = index,
             )
+        }
+    }
+
+    private fun openPrivacyMediaUnlock(messageId: String) {
+        viewModelScope.launch {
+            val message = cachedMessages.firstOrNull { it.id == messageId } ?: return@launch
+            val isVideo = message.type == MessageType.PrivateVideo
+            val payload = extractPrivateMediaUnlockPayload(message.content) ?: return@launch
+            val coachUid = resolvePrivacyAlbumCoachUid()
+            if (coachUid <= 0L) return@launch
+            val mtime = messageId.toLongOrNull() ?: message.createdAt
+            when (
+                val check = runtime.profileRepository.checkPrivateAlbum(
+                    coachUid = coachUid,
+                    mediaId = payload.mediaId,
+                    mtime = mtime,
+                )
+            ) {
+                is AppResult.Success -> {
+                    if (check.data.isUnlocked) {
+                        runtime.messageRepository.markPrivateMediaUnlocked(
+                            conversationId = conversationId,
+                            messageId = messageId,
+                            playUrl = check.data.playUrl,
+                            imageUrl = check.data.imageUrl,
+                            coverUrl = check.data.coverUrl,
+                        )
+                        cachedMessages = cachedMessages.map { msg ->
+                            if (msg.id != messageId) {
+                                msg
+                            } else {
+                                msg.copy(
+                                    content = msg.content.withPrivateMediaUnlocked(
+                                        playUrl = check.data.playUrl,
+                                        imageUrl = check.data.imageUrl,
+                                        coverUrl = check.data.coverUrl,
+                                    ),
+                                )
+                            }
+                        }
+                        publishItems()
+                        openUnlockedMediaPreview(messageId)
+                        return@launch
+                    }
+                    val userId = runtime.sessionManager.currentUserId.orEmpty()
+                    val skipConfirm = runtime.appPrefs.isPrivacyMediaUnlockSkipConfirm(userId)
+                    val price = check.data.viewPrice.takeIf { it > 0 } ?: payload.price
+                    if (skipConfirm) {
+                        performPrivacyMediaUnlock(
+                            messageId = messageId,
+                            mediaId = payload.mediaId,
+                            persistSkipConfirm = false,
+                        )
+                        return@launch
+                    }
+                    _uiState.update {
+                        it.copy(
+                            privacyMediaUnlock = PrivacyMediaUnlockUiState(
+                                messageId = messageId,
+                                mediaId = payload.mediaId,
+                                price = price,
+                                isVideo = isVideo,
+                            ),
+                        )
+                    }
+                }
+                is AppResult.Failure -> {
+                    val userId = runtime.sessionManager.currentUserId.orEmpty()
+                    val skipConfirm = runtime.appPrefs.isPrivacyMediaUnlockSkipConfirm(userId)
+                    if (skipConfirm) {
+                        performPrivacyMediaUnlock(
+                            messageId = messageId,
+                            mediaId = payload.mediaId,
+                            persistSkipConfirm = false,
+                        )
+                        return@launch
+                    }
+                    _uiState.update {
+                        it.copy(
+                            privacyMediaUnlock = PrivacyMediaUnlockUiState(
+                                messageId = messageId,
+                                mediaId = payload.mediaId,
+                                price = payload.price,
+                                isVideo = isVideo,
+                            ),
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    private fun confirmPrivacyMediaUnlock() {
+        val unlock = _uiState.value.privacyMediaUnlock ?: return
+        performPrivacyMediaUnlock(
+            messageId = unlock.messageId,
+            mediaId = unlock.mediaId,
+            persistSkipConfirm = unlock.dontRemind,
+        )
+    }
+
+    /**
+     * `private-album/unlock` from a chat bubble (`from_type=1`).
+     * Free unlock counts are preferred server-side (`use_type=1`); coin shortage
+     * surfaces as a failure with recharge callback / `ok=2`.
+     */
+    private fun performPrivacyMediaUnlock(
+        messageId: String,
+        mediaId: Long,
+        persistSkipConfirm: Boolean,
+    ) {
+        viewModelScope.launch {
+            _uiState.update { state ->
+                val current = state.privacyMediaUnlock ?: return@update state
+                state.copy(privacyMediaUnlock = current.copy(isUnlocking = true))
+            }
+            if (messageId.isEmpty() || mediaId <= 0L) {
+                _uiState.update { it.copy(privacyMediaUnlock = null) }
+                return@launch
+            }
+            val coachUid = resolvePrivacyAlbumCoachUid()
+            if (coachUid <= 0L) {
+                _uiState.update { it.copy(privacyMediaUnlock = null) }
+                return@launch
+            }
+            val message = cachedMessages.firstOrNull { it.id == messageId }
+            val mtime = messageId.toLongOrNull() ?: message?.createdAt ?: 0L
+            when (
+                val result = runtime.profileRepository.unlockPrivateAlbum(
+                    coachUid = coachUid,
+                    mediaId = mediaId,
+                    fromType = PrivateAlbumUnlockRequestDto.FROM_TYPE_MESSAGE,
+                    mtime = mtime,
+                    useType = PrivateAlbumUnlockRequestDto.USE_TYPE_COUNTS_THEN_COINS,
+                    rechargeFromType = GiftFromType.CHAT,
+                )
+            ) {
+                is AppResult.Success -> {
+                    if (persistSkipConfirm) {
+                        val userId = runtime.sessionManager.currentUserId.orEmpty()
+                        runtime.appPrefs.setPrivacyMediaUnlockSkipConfirm(userId, true)
+                    }
+                    _uiState.update { it.copy(privacyMediaUnlock = null) }
+                    val refreshed = runtime.profileRepository.checkPrivateAlbum(
+                        coachUid = coachUid,
+                        mediaId = mediaId,
+                        mtime = mtime,
+                    )
+                    val urls = (refreshed as? AppResult.Success)?.data
+                    runtime.messageRepository.markPrivateMediaUnlocked(
+                        conversationId = conversationId,
+                        messageId = messageId,
+                        playUrl = urls?.playUrl,
+                        imageUrl = urls?.imageUrl,
+                        coverUrl = urls?.coverUrl,
+                    )
+                    cachedMessages = cachedMessages.map { msg ->
+                        if (msg.id != messageId) {
+                            msg
+                        } else {
+                            msg.copy(
+                                content = msg.content.withPrivateMediaUnlocked(
+                                    playUrl = urls?.playUrl,
+                                    imageUrl = urls?.imageUrl,
+                                    coverUrl = urls?.coverUrl,
+                                ),
+                            )
+                        }
+                    }
+                    publishItems()
+                    openUnlockedMediaPreview(messageId)
+                }
+                is AppResult.Failure -> {
+                    _uiState.update { it.copy(privacyMediaUnlock = null) }
+                    val biz = result as? AppResult.BizError
+                    val hasRechargeCallback = biz?.callback.toRechargePageDataOrNull() != null
+                    when {
+                        result.isInsufficientBalance() -> maybeShowCoinPayGuide(result)
+                        hasRechargeCallback -> maybeShowCoinPayGuide(result, force = true)
+                        else -> _effects.send(
+                            ChatDetailEffect.ShowMessage(
+                                result.message.ifBlank {
+                                    str(R.string.chat_detail_privacy_unlock_failed)
+                                },
+                            ),
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    private fun resolvePrivacyAlbumCoachUid(): Long {
+        val peer = _uiState.value.peerId.ifBlank { conversationId }
+        return peer.toLongOrNull() ?: 0L
+    }
+
+    /** After unlock (or check says already unlocked), open the shared media viewer. */
+    private fun openUnlockedMediaPreview(messageId: String) {
+        // Prefer freshly published UI rows; fall back to remapping cached domain messages.
+        val mediaRows = _uiState.value.items
+            .asSequence()
+            .filterIsInstance<ChatDetailListItem.MessageRow>()
+            .mapNotNull { row ->
+                val item = row.message.toMediaViewerItem() ?: return@mapNotNull null
+                row.message.id to item
+            }
+            .toList()
+            .ifEmpty {
+                publishItems()
+                _uiState.value.items
+                    .asSequence()
+                    .filterIsInstance<ChatDetailListItem.MessageRow>()
+                    .mapNotNull { row ->
+                        val item = row.message.toMediaViewerItem() ?: return@mapNotNull null
+                        row.message.id to item
+                    }
+                    .toList()
+            }
+        val index = mediaRows.indexOfFirst { it.first == messageId }
+        if (index < 0) return
+        _uiState.update {
+            it.copy(
+                mediaViewerItems = mediaRows.map { pair -> pair.second },
+                mediaViewerIndex = index,
+            )
+        }
+    }
+
+    /** Opens the coin pay-guide using the local catalog (no biz failure envelope). */
+    private fun openCoinPayGuideFromLocalBalance() {
+        val balance = _uiState.value.coinBalance
+        _uiState.update {
+            it.copy(
+                coinPayGuide = CoinPayGuideUiState(
+                    isLoading = true,
+                    balance = balance,
+                ),
+            )
+        }
+        viewModelScope.launch {
+            yield()
+            val page = resolveCoinPayGuidePage(fromCallback = null)
+            val fallbackLabel = strStore(StoreR.string.store_super_discount)
+            val ui = page?.toCoinPayGuideUiState(
+                fallbackSuperDiscountLabel = fallbackLabel,
+                fromType = null,
+            )
+            if (ui == null || ui.isCatalogEmpty) {
+                _uiState.update { state ->
+                    if (state.coinPayGuide?.isLoading == true) {
+                        state.copy(coinPayGuide = null)
+                    } else {
+                        state
+                    }
+                }
+                _effects.send(ChatDetailEffect.OpenStore)
+                return@launch
+            }
+            _uiState.update {
+                it.copy(
+                    coinPayGuide = ui.copy(
+                        isLoading = false,
+                        balance = if (ui.balance > 0) ui.balance else balance,
+                    ),
+                )
+            }
         }
     }
 
@@ -1119,6 +1498,12 @@ class ChatDetailViewModel(
                         delay(FOLLOWED_FLASH_MS)
                         _uiState.update { it.copy(showFollowedFlash = false) }
                     }
+                    NotificationPermissionGuideTriggerBus.emit(
+                        NotificationPermissionGuideTrigger.FollowSuccess(
+                            peerAvatarUrl = state.peerAvatarUrl.orEmpty(),
+                            peerNickname = state.nickname,
+                        ),
+                    )
                 }
                 is AppResult.Failure -> _effects.send(ChatDetailEffect.ShowMessage(result.message))
             }

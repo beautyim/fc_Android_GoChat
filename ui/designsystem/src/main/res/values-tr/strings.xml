@@ -31,4 +31,18 @@
 
     <string name="treasure_entry_cd">Sınırlı süreli hazine teklifi</string>
     <string name="treasure_entry_special_offer">ÖZEL TEKLİF</string>
+
+    <string name="notification_guide_title">Bildirimleri Aç</string>
+    <string name="notification_guide_body">Yeni mesajlar, eşleşmeler ve görüntülü aramalar hakkında bildirim almak için bildirimleri etkinleştirin.</string>
+    <string name="notification_guide_cta">Aç</string>
+    <string name="notification_guide_next_time">Sonraki Sefer</string>
+
+    <string name="privacy_unlock_title_photo">Özel Fotoğrafı Aç</string>
+    <string name="privacy_unlock_title_video">Özel Videoyu Aç</string>
+    <string name="privacy_unlock_price_prefix">%1$d</string>
+    <string name="privacy_unlock_price_suffix_photo">kullanarak bu görseli aç</string>
+    <string name="privacy_unlock_price_suffix_video">kullanarak bu videoyu aç</string>
+    <string name="privacy_unlock_cta">Şimdi aç</string>
+    <string name="privacy_unlock_dont_remind">Bir daha hatırlatma</string>
+    <string name="privacy_unlock_cd_close">Kapat</string>
 </resources>

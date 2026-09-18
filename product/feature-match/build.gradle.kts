@@ -22,6 +22,7 @@ dependencies {
 
     implementation(project(":ui:foundation"))
     implementation(project(":ui:designsystem"))
+    implementation(project(":product:feature-store"))
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)

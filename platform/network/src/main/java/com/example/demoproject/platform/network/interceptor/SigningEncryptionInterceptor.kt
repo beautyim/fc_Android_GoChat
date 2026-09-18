@@ -48,8 +48,12 @@ import kotlin.collections.iterator
  *    server may omit the [com.example.demoproject.platform.network.dto.ApiResponse] wrapper — we fold it into
  *    `{status,msg,result}` using the **wire** HTTP code (see
  *    [normalizeDecryptedPlaintext]) so Retrofit never decodes a bare `[`
+ *  - when the wire / decrypted body is **empty** on HTTP 2xx (known gateway bug
+ *    on `msg/set`), we synthesize `{"ok":1}` so Retrofit can decode an envelope
  *
- * The interceptor is a no-op when [com.example.demoproject.platform.network.config.NetworkConfig.requestSigningEnabled] is false.
+ * The interceptor still runs empty-body normalisation when
+ * [com.example.demoproject.platform.network.config.NetworkConfig.requestSigningEnabled] is false;
+ * sign/encrypt steps are skipped in that mode.
  */
 class SigningEncryptionInterceptor @Inject constructor(
     private val networkConfig: NetworkConfig,
@@ -70,7 +74,7 @@ class SigningEncryptionInterceptor @Inject constructor(
     override fun intercept(chain: Interceptor.Chain): Response {
         val incoming = chain.request()
         if (!networkConfig.requestSigningEnabled) {
-            return chain.proceed(incoming)
+            return foldEmptySuccessBody(chain.proceed(incoming), incoming.url.toUrl().path)
         }
         val path = incoming.url.toUrl().path
         val uid = uidProvider.currentUid()
@@ -179,7 +183,10 @@ class SigningEncryptionInterceptor @Inject constructor(
         }
         val cleaned = unwrapQuotes(String(rawBytes, StandardCharsets.UTF_8))
         if (cleaned.isEmpty()) {
-            return response.newBuilder().body(rawBytes.toResponseBody(contentType)).build()
+            return foldEmptySuccessBody(
+                response.newBuilder().body(rawBytes.toResponseBody(contentType)).build(),
+                path,
+            )
         }
         return try {
             val plaintext = cipher.decrypt(aesKey, cleaned)
@@ -267,7 +274,12 @@ class SigningEncryptionInterceptor @Inject constructor(
         path: String,
     ): String {
         val trim = plaintext.trim()
-        if (trim.startsWith('{')) return plaintext
+        if (trim.startsWith('{')) {
+            // Some failures (e.g. private-album/unlock ok=0) nest recharge/VIP
+            // `callback` under `data`. ApiResponse / safeApiCall only read the
+            // envelope-root field — promote when root omits it.
+            return hoistDataCallbackToEnvelope(trim, path)
+        }
         if (!trim.startsWith('[')) return plaintext
 
         val parsed = runCatching { json.parseToJsonElement(trim) }.getOrNull()
@@ -297,6 +309,21 @@ class SigningEncryptionInterceptor @Inject constructor(
             }
             json.encodeToString(envelope)
         }
+    }
+
+    /**
+     * Promotes `data.callback` to the envelope root when the root has no
+     * `callback`. Safe for success payloads that lack a nested callback (no-op).
+     */
+    private fun hoistDataCallbackToEnvelope(plaintext: String, path: String): String {
+        val root = runCatching { json.parseToJsonElement(plaintext) as? JsonObject }.getOrNull()
+            ?: return plaintext
+        if (root.containsKey("callback")) return plaintext
+        val data = root["data"] as? JsonObject ?: return plaintext
+        val nestedCallback = data["callback"] ?: return plaintext
+        AppLogger.d(TAG, "hoist data.callback → envelope root: path=$path")
+        val hoisted = JsonObject(root.toMutableMap().apply { put("callback", nestedCallback) })
+        return json.encodeToString(JsonObject.serializer(), hoisted)
     }
 
     // ---------------------------------------------------------------------
@@ -343,6 +370,36 @@ class SigningEncryptionInterceptor @Inject constructor(
         }
     }
 
+    /**
+     * Gateway `msg/set` (and potentially similar bugs) returns HTTP 2xx with an
+     * empty body on success. Retrofit always expects an [ApiResponse] JSON object,
+     * so we synthesize a minimal success envelope.
+     */
+    private fun foldEmptySuccessBody(response: Response, path: String): Response {
+        val body = response.body ?: return response
+        val declared = body.contentLength()
+        // contentLength() == 0 is definitive; -1 (unknown) still needs a peek.
+        if (declared > 0L) return response
+        val contentType = body.contentType()
+        val rawBytes = try {
+            readAllAndClose(body)
+        } catch (io: IOException) {
+            AppLogger.e(TAG, "failed to read empty-check body: $path", io)
+            throw io
+        }
+        if (rawBytes.isNotEmpty() && unwrapQuotes(String(rawBytes, StandardCharsets.UTF_8)).isNotEmpty()) {
+            return response.newBuilder().body(rawBytes.toResponseBody(contentType)).build()
+        }
+        if (!response.isSuccessful) {
+            return response.newBuilder().body(rawBytes.toResponseBody(contentType)).build()
+        }
+        AppLogger.w(TAG, "empty HTTP ${response.code} body → ok=1 envelope: path=$path")
+        return response.newBuilder()
+            .code(HTTP_OK)
+            .body(EMPTY_SUCCESS_ENVELOPE.toResponseBody(JSON_MEDIA))
+            .build()
+    }
+
     private fun unwrapQuotes(input: String): String {
         val length = input.length
         return if (length >= 2 && input[0] == '"' && input[length - 1] == '"') {
@@ -379,6 +436,8 @@ class SigningEncryptionInterceptor @Inject constructor(
         const val HTTP_OK_MIN = 200
         const val HTTP_OK_MAX = 299
         const val JSON_PREVIEW_LEN = 64
+        /** Synthesized envelope for empty HTTP 2xx bodies (e.g. `msg/set` success). */
+        const val EMPTY_SUCCESS_ENVELOPE = """{"ok":1}"""
         private val JSON_MEDIA: MediaType = "application/json; charset=utf-8".toMediaType()
     }
 }

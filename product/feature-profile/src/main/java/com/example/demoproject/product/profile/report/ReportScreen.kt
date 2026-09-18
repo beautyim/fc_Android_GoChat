@@ -192,7 +192,10 @@ fun ReportScreen(
         viewModel.effect.collect { effect ->
             when (effect) {
                 ReportEffect.NavigateBack -> onBack()
-                ReportEffect.SubmitSucceeded -> onSubmitted()
+                is ReportEffect.SubmitSucceeded -> {
+                    Toast.makeText(context, effect.message, Toast.LENGTH_SHORT).show()
+                    onSubmitted()
+                }
                 is ReportEffect.ShowMessage -> {
                     Toast.makeText(context, effect.message, Toast.LENGTH_SHORT).show()
                 }
@@ -222,10 +225,16 @@ fun ReportScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(DemoColors.page)
-            .statusBarsPadding()
             .navigationBarsPadding(),
     ) {
-        ReportTopBar(onBack = { onIntent(ReportIntent.Back) })
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(DemoColors.sheet)
+                .statusBarsPadding(),
+        ) {
+            ReportTopBar(onBack = { onIntent(ReportIntent.Back) })
+        }
         when {
             state.isLoading && state.reasons.isEmpty() -> {
                 Box(

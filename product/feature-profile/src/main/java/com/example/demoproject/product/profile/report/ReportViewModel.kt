@@ -127,8 +127,7 @@ class ReportViewModel(
             ) {
                 is AppResult.Success -> {
                     _uiState.update { it.copy(isSubmitting = false) }
-                    emit(ReportEffect.ShowMessage(str(R.string.report_submit_success)))
-                    emit(ReportEffect.SubmitSucceeded)
+                    emit(ReportEffect.SubmitSucceeded(str(R.string.report_submit_success)))
                 }
                 is AppResult.Failure -> {
                     _uiState.update { it.copy(isSubmitting = false) }

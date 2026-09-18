@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
@@ -158,4 +159,67 @@ class AppPrefs(
             prefs[Keys.CHAT_DETAIL_INTRO_SEEN_PEER_IDS] = current + key
         }
     }
+
+    /**
+     * Last time the Match gender-guide dialog was shown for [userId], or 0 if never.
+     * Interval is per account so switching users does not inherit another throttle.
+     */
+    suspend fun matchGenderGuideShownAtMs(userId: String): Long {
+        val key = userId.trim()
+        if (key.isEmpty()) return 0L
+        return context.appDataStore.data.first()[matchGenderGuideKey(key)] ?: 0L
+    }
+
+    suspend fun markMatchGenderGuideShown(
+        userId: String,
+        atMs: Long = System.currentTimeMillis(),
+    ) {
+        val key = userId.trim()
+        if (key.isEmpty()) return
+        context.appDataStore.edit { it[matchGenderGuideKey(key)] = atMs }
+    }
+
+    private fun matchGenderGuideKey(userId: String) =
+        longPreferencesKey("match_gender_guide_shown_at_ms_$userId")
+
+    /**
+     * Last time the notification-permission guide dialog was **shown** for [userId],
+     * or 0 if never. 24h window starts at display time, not at trigger time.
+     */
+    suspend fun notificationPermissionGuideShownAtMs(userId: String): Long {
+        val key = userId.trim()
+        if (key.isEmpty()) return 0L
+        return context.appDataStore.data.first()[notificationPermissionGuideKey(key)] ?: 0L
+    }
+
+    suspend fun markNotificationPermissionGuideShown(
+        userId: String,
+        atMs: Long = System.currentTimeMillis(),
+    ) {
+        val key = userId.trim()
+        if (key.isEmpty()) return
+        context.appDataStore.edit { it[notificationPermissionGuideKey(key)] = atMs }
+    }
+
+    private fun notificationPermissionGuideKey(userId: String) =
+        longPreferencesKey("notification_permission_guide_shown_at_ms_$userId")
+
+    /**
+     * When true, tapping locked private media skips the unlock confirmation sheet
+     * and goes straight to the unlock action.
+     */
+    suspend fun isPrivacyMediaUnlockSkipConfirm(userId: String): Boolean {
+        val key = userId.trim()
+        if (key.isEmpty()) return false
+        return context.appDataStore.data.first()[privacyMediaUnlockSkipConfirmKey(key)] ?: false
+    }
+
+    suspend fun setPrivacyMediaUnlockSkipConfirm(userId: String, skip: Boolean) {
+        val key = userId.trim()
+        if (key.isEmpty()) return
+        context.appDataStore.edit { it[privacyMediaUnlockSkipConfirmKey(key)] = skip }
+    }
+
+    private fun privacyMediaUnlockSkipConfirmKey(userId: String) =
+        booleanPreferencesKey("privacy_media_unlock_skip_confirm_$userId")
 }

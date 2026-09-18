@@ -109,4 +109,27 @@
     <string name="blocked_load_error">Couldn’t load blocked users</string>
     <string name="blocked_unlock_failed">Couldn’t unblock this user</string>
     <string name="blocked_retry">Retry</string>
+    <string name="verify_title">Real Person Verification</string>
+    <string name="verify_cd_back">Back</string>
+    <string name="verify_hero_title_line1">Verify to Build</string>
+    <string name="verify_hero_title_real">Real</string>
+    <string name="verify_hero_title_rest"> Connections</string>
+    <string name="verify_hero_subtitle">Complete verification to show you\'re a real person and unlock a safer community.</string>
+    <string name="verify_benefit_safer_title">Safer Community</string>
+    <string name="verify_benefit_safer_body">Help keep community real and trustworthy</string>
+    <string name="verify_benefit_trust_title">More Trust</string>
+    <string name="verify_benefit_trust_body">Others can connect with confidence</string>
+    <string name="verify_benefit_badge_title">Exclusive Badge</string>
+    <string name="verify_benefit_badge_body">Show a verified mark on your profile</string>
+    <string name="verify_how_title">How it works</string>
+    <string name="verify_step_selfie_title">Take a Selfie</string>
+    <string name="verify_step_selfie_body">We\'ll ask you to take a clear selfie.</string>
+    <string name="verify_step_liveness_title">Liveness Check</string>
+    <string name="verify_step_liveness_body">Follow the on-screen instructions to prove you\'re a real person.</string>
+    <string name="verify_step_done_title">Get Verified</string>
+    <string name="verify_step_done_body">Verification usually takes just a few seconds.</string>
+    <string name="verify_action_start">Start Verification</string>
+    <string name="verify_camera_requesting">Requesting camera access…</string>
+    <string name="verify_camera_permission_denied">Camera permission is required for verification</string>
+    <string name="verify_camera_permission_retry">Allow Camera</string>
 </resources>

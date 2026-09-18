@@ -109,4 +109,27 @@
     <string name="blocked_load_error">تعذر تحميل المستخدمين المحظورين</string>
     <string name="blocked_unlock_failed">تعذر إلغاء حظر هذا المستخدم</string>
     <string name="blocked_retry">إعادة المحاولة</string>
+    <string name="verify_title">التحقق من شخص حقيقي</string>
+    <string name="verify_cd_back">رجوع</string>
+    <string name="verify_hero_title_line1">تحقق لبناء</string>
+    <string name="verify_hero_title_real">حقيقية</string>
+    <string name="verify_hero_title_rest"> روابط</string>
+    <string name="verify_hero_subtitle">أكمل التحقق لإظهار أنك شخص حقيقي وفتح مجتمع أكثر أمانًا.</string>
+    <string name="verify_benefit_safer_title">مجتمع أكثر أمانًا</string>
+    <string name="verify_benefit_safer_body">ساعد في إبقاء المجتمع حقيقيًا وموثوقًا</string>
+    <string name="verify_benefit_trust_title">ثقة أكبر</string>
+    <string name="verify_benefit_trust_body">يمكن للآخرين التواصل بثقة</string>
+    <string name="verify_benefit_badge_title">شارة حصرية</string>
+    <string name="verify_benefit_badge_body">أظهر علامة موثّقة على ملفك</string>
+    <string name="verify_how_title">كيف يعمل</string>
+    <string name="verify_step_selfie_title">التقط صورة شخصية</string>
+    <string name="verify_step_selfie_body">سنطلب منك التقاط صورة واضحة.</string>
+    <string name="verify_step_liveness_title">فحص الحيوية</string>
+    <string name="verify_step_liveness_body">اتبع التعليمات على الشاشة لإثبات أنك شخص حقيقي.</string>
+    <string name="verify_step_done_title">احصل على التحقق</string>
+    <string name="verify_step_done_body">عادةً ما يستغرق التحقق بضع ثوانٍ فقط.</string>
+    <string name="verify_action_start">بدء التحقق</string>
+    <string name="verify_camera_requesting">جارٍ طلب إذن الكاميرا…</string>
+    <string name="verify_camera_permission_denied">إذن الكاميرا مطلوب للتحقق</string>
+    <string name="verify_camera_permission_retry">السماح بالكاميرا</string>
 </resources>

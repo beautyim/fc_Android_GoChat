@@ -24,4 +24,7 @@
     <string name="match_searching_title">Combinando...</string>
     <string name="match_searching_caption">Procurando alguém\nespecial para você 💜</string>
     <string name="match_searching_cancel">Cancelar</string>
+    <string name="match_gender_guide_message">Selecione o gênero com quem deseja conversar por vídeo…</string>
+    <string name="match_gender_guide_cta">Começar a conversar por vídeo</string>
+    <string name="match_gender_guide_cd_close">Fechar guia de gênero</string>
 </resources>

@@ -11,6 +11,7 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -92,6 +93,7 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.demoproject.ui.designsystem.DemoColors
 import com.example.demoproject.ui.designsystem.DemoConfirmDialog
+import com.example.demoproject.ui.designsystem.DemoNavIconButton
 import com.example.demoproject.ui.designsystem.DemoTheme
 import com.example.demoproject.ui.foundation.ComponentSize
 import com.example.demoproject.ui.foundation.IconSize
@@ -134,6 +136,45 @@ private val ChatListMetaStyle = TextStyle(
     fontSize = TextSize.meMeta,
     lineHeight = TextSize.chatListMetaLine,
     fontWeight = FontWeight.Normal,
+    platformStyle = PlatformTextStyle(includeFontPadding = false),
+    lineHeightStyle = LineHeightStyle(
+        alignment = LineHeightStyle.Alignment.Center,
+        trim = LineHeightStyle.Trim.Both,
+    ),
+)
+
+/** Figma 1:1645 — 12sp / 14sp line box on notification banner. */
+private val ChatNotifTitleStyle = TextStyle(
+    fontSize = TextSize.xs,
+    lineHeight = TextSize.chatNotifTitleLine,
+    fontWeight = FontWeight.Normal,
+    color = DemoColors.textPrimary,
+    platformStyle = PlatformTextStyle(includeFontPadding = false),
+    lineHeightStyle = LineHeightStyle(
+        alignment = LineHeightStyle.Alignment.Center,
+        trim = LineHeightStyle.Trim.Both,
+    ),
+)
+
+/** Figma 1:1646 — 10sp / 12sp line box on notification banner. */
+private val ChatNotifSubtitleStyle = TextStyle(
+    fontSize = TextSize.caption,
+    lineHeight = TextSize.chatNotifSubtitleLine,
+    fontWeight = FontWeight.Normal,
+    color = DemoColors.textAuxiliary,
+    platformStyle = PlatformTextStyle(includeFontPadding = false),
+    lineHeightStyle = LineHeightStyle(
+        alignment = LineHeightStyle.Alignment.Center,
+        trim = LineHeightStyle.Trim.Both,
+    ),
+)
+
+/** Figma 1:1651 — 10sp / 12sp on Turn On pill. */
+private val ChatNotifCtaStyle = TextStyle(
+    fontSize = TextSize.caption,
+    lineHeight = TextSize.chatNotifCtaLine,
+    fontWeight = FontWeight.Normal,
+    color = DemoColors.onPrimaryButton,
     platformStyle = PlatformTextStyle(includeFontPadding = false),
     lineHeightStyle = LineHeightStyle(
         alignment = LineHeightStyle.Alignment.Center,
@@ -288,13 +329,10 @@ private fun ChatListHeader(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            Image(
-                painter = painterResource(R.drawable.chat_ic_support),
+            DemoNavIconButton(
+                icon = painterResource(R.drawable.chat_ic_support),
                 contentDescription = stringResource(R.string.chat_cd_support),
-                modifier = Modifier
-                    .size(IconSize.md)
-                    .clickable(onClick = onSupportClick),
-                contentScale = ContentScale.Fit,
+                onClick = onSupportClick,
             )
         }
     }
@@ -306,17 +344,20 @@ private fun ChatNotificationBanner(
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    // Figma 1:1640 — white card, 8dp radius, 1dp hairline, 12/8 padding, purple 2dp glow.
+    val bannerShape = RoundedCornerShape(Radius.chatBanner)
     Row(
         modifier = modifier
             .fillMaxWidth()
             .shadow(
                 elevation = Spacing.xxs,
-                shape = RoundedCornerShape(Radius.chatBanner),
+                shape = bannerShape,
                 ambientColor = DemoColors.chatBannerShadow,
                 spotColor = DemoColors.chatBannerShadow,
             )
-            .clip(RoundedCornerShape(Radius.chatBanner))
+            .clip(bannerShape)
             .background(DemoColors.sheet)
+            .border(ComponentSize.chatBannerStroke, DemoColors.chatBannerBorder, bannerShape)
             .padding(horizontal = ComponentSize.chatListHorizontalInset, vertical = Spacing.sm),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
@@ -331,34 +372,33 @@ private fun ChatNotificationBanner(
             Image(
                 painter = painterResource(R.drawable.chat_ic_notif_bell),
                 contentDescription = null,
-                modifier = Modifier.size(IconSize.sm + Spacing.xs),
+                modifier = Modifier.size(ComponentSize.chatNotifBell),
                 contentScale = ContentScale.Fit,
             )
         }
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = stringResource(R.string.chat_notif_title),
-                color = DemoColors.textPrimary,
-                fontSize = TextSize.xs,
-                fontWeight = FontWeight.Normal,
+                style = ChatNotifTitleStyle,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
+            Spacer(modifier = Modifier.height(ComponentSize.chatNotifTitleToSubtitle))
             Text(
                 text = stringResource(R.string.chat_notif_subtitle),
-                color = DemoColors.textAuxiliary,
-                fontSize = TextSize.caption,
-                fontWeight = FontWeight.Normal,
+                style = ChatNotifSubtitleStyle,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
             )
         }
+        // Figma: Turn On ↔ close gap 8dp (309 − 301).
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
+            horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
         ) {
             Box(
                 modifier = Modifier
+                    .height(ComponentSize.chatNotifCtaHeight)
                     .clip(RoundedCornerShape(Radius.pill))
                     .background(
                         Brush.horizontalGradient(
@@ -366,23 +406,21 @@ private fun ChatNotificationBanner(
                         ),
                     )
                     .clickable(onClick = onTurnOn)
-                    .padding(horizontal = Spacing.sm + Spacing.xxs, vertical = Spacing.xs + Spacing.xxs),
+                    .padding(horizontal = ComponentSize.chatNotifCtaHorizontal),
+                contentAlignment = Alignment.Center,
             ) {
                 Text(
                     text = stringResource(R.string.chat_notif_turn_on),
-                    color = DemoColors.onPrimaryButton,
-                    fontSize = TextSize.caption,
-                    fontWeight = FontWeight.Normal,
+                    style = ChatNotifCtaStyle,
                     maxLines = 1,
                 )
             }
-            Image(
-                painter = painterResource(R.drawable.chat_ic_banner_close),
+            DemoNavIconButton(
+                icon = painterResource(R.drawable.chat_ic_banner_close),
                 contentDescription = stringResource(R.string.chat_cd_dismiss_banner),
-                modifier = Modifier
-                    .size(IconSize.xs + Spacing.xs)
-                    .clickable(onClick = onDismiss),
-                contentScale = ContentScale.Fit,
+                onClick = onDismiss,
+                iconSize = ComponentSize.chatNotifClose,
+                size = ComponentSize.chatNotifClose,
             )
         }
     }
@@ -549,7 +587,13 @@ private fun ChatConversationRow(
                 contentAlignment = Alignment.Center,
             ) {
                 Image(
-                    painter = painterResource(R.drawable.chat_ic_swipe_pin),
+                    painter = painterResource(
+                        if (conversation.isPinned) {
+                            R.drawable.chat_ic_swipe_unpin
+                        } else {
+                            R.drawable.chat_ic_swipe_pin
+                        },
+                    ),
                     contentDescription = stringResource(
                         if (conversation.isPinned) R.string.chat_cd_unpin else R.string.chat_cd_pin,
                     ),

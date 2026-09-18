@@ -71,6 +71,7 @@ fun SettingsScreen(
     onOpenAbout: () -> Unit,
     onOpenBindEmail: () -> Unit,
     onOpenChangeEmail: () -> Unit,
+    onOpenVerification: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -89,6 +90,7 @@ fun SettingsScreen(
                 SettingsEffect.OpenAbout -> onOpenAbout()
                 SettingsEffect.OpenBindEmail -> onOpenBindEmail()
                 SettingsEffect.OpenChangeEmail -> onOpenChangeEmail()
+                SettingsEffect.OpenVerification -> onOpenVerification()
                 is SettingsEffect.ShowMessage -> {
                     Toast.makeText(context, effect.message, Toast.LENGTH_SHORT).show()
                 }
@@ -127,7 +129,7 @@ fun SettingsScreen(
                 SettingsTopBar(onBack = { onIntent(SettingsIntent.Back) })
             }
             when {
-                state.isLoading && state.email == null && state.errorMessage == null -> {
+                state.isLoading && !state.hasLoaded -> {
                     SettingsSkeleton(
                         modifier = Modifier
                             .fillMaxSize()
@@ -135,7 +137,7 @@ fun SettingsScreen(
                             .readableContentWidth(),
                     )
                 }
-                state.errorMessage != null && state.email == null -> {
+                state.errorMessage != null && !state.hasLoaded -> {
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
@@ -430,6 +432,7 @@ private fun SettingsSkeleton(modifier: Modifier = Modifier) {
 
 private val PreviewBoundState = SettingsUiState(
     isLoading = false,
+    hasLoaded = true,
     email = "11111@123.com",
     languageLabel = "English",
     isAuthVerified = false,

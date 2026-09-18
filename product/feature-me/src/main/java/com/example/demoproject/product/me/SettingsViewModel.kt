@@ -5,8 +5,10 @@ import androidx.annotation.StringRes
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.demoproject.platform.data.BuildConfig
+import com.example.demoproject.platform.data.model.User
 import com.example.demoproject.platform.data.network.NetworkRuntime
 import com.example.demoproject.platform.network.result.AppResult
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -28,6 +30,8 @@ class SettingsViewModel(
     private val _effects = Channel<SettingsEffect>(Channel.BUFFERED)
     val effects = _effects.receiveAsFlow()
 
+    private var loadJob: Job? = null
+
     init {
         if (BuildConfig.DEBUG) {
             _uiState.update { it.copy(showFakePaymentToggle = true) }
@@ -37,7 +41,8 @@ class SettingsViewModel(
                 }
             }
         }
-        loadSettings()
+        // Initial load is triggered by SettingsScreen RESUMED Refresh so we do not
+        // double-fetch (and flash skeleton twice) on first enter.
     }
 
     fun onIntent(intent: SettingsIntent) {
@@ -60,7 +65,9 @@ class SettingsViewModel(
             SettingsIntent.OpenChangePassword -> emitComingSoon(R.string.settings_message_password_soon)
             SettingsIntent.OpenVerification -> {
                 if (_uiState.value.isAuthVerified) return
-                emitComingSoon(R.string.me_message_verify_soon)
+                viewModelScope.launch {
+                    _effects.send(SettingsEffect.OpenVerification)
+                }
             }
             SettingsIntent.OpenAbout -> viewModelScope.launch {
                 _effects.send(SettingsEffect.OpenAbout)
@@ -75,34 +82,45 @@ class SettingsViewModel(
     }
 
     private fun loadSettings() {
-        viewModelScope.launch {
+        loadJob?.cancel()
+        loadJob = viewModelScope.launch {
+            if (!_uiState.value.hasLoaded) {
+                val uid = runtime.sessionManager.currentUserId?.takeIf { it.isNotBlank() }
+                if (uid != null) {
+                    runtime.profileRepository.getCachedUser(uid)?.let(::applyUser)
+                }
+            }
             _uiState.update {
                 it.copy(
-                    isLoading = it.email == null,
+                    // Only show skeleton before the first successful apply; refresh
+                    // after bind/change email must not blank the list (esp. unbound).
+                    isLoading = !it.hasLoaded,
                     errorMessage = null,
                     languageLabel = str(R.string.settings_language_value),
                 )
             }
-            when (val result = runtime.profileRepository.getMyHomeDetail()) {
-                is AppResult.Success -> {
-                    val user = result.data.user
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            errorMessage = null,
-                            email = user.email?.trim()?.takeIf(String::isNotEmpty),
-                            isAuthVerified = user.isAuthVerified,
-                            languageLabel = str(R.string.settings_language_value),
-                        )
-                    }
-                }
+            when (val result = runtime.profileRepository.getMyProfile()) {
+                is AppResult.Success -> applyUser(result.data)
                 is AppResult.Failure -> _uiState.update {
                     it.copy(
                         isLoading = false,
-                        errorMessage = result.message,
+                        errorMessage = if (it.hasLoaded) null else result.message,
                     )
                 }
             }
+        }
+    }
+
+    private fun applyUser(user: User) {
+        _uiState.update {
+            it.copy(
+                isLoading = false,
+                hasLoaded = true,
+                errorMessage = null,
+                email = user.email?.trim()?.takeIf(String::isNotEmpty),
+                isAuthVerified = user.isAuthVerified,
+                languageLabel = str(R.string.settings_language_value),
+            )
         }
     }
 

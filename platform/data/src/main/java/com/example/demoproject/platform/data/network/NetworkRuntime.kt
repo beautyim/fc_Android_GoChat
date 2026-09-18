@@ -273,6 +273,7 @@ class NetworkRuntime private constructor(
                 profileApi = profileApi,
                 userDao = userCache,
                 mediaUploadService = mediaUploadService,
+                accountBalanceStore = accountBalanceStore,
             )
             val chatStore: ChatStore = RoomChatStore(
                 conversationDao = database.conversationDao(),

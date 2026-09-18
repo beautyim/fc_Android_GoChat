@@ -5,6 +5,9 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.SizeTransform
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -15,10 +18,17 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandHorizontally
+import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.shrinkHorizontally
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -109,6 +119,7 @@ import com.example.demoproject.ui.designsystem.DemoColors
 import com.example.demoproject.ui.designsystem.DemoGradients
 import com.example.demoproject.ui.designsystem.DemoNavIconButton
 import com.example.demoproject.ui.designsystem.DemoTheme
+import com.example.demoproject.ui.designsystem.PrivacyMediaUnlockSheet
 import com.example.demoproject.ui.designsystem.gift.GiftSvgaOverlay
 import com.example.demoproject.ui.designsystem.media.MediaViewer
 import com.example.demoproject.ui.foundation.ComponentSize
@@ -129,6 +140,7 @@ fun ChatDetailScreen(
     onOpenPeerProfile: (externalUserId: String) -> Unit,
     onStartVideoCall: (peerUserId: String) -> Unit,
     onOpenStore: () -> Unit = {},
+    onOpenVip: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -168,6 +180,7 @@ fun ChatDetailScreen(
                     context, context.getString(R.string.chat_detail_soon_more), Toast.LENGTH_SHORT,
                 ).show()
                 ChatDetailEffect.OpenStore -> onOpenStore()
+                ChatDetailEffect.NavigateVipPurchase -> onOpenVip()
             }
         }
     }
@@ -180,6 +193,75 @@ fun ChatDetailScreen(
 }
 
 private const val ChatEmojiPanelAnimMillis = 280
+private const val ChatVipUnlockAnimMillis = 280
+/** Gift hide / video↔send swap when IME or emoji panel toggles. */
+private const val ChatComposerActionAnimMillis = 200
+
+private val ChatComposerGiftEnter = fadeIn(
+    animationSpec = tween(
+        durationMillis = ChatComposerActionAnimMillis,
+        easing = FastOutSlowInEasing,
+    ),
+) + expandHorizontally(
+    animationSpec = tween(
+        durationMillis = ChatComposerActionAnimMillis,
+        easing = FastOutSlowInEasing,
+    ),
+    expandFrom = Alignment.End,
+)
+
+private val ChatComposerGiftExit = fadeOut(
+    animationSpec = tween(
+        durationMillis = ChatComposerActionAnimMillis,
+        easing = FastOutSlowInEasing,
+    ),
+) + shrinkHorizontally(
+    animationSpec = tween(
+        durationMillis = ChatComposerActionAnimMillis,
+        easing = FastOutSlowInEasing,
+    ),
+    shrinkTowards = Alignment.End,
+)
+
+/** Slide up + expand + fade — card grows above the composer without a layout jump. */
+private val ChatVipUnlockEnter = fadeIn(
+    animationSpec = tween(
+        durationMillis = ChatVipUnlockAnimMillis,
+        easing = FastOutSlowInEasing,
+    ),
+) + expandVertically(
+    animationSpec = tween(
+        durationMillis = ChatVipUnlockAnimMillis,
+        easing = FastOutSlowInEasing,
+    ),
+    expandFrom = Alignment.Bottom,
+) + slideInVertically(
+    animationSpec = tween(
+        durationMillis = ChatVipUnlockAnimMillis,
+        easing = FastOutSlowInEasing,
+    ),
+    initialOffsetY = { it / 2 },
+)
+
+/** Slide down + shrink + fade — composer rises as the card collapses. */
+private val ChatVipUnlockExit = fadeOut(
+    animationSpec = tween(
+        durationMillis = ChatVipUnlockAnimMillis,
+        easing = FastOutSlowInEasing,
+    ),
+) + shrinkVertically(
+    animationSpec = tween(
+        durationMillis = ChatVipUnlockAnimMillis,
+        easing = FastOutSlowInEasing,
+    ),
+    shrinkTowards = Alignment.Bottom,
+) + slideOutVertically(
+    animationSpec = tween(
+        durationMillis = ChatVipUnlockAnimMillis,
+        easing = FastOutSlowInEasing,
+    ),
+    targetOffsetY = { it / 2 },
+)
 
 private val ChatEmojiPanelEnter = slideInVertically(
     animationSpec = tween(
@@ -430,10 +512,39 @@ fun ChatDetailScreen(
                     )
                 }
             }
+            // Retain the last prompt type so exit can finish with real content.
+            var retainedVipUnlockType by remember {
+                mutableStateOf(state.unlockPromptType)
+            }
+            LaunchedEffect(state.unlockPromptType) {
+                if (state.unlockPromptType != null) {
+                    retainedVipUnlockType = state.unlockPromptType
+                }
+            }
+            androidx.compose.animation.AnimatedVisibility(
+                visible = state.showVipUnlockPrompt,
+                enter = ChatVipUnlockEnter,
+                exit = ChatVipUnlockExit,
+            ) {
+                val promptType = state.unlockPromptType ?: retainedVipUnlockType
+                if (promptType != null) {
+                    ChatVipUnlockPromptCard(
+                        type = promptType,
+                        peerAvatarUrl = state.peerAvatarUrl,
+                        peerNickname = state.nickname,
+                        onSubscribe = { onIntent(ChatDetailIntent.UnlockPromptCtaClick) },
+                        modifier = Modifier.padding(
+                            bottom = ComponentSize.chatVipUnlockAboveComposer,
+                        ),
+                    )
+                }
+            }
             ChatDetailComposer(
                 state = state,
                 onIntent = onIntent,
                 focusRequester = composerFocusRequester,
+                // Figma 1:2312 / 176:4804 — keyboard or emoji up: hide gift, video → send.
+                inputPanelExpanded = imeVisible || state.isEmojiSheetVisible,
                 onToggleEmoji = {
                     if (state.isEmojiSheetVisible) {
                         // Emoji → keyboard: hold panel height so bar only rises with IME.
@@ -518,6 +629,19 @@ fun ChatDetailScreen(
                 onDismiss = { onIntent(ChatDetailIntent.DismissCoinPayGuide) },
                 onPurchaseCoin = { onIntent(ChatDetailIntent.PurchaseCoinPayGuideCoin(it)) },
                 onPurchaseSale = { onIntent(ChatDetailIntent.PurchaseCoinPayGuideSale(it)) },
+            )
+        }
+        state.privacyMediaUnlock?.let { unlock ->
+            PrivacyMediaUnlockSheet(
+                price = unlock.price,
+                isVideo = unlock.isVideo,
+                dontRemind = unlock.dontRemind,
+                onDontRemindChange = {
+                    onIntent(ChatDetailIntent.PrivacyMediaUnlockDontRemindChanged(it))
+                },
+                onUnlock = { onIntent(ChatDetailIntent.ConfirmPrivacyMediaUnlock) },
+                onDismiss = { onIntent(ChatDetailIntent.DismissPrivacyMediaUnlock) },
+                isUnlocking = unlock.isUnlocking,
             )
         }
         state.giftAnimationUrl?.let { url ->
@@ -1322,6 +1446,8 @@ private fun ChatDetailComposer(
     onIntent: (ChatDetailIntent) -> Unit,
     modifier: Modifier = Modifier,
     focusRequester: FocusRequester? = null,
+    /** True when IME or emoji panel is up (Figma 消息详情-键盘弹起 / 表情). */
+    inputPanelExpanded: Boolean = false,
     onToggleEmoji: () -> Unit = {
         if (state.isEmojiSheetVisible) {
             onIntent(ChatDetailIntent.DismissEmojiSheet)
@@ -1338,6 +1464,8 @@ private fun ChatDetailComposer(
         stringResource(R.string.chat_detail_input_hint)
     }
     val canSend = state.draft.isNotBlank()
+    val showGift = !inputPanelExpanded
+    val showVideoCall = !inputPanelExpanded && state.composerShowsVideoCall
     var fieldValue by remember {
         mutableStateOf(TextFieldValue(text = state.draft, selection = TextRange(state.draft.length)))
     }
@@ -1435,31 +1563,86 @@ private fun ChatDetailComposer(
                 )
             }
         }
-        ComposerCircle(R.drawable.chat_ic_gift) {
-            keyboard?.hide()
-            onIntent(ChatDetailIntent.OpenGiftPanel)
-        }
-        if (state.composerShowsVideoCall) {
-            VideoCallButton { onIntent(ChatDetailIntent.StartVideoCall) }
-        } else {
-            Box(
-                modifier = Modifier
-                    .size(ComponentSize.chatDetailComposerControl)
-                    .clip(CircleShape)
-                    .background(if (canSend) DemoColors.link else DemoColors.chatComposerField)
-                    .clickable(enabled = canSend) {
-                        onIntent(ChatDetailIntent.SendText)
-                    },
-                contentAlignment = Alignment.Center,
+        // Cluster trailing actions so gift width animates without jumping Row spacedBy gaps.
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(Spacing.chipGap),
+        ) {
+            AnimatedVisibility(
+                visible = showGift,
+                enter = ChatComposerGiftEnter,
+                exit = ChatComposerGiftExit,
             ) {
-                Image(
-                    painter = painterResource(R.drawable.chat_ic_send),
-                    contentDescription = null,
-                    modifier = Modifier.size(IconSize.xs + Spacing.xs),
-                    contentScale = ContentScale.Fit,
-                )
+                ComposerCircle(R.drawable.chat_ic_gift) {
+                    keyboard?.hide()
+                    onIntent(ChatDetailIntent.OpenGiftPanel)
+                }
+            }
+            AnimatedContent(
+                targetState = showVideoCall,
+                transitionSpec = {
+                    (
+                        fadeIn(
+                            animationSpec = tween(
+                                durationMillis = ChatComposerActionAnimMillis,
+                                easing = FastOutSlowInEasing,
+                            ),
+                        ) + scaleIn(
+                            initialScale = 0.82f,
+                            animationSpec = tween(
+                                durationMillis = ChatComposerActionAnimMillis,
+                                easing = FastOutSlowInEasing,
+                            ),
+                        )
+                        ).togetherWith(
+                        fadeOut(
+                            animationSpec = tween(
+                                durationMillis = ChatComposerActionAnimMillis,
+                                easing = FastOutSlowInEasing,
+                            ),
+                        ) + scaleOut(
+                            targetScale = 0.82f,
+                            animationSpec = tween(
+                                durationMillis = ChatComposerActionAnimMillis,
+                                easing = FastOutSlowInEasing,
+                            ),
+                        ),
+                    ).using(SizeTransform(clip = false))
+                },
+                label = "composerTrailingAction",
+            ) { videoCall ->
+                if (videoCall) {
+                    VideoCallButton { onIntent(ChatDetailIntent.StartVideoCall) }
+                } else {
+                    ComposerSendButton(
+                        enabled = canSend,
+                        onClick = { onIntent(ChatDetailIntent.SendText) },
+                    )
+                }
             }
         }
+    }
+}
+
+@Composable
+private fun ComposerSendButton(
+    enabled: Boolean,
+    onClick: () -> Unit,
+) {
+    Box(
+        modifier = Modifier
+            .size(ComponentSize.chatDetailComposerControl)
+            .clip(CircleShape)
+            .background(DemoColors.link)
+            .clickable(enabled = enabled, onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Image(
+            painter = painterResource(R.drawable.chat_ic_send),
+            contentDescription = stringResource(R.string.chat_detail_cd_send),
+            modifier = Modifier.size(IconSize.xs + Spacing.xs),
+            contentScale = ContentScale.Fit,
+        )
     }
 }
 
@@ -1604,6 +1787,28 @@ private val PreviewDetailItems = listOf(
         ),
     ),
 )
+
+@Preview(name = "ChatDetail VIP Unlock", locale = "en")
+@Composable
+private fun ChatDetailVipUnlockPreview() {
+    DemoTheme {
+        ChatDetailScreen(
+            state = ChatDetailUiState(
+                nickname = "Terry",
+                age = 23,
+                isOnline = true,
+                freeMessageCount = 0,
+                unlockPromptType = ChatUnlockPromptType.WaitingReply,
+                items = PreviewDetailItems,
+                isLoading = false,
+                hasLoaded = true,
+                hasMore = false,
+            ),
+            onIntent = {},
+            onBack = {},
+        )
+    }
+}
 
 @PreviewScreenSizes
 @PreviewFontScale

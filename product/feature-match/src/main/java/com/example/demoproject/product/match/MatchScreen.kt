@@ -40,6 +40,7 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -50,6 +51,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -62,8 +64,10 @@ import androidx.compose.ui.tooling.preview.PreviewFontScale
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import android.app.Activity
 import com.example.demoproject.platform.data.network.dto.MATCH_SEX_FEMALE
 import com.example.demoproject.platform.data.network.dto.MATCH_SEX_MALE
+import com.example.demoproject.product.store.CoinPayGuideSheet
 import com.example.demoproject.ui.designsystem.DemoColors
 import com.example.demoproject.ui.designsystem.DemoGradients
 import com.example.demoproject.ui.designsystem.DemoTextAutoSize
@@ -83,6 +87,12 @@ fun MatchScreen(
     onNavigateTab: (String) -> Unit = {},
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    val activity = context as? Activity
+    DisposableEffect(activity) {
+        viewModel.bindActivity(activity)
+        onDispose { viewModel.bindActivity(null) }
+    }
     MatchScreen(
         state = state,
         onIntent = viewModel::onIntent,
@@ -167,6 +177,22 @@ fun MatchScreen(
         }
         if (state.isSearching) {
             MatchSearchingOverlay(onCancel = { onIntent(MatchIntent.CancelVideoMatch) })
+        }
+        if (state.isGenderGuideVisible) {
+            MatchGenderGuideDialog(
+                selectedSex = state.guideMatchSex,
+                onSelectSex = { onIntent(MatchIntent.SelectGenderGuideSex(it)) },
+                onConfirm = { onIntent(MatchIntent.ConfirmGenderGuide) },
+                onDismiss = { onIntent(MatchIntent.DismissGenderGuide) },
+            )
+        }
+        state.coinPayGuide?.let { guide ->
+            CoinPayGuideSheet(
+                state = guide,
+                onDismiss = { onIntent(MatchIntent.DismissCoinPayGuide) },
+                onPurchaseCoin = { onIntent(MatchIntent.PurchaseCoinPayGuideCoin(it)) },
+                onPurchaseSale = { onIntent(MatchIntent.PurchaseCoinPayGuideSale(it)) },
+            )
         }
     }
 }
@@ -281,11 +307,10 @@ private fun MatchHeroCard(
                 modifier = Modifier.align(Alignment.Center),
             )
             val filterCd = stringResource(R.string.match_cd_filter)
-            // Figma 315:5307: once a gender filter is applied the funnel carries that glyph.
-            val appliedFilterIcon = when {
-                !state.hasAppliedFilters -> null
-                state.matchSex == MATCH_SEX_MALE -> R.drawable.match_ic_filter_male_selected
-                state.matchSex == MATCH_SEX_FEMALE -> R.drawable.match_ic_filter_female_selected
+            // Figma 315:5307: funnel glyph follows current match_sex (default female).
+            val appliedFilterIcon = when (state.matchSex) {
+                MATCH_SEX_MALE -> R.drawable.match_ic_filter_male_selected
+                MATCH_SEX_FEMALE -> R.drawable.match_ic_filter_female_selected
                 else -> null
             }
             Image(
@@ -825,7 +850,23 @@ private fun MatchScreenNonVipPreview() {
 private fun MatchScreenFilteredPreview() {
     DemoTheme {
         MatchScreen(
-            state = PreviewState.copy(matchSex = MATCH_SEX_MALE, hasAppliedFilters = true),
+            state = PreviewState.copy(matchSex = MATCH_SEX_MALE),
+            onIntent = {},
+            onNavigateTab = {},
+        )
+    }
+}
+
+@Preview(name = "Match gender guide", showBackground = true, widthDp = 375, heightDp = 812)
+@Composable
+private fun MatchScreenGenderGuidePreview() {
+    DemoTheme {
+        MatchScreen(
+            state = PreviewState.copy(
+                matchSex = MATCH_SEX_ALL,
+                isGenderGuideVisible = true,
+                guideMatchSex = MATCH_SEX_FEMALE,
+            ),
             onIntent = {},
             onNavigateTab = {},
         )

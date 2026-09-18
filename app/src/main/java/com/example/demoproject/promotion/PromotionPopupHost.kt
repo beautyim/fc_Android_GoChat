@@ -71,12 +71,10 @@ fun PromotionPopupHost(
                 else -> null
             }
             val excluded = mainTab == null
-            val matchImmersive = false
             viewModel.updateGate {
                 it.copy(
                     excludedRoute = excluded,
                     currentMainTab = mainTab,
-                    matchImmersive = matchImmersive,
                 )
             }
         }

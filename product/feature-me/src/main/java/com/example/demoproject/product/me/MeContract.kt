@@ -44,5 +44,6 @@ sealed interface MeEffect {
     data object OpenStore : MeEffect
     data object OpenVip : MeEffect
     data object OpenSettings : MeEffect
+    data object OpenVerification : MeEffect
     data class ShowMessage(val message: String) : MeEffect
 }

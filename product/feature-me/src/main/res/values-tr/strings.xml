@@ -109,4 +109,27 @@
     <string name="blocked_load_error">Engellenen kullanıcılar yüklenemedi</string>
     <string name="blocked_unlock_failed">Bu kullanıcının engeli kaldırılamadı</string>
     <string name="blocked_retry">Yeniden dene</string>
+    <string name="verify_title">Gerçek Kişi Doğrulaması</string>
+    <string name="verify_cd_back">Geri</string>
+    <string name="verify_hero_title_line1">Doğrula ve Kur</string>
+    <string name="verify_hero_title_real">Gerçek</string>
+    <string name="verify_hero_title_rest"> Bağlantılar</string>
+    <string name="verify_hero_subtitle">Gerçek bir kişi olduğunu göstererek daha güvenli bir topluluğun kilidini aç.</string>
+    <string name="verify_benefit_safer_title">Daha Güvenli Topluluk</string>
+    <string name="verify_benefit_safer_body">Topluluğu gerçek ve güvenilir tutmaya yardım et</string>
+    <string name="verify_benefit_trust_title">Daha Fazla Güven</string>
+    <string name="verify_benefit_trust_body">Diğerleri güvenle bağlanabilir</string>
+    <string name="verify_benefit_badge_title">Özel Rozet</string>
+    <string name="verify_benefit_badge_body">Profilinde doğrulanmış işaret göster</string>
+    <string name="verify_how_title">Nasıl çalışır</string>
+    <string name="verify_step_selfie_title">Selfie Çek</string>
+    <string name="verify_step_selfie_body">Net bir selfie çekmeni isteyeceğiz.</string>
+    <string name="verify_step_liveness_title">Canlılık Kontrolü</string>
+    <string name="verify_step_liveness_body">Ekrandaki yönergeleri izleyerek gerçek kişi olduğunu kanıtla.</string>
+    <string name="verify_step_done_title">Doğrulan</string>
+    <string name="verify_step_done_body">Doğrulama genellikle birkaç saniye sürer.</string>
+    <string name="verify_action_start">Doğrulamayı Başlat</string>
+    <string name="verify_camera_requesting">Kamera erişimi isteniyor…</string>
+    <string name="verify_camera_permission_denied">Doğrulama için kamera izni gerekli</string>
+    <string name="verify_camera_permission_retry">Kameraya İzin Ver</string>
 </resources>

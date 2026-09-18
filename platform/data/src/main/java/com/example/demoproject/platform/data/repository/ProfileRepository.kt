@@ -11,6 +11,26 @@ data class MyPrivateUnlockCounts(
     val videoCount: Int,
 )
 
+/** Result of `POST private-album/check`. */
+data class PrivateAlbumCheckResult(
+    val photoCount: Int,
+    val videoCount: Int,
+    val balance: Int,
+    val isUnlocked: Boolean,
+    val viewPrice: Int = 0,
+    val mediaId: Long = 0L,
+    val playUrl: String? = null,
+    val imageUrl: String? = null,
+    val coverUrl: String? = null,
+)
+
+/** Result of `POST private-album/unlock`. Absent fields stay null. */
+data class PrivateAlbumUnlockResult(
+    val balance: Int? = null,
+    val photoCount: Int? = null,
+    val videoCount: Int? = null,
+)
+
 data class EditProfileData(
     val user: User,
     val level: Int,
@@ -103,8 +123,41 @@ interface ProfileRepository {
     /** `home/my` — album count used as a lightweight unlock hint. */
     suspend fun getMyPhotoUnlockCount(): AppResult<Int>
 
-    /** Not exposed by the Spicy doc; returns zeroed counts until a dedicated endpoint exists. */
+    /**
+     * Not a dedicated list endpoint — prefer [checkPrivateAlbum] / [unlockPrivateAlbum]
+     * which return live `photo_count` / `video_count`. Stubbed at zero when unused.
+     */
     suspend fun getMyPrivateUnlockCounts(): AppResult<MyPrivateUnlockCounts>
+
+    /**
+     * `private-album/check` — unlock status for [mediaId] owned by [coachUid], plus
+     * remaining free unlock counts and coin balance.
+     *
+     * @param mtime chat message timestamp when checking from a private-chat bubble.
+     */
+    suspend fun checkPrivateAlbum(
+        coachUid: Long,
+        mediaId: Long,
+        mtime: Long = 0L,
+    ): AppResult<PrivateAlbumCheckResult>
+
+    /**
+     * `private-album/unlock` — unlock private album media.
+     *
+     * @param fromType `1=message`, `2=album list`.
+     * @param mtime required when [fromType] is message.
+     * @param useType `1=prefer free counts then coins`, `2=counts only`.
+     */
+    suspend fun unlockPrivateAlbum(
+        coachUid: Long,
+        mediaId: Long,
+        fromType: Int,
+        mtime: Long = 0L,
+        useType: Int = 1,
+        rechargeFromType: Int = 0,
+        isAll: Boolean = false,
+        feedsId: Long = 0L,
+    ): AppResult<PrivateAlbumUnlockResult>
 
     /** `/user/info` — edit-profile initialization data. */
     suspend fun getEditProfileData(): AppResult<EditProfileData>

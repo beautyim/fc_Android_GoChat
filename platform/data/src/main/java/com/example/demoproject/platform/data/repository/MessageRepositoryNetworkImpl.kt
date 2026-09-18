@@ -7,6 +7,7 @@ import com.example.demoproject.platform.data.billing.PayEventStore
 import com.example.demoproject.platform.data.local.cache.ChatStore
 import com.example.demoproject.platform.data.message.ChatUnreadStore
 import com.example.demoproject.platform.data.message.IncomingChatPush
+import com.example.demoproject.platform.data.message.withPrivateMediaUnlocked
 import com.example.demoproject.platform.data.model.Conversation
 import com.example.demoproject.platform.data.model.ConversationDetail
 import com.example.demoproject.platform.data.model.ConversationListPage
@@ -32,6 +33,7 @@ import com.example.demoproject.platform.data.network.dto.MessageSyncRequestDto
 import com.example.demoproject.platform.data.network.dto.MsgContentDto
 import com.example.demoproject.platform.data.network.dto.MsgSendDataDto
 import com.example.demoproject.platform.data.network.dto.MsgSendRequestDto
+import com.example.demoproject.platform.data.network.dto.MsgSetRequestDto
 import com.example.demoproject.platform.data.network.dto.MsgUnreadRequestDto
 import com.example.demoproject.platform.data.network.dto.PayEventDto
 import com.example.demoproject.platform.data.network.dto.TranslationSubmitRequestDto
@@ -138,7 +140,7 @@ class MessageRepositoryNetworkImpl(
                 conversation = conversation,
                 peerHasReplied = dto.chatIsReply == 1,
                 friendStatus = dto.friendStatus,
-                unlockFromType = dto.unlockFromType.takeIf { it >= 0 },
+                unlockFromType = dto.unlockFromType.takeIf { it == 1 || it == 2 },
                 freeMessageCount = dto.freeMessageCount,
             )
         }
@@ -406,11 +408,38 @@ class MessageRepositoryNetworkImpl(
         }
     }
 
+    override suspend fun markPrivateMediaUnlocked(
+        conversationId: String,
+        messageId: String,
+        playUrl: String?,
+        imageUrl: String?,
+        coverUrl: String?,
+    ) {
+        val existing = chatStore.getMessages(conversationId)
+            .firstOrNull { it.id == messageId }
+            ?: return
+        val patchedContent = existing.content.withPrivateMediaUnlocked(
+            playUrl = playUrl,
+            imageUrl = imageUrl,
+            coverUrl = coverUrl,
+        )
+        if (patchedContent == existing.content) return
+        chatStore.upsertMessages(
+            conversationId,
+            listOf(existing.copy(content = patchedContent)),
+        )
+    }
+
     override suspend fun setConversationPinned(conversationId: String, pinned: Boolean): AppResult<Unit> {
-        chatStore.getConversation(conversationId)?.let {
-            chatStore.putConversation(it.copy(isPinned = pinned))
+        val chatId = conversationId.toLongOrNull()
+            ?: return AppResult.BizError(AppResult.CODE_EMPTY_PAYLOAD, "Invalid conversation id")
+        return safeApiCallUnit {
+            messageApi.setConversation(MsgSetRequestDto.pin(chatId = chatId, pinned = pinned))
+        }.onSuccessSuspend {
+            chatStore.getConversation(conversationId)?.let {
+                chatStore.putConversation(it.copy(isPinned = pinned))
+            }
         }
-        return AppResult.Success(Unit)
     }
 
     override suspend fun setConversationMuted(conversationId: String, muted: Boolean): AppResult<Unit> {

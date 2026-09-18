@@ -2,6 +2,8 @@ package com.example.demoproject.product.me
 
 data class SettingsUiState(
     val isLoading: Boolean = true,
+    /** True after the first successful apply (network or cache). */
+    val hasLoaded: Boolean = false,
     val errorMessage: String? = null,
     val email: String? = null,
     val languageLabel: String = "",
@@ -35,5 +37,6 @@ sealed interface SettingsEffect {
     data object OpenAbout : SettingsEffect
     data object OpenBindEmail : SettingsEffect
     data object OpenChangeEmail : SettingsEffect
+    data object OpenVerification : SettingsEffect
     data class ShowMessage(val message: String) : SettingsEffect
 }

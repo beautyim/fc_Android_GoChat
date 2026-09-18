@@ -91,4 +91,12 @@
     <string name="chat_detail_greeting_text">hi～</string>
     <string name="chat_detail_cd_greeting">Selam gönder</string>
     <string name="chat_detail_cd_quick_gift">Hediye gönder %1$s</string>
+    <string name="chat_detail_privacy_unlock_pending">Kilidi açma henüz kullanılamıyor. Lütfen daha sonra tekrar deneyin.</string>
+    <string name="chat_detail_privacy_unlock_failed">Bu medyanın kilidi açılamadı. Lütfen tekrar deneyin.</string>
+
+    <string name="chat_detail_unlock_waiting_title">Yanıtını bekliyor</string>
+    <string name="chat_detail_unlock_waiting_subtitle">Onunla sohbet etmeye devam etmek için abone ol</string>
+    <string name="chat_detail_unlock_user_title">Onunla sohbet etmek ister misin?</string>
+    <string name="chat_detail_unlock_user_subtitle">Onunla sohbet etmeye devam etmek için abone ol</string>
+    <string name="chat_detail_unlock_cta">Abone ol</string>
 </resources>

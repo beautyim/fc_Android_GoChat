@@ -24,4 +24,7 @@
     <string name="match_searching_title">Matching...</string>
     <string name="match_searching_caption">Finding someone\nspecial for you 💜</string>
     <string name="match_searching_cancel">Cancel</string>
+    <string name="match_gender_guide_message">Select the gender you want to video chat with…</string>
+    <string name="match_gender_guide_cta">Start video chatting</string>
+    <string name="match_gender_guide_cd_close">Close gender guide</string>
 </resources>

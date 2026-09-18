@@ -240,6 +240,25 @@ object ComponentSize {
     val meMenuIconCircle = 36.dp
     /** Settings row icon circle — Figma 7+16+7. */
     val settingsIconCircle = 30.dp
+    /** Real-person verify top bar — Figma 53dp. */
+    val verifyTopBar = 53.dp
+    /** Real-person verify hero art — Figma 240×160. */
+    val verifyHeroWidth = 240.dp
+    val verifyHeroHeight = 160.dp
+    /** Real-person verify hero wash — Figma 228dp. */
+    val verifyHeroWash = 228.dp
+    /** Real-person verify benefit / step icon disc — Figma 8+24+8. */
+    val verifyIconCircle = 40.dp
+    /** Real-person verify face oval aspect — Figma 330×610. */
+    val verifyOvalAspect = 330f / 610f
+    /** Real-person verify oval width fraction of board — Figma 330/375. */
+    val verifyOvalWidthFraction = 330f / 375f
+    /** Real-person verify outer oval stroke — Figma ~2dp. */
+    val verifyOvalStroke = 2.dp
+    /** Real-person verify inner dashed oval stroke — Figma ~1.5dp. */
+    val verifyOvalDashStroke = 1.5.dp
+    /** Real-person verify CTA — Figma py 16 + 16 text ≈ 48–51. */
+    val verifyCtaHeight = 51.dp
     /** Following / Followers list top bar — Figma 53dp. */
     val relationshipTopBar = 53.dp
     /** Following / Followers card — 60dp avatar + 8dp vertical padding. */
@@ -314,6 +333,19 @@ object ComponentSize {
     val chatEmptyIll = 258.dp
     /** Figma Messages notification bell circle — 28dp. */
     val chatNotifBell = 28.dp
+    /** Figma Messages notification banner hairline — 1dp (1:1640). */
+    val chatBannerStroke = 1.dp
+    /** Figma Messages notification banner close — 16dp (1:1642). */
+    val chatNotifClose = 16.dp
+    /** Figma Messages notification Turn On pill — 1:1650 height 24. */
+    val chatNotifCtaHeight = 24.dp
+    /** Figma Messages notification Turn On horizontal pad — 1:1650 px 10. */
+    val chatNotifCtaHorizontal = 10.dp
+    /**
+     * Title → subtitle gap inside notification banner —
+     * Figma 1:1645/1:1646: 25 − (8+14) = 3.
+     */
+    val chatNotifTitleToSubtitle = 3.dp
     /** Figma Messages swipe action column — 48dp each. */
     val chatSwipeAction = 48.dp
     /** Figma Messages pin indicator next to timestamp — 12dp. */
@@ -811,6 +843,45 @@ object ComponentSize {
     val matchFilterCloseIcon = 20.dp
     /** Applied male-filter glyph outer box — Figma 24dp. */
     val matchAppliedFilterIcon = 24.dp
+    /** Gender-guide dialog board — Figma 318:5314 343×382. */
+    val matchGenderGuideWidth = 343.dp
+    val matchGenderGuideHeight = 382.dp
+    val matchGenderGuideAspect = 343f / 382f
+    /** Gender-guide close glyph — Figma 20dp @ top/end 12. */
+    val matchGenderGuideClose = 20.dp
+    val matchGenderGuideCloseInset = 12.dp
+    /** Gender-guide male avatar — Figma left 37.5 / top 66.36 / 107×111.265. */
+    val matchGenderGuideMaleStart = 37.5.dp
+    val matchGenderGuideMaleTop = 66.36.dp
+    val matchGenderGuideMaleWidth = 107.dp
+    val matchGenderGuideMaleHeight = 111.265.dp
+    /** Gender-guide female avatar — Figma left 190 / top 59 / 120. */
+    val matchGenderGuideFemaleStart = 190.dp
+    val matchGenderGuideFemaleTop = 59.dp
+    val matchGenderGuideFemale = 120.dp
+    /** Gender-guide arrow — Figma left 133 / top 18.48 / 80×67.841. */
+    val matchGenderGuideArrowStart = 133.dp
+    val matchGenderGuideArrowTop = 18.48.dp
+    val matchGenderGuideArrowWidth = 80.dp
+    val matchGenderGuideArrowHeight = 67.841.dp
+    /** Gender-guide checkboxes — Figma top 190 / male left 78 / female left 239 / 25. */
+    val matchGenderGuideCheckboxTop = 190.dp
+    val matchGenderGuideMaleCheckboxStart = 78.dp
+    val matchGenderGuideFemaleCheckboxStart = 239.dp
+    val matchGenderGuideCheckbox = 25.dp
+    val matchGenderGuideCheckboxRadius = 4.dp
+    val matchGenderGuideCheckboxStroke = 1.dp
+    val matchGenderGuideCheckIcon = 16.dp
+    /**
+     * Gender-guide copy — Figma top 260 is the vertical center of the line;
+     * 16sp ≈ 19dp → top ≈ 250.5. Width 279 → horizontal inset (343−279)/2.
+     */
+    val matchGenderGuideMessageTop = 250.5.dp
+    val matchGenderGuideCopyHorizontal = 32.dp
+    /** Gender-guide CTA — Figma top 313 / width 292 / py 16 ≈ 48. */
+    val matchGenderGuideCtaTop = 313.dp
+    val matchGenderGuideCtaHeight = 48.dp
+    val matchGenderGuideCtaHorizontal = 25.5.dp
     /**
      * FREE badge lift above CTA bottom so it overlaps the button top-end
      * (Figma FREE top 508, CTA top 522 → lift ≈ CTA height − 14).
@@ -988,4 +1059,88 @@ object ComponentSize {
     /** Original-price strike — same as treasure. */
     val prizeStrikeWidth = 61.dp
     val prizeStrikeStroke = 1.dp
+
+    /**
+     * Notification permission guide sheet — Figma 83:4565 / image 375×420.
+     * Sheet body sits at the bottom; hero art overhangs the top slightly in Figma (−20).
+     */
+    val notificationGuideHeroAspect = 375f / 420f
+    /** Title / body / CTA horizontal inset — Figma 16–23. */
+    val notificationGuideHorizontalInset = 16.dp
+    /** Title→body — Figma 326 − (285+29) ≈ 12. */
+    val notificationGuideTitleToBody = 12.dp
+    /** Body→CTA — Figma 388 − (326+38) ≈ 24. */
+    val notificationGuideBodyToCta = 24.dp
+    /** CTA→"Next Time" — Figma 448 − (388+51) ≈ 9. */
+    val notificationGuideCtaToDismiss = 9.dp
+    /**
+     * Space below the hero so the CTA can straddle the image bottom —
+     * Figma button bottom 439 − image bottom 400 ≈ 39.
+     */
+    val notificationGuideButtonOverhang = 39.dp
+    /** Body copy max width — Figma 330. */
+    val notificationGuideBodyWidth = 330.dp
+    /** Bottom inset under "Next Time" before home-indicator / nav bar — Figma ~12. */
+    val notificationGuideDismissBottom = 12.dp
+
+    /**
+     * Privacy media unlock sheet — Figma 502:3650 / 375×437.
+     * Title / price / CTA / don't-remind sit on the hero wash.
+     */
+    val privacyUnlockBoardWidth = 375.dp
+    val privacyUnlockHeroAspect = 375f / 437f
+    /** Close hit target over baked-in X — Figma ≈32. */
+    val privacyUnlockClose = 32.dp
+    val privacyUnlockCloseTop = 2.dp
+    val privacyUnlockCloseEnd = 1.dp
+    /** Title top — Figma 244. */
+    val privacyUnlockTitleTop = 244.dp
+    /** Title→price — Figma 284 − (244+28) = 12. */
+    val privacyUnlockTitleToPrice = 12.dp
+    /** Price→CTA — Figma 318 − (284+17) = 17. */
+    val privacyUnlockPriceToCta = 17.dp
+    /** CTA height — Figma 502:3658 / 53. */
+    val privacyUnlockCtaHeight = 53.dp
+    /** CTA horizontal inset — Figma 24. */
+    val privacyUnlockCtaInset = 24.dp
+    /** Lock glyph on CTA — Figma 16. */
+    val privacyUnlockCtaLock = 16.dp
+    /** CTA shadow blur — Figma 14.287. */
+    val privacyUnlockCtaShadowBlur = 14.287.dp
+    /** CTA shadow Y — Figma 7.62. */
+    val privacyUnlockCtaShadowY = 7.62.dp
+    /** CTA→don't-remind — Figma 383 − (318+53) = 12. */
+    val privacyUnlockCtaToRemind = 12.dp
+    /** Don't-remind checkbox — Figma 16. */
+    val privacyUnlockRemindCheck = 16.dp
+    /** Check glyph inside remind checkbox. */
+    val privacyUnlockRemindCheckIcon = 10.dp
+    /** Checkbox stroke — Figma 1.455. */
+    val privacyUnlockRemindStroke = 1.455.dp
+    /** Inline coin in price row — Figma 12. */
+    val privacyUnlockPriceCoin = 12.dp
+    /** Space under don't-remind before home-indicator — Figma 403 − (383+16) = 4. */
+    val privacyUnlockRemindBottom = 4.dp
+
+    /**
+     * Chat VIP unlock prompt card — Figma 1:2788 / 351×66 on 375 board.
+     * Horizontal inset matches chat list (12dp).
+     */
+    val chatVipUnlockCardHeight = 66.dp
+    /** Peer avatar on unlock card — Figma Ellipse 42 / 40. */
+    val chatVipUnlockAvatar = 40.dp
+    /** Subscribe CTA — Figma Frame 70 / 86×34. */
+    val chatVipUnlockCtaWidth = 86.dp
+    val chatVipUnlockCtaHeight = 34.dp
+    /** Decorative wash width on trailing edge — Figma image 233 clip / 154. */
+    val chatVipUnlockDecorWidth = 154.dp
+    /**
+     * Title→subtitle gap — Figma 1:2794/1:2795:
+     * title y=17 h=14 → subtitle y=37 → 6dp.
+     */
+    val chatVipUnlockTitleToSubtitle = 6.dp
+    /** Card ↔ composer gap — Figma 1:2694 card bottom 720 → composer top 732. */
+    val chatVipUnlockAboveComposer = 12.dp
+    /** Unlock card elevation blur — Figma 0 0 4. */
+    val chatVipUnlockElevation = 4.dp
 }

@@ -89,6 +89,7 @@ fun MeScreen(
     onOpenPublicProfile: (String) -> Unit,
     onOpenRelationshipList: (RelationshipListType, Int) -> Unit,
     onOpenSettings: () -> Unit = {},
+    onOpenVerification: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -102,6 +103,7 @@ fun MeScreen(
                 MeEffect.OpenStore -> onOpenStore()
                 MeEffect.OpenVip -> onOpenVip()
                 MeEffect.OpenSettings -> onOpenSettings()
+                MeEffect.OpenVerification -> onOpenVerification()
                 is MeEffect.ShowMessage -> {
                     Toast.makeText(context, effect.message, Toast.LENGTH_SHORT).show()
                 }

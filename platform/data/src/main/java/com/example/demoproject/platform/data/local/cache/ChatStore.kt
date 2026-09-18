@@ -12,8 +12,9 @@ interface ChatStore {
     fun observeMessages(conversationId: String): Flow<List<Message>>
 
     /**
-     * Upserts conversations, coalescing blank peer profile fields and preserving
-     * local pin/mute. Returns the merged rows that were written.
+     * Upserts conversations, coalescing blank peer profile fields. Pin / mute
+     * from the server row (`is_top` / `msg_notice`) replace local flags.
+     * Returns the merged rows that were written.
      */
     suspend fun upsertConversations(list: List<Conversation>): List<Conversation>
     suspend fun upsertMessages(conversationId: String, list: List<Message>)

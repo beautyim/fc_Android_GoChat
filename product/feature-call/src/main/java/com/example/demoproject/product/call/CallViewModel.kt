@@ -20,6 +20,8 @@ import com.example.demoproject.platform.data.network.dto.GiftSendRequestDto
 import com.example.demoproject.platform.data.network.mapper.toRechargePageDataOrNull
 import com.example.demoproject.platform.data.network.toChatBinaryUrlOrNull
 import com.example.demoproject.platform.data.network.toPicUrlOrNull
+import com.example.demoproject.platform.data.notification.NotificationPermissionGuideTrigger
+import com.example.demoproject.platform.data.notification.NotificationPermissionGuideTriggerBus
 import com.example.demoproject.platform.data.repository.BillingPaymentType
 import com.example.demoproject.platform.data.repository.BillingProductType
 import com.example.demoproject.platform.data.repository.CallCreateResult
@@ -658,6 +660,17 @@ class CallViewModel(
                 val wasConnectedFreeCall = _uiState.value.isFreeCall && wasConnected
                 val showHangupRecharge =
                     state.reason == EndReason.InsufficientBalance && wasConnected
+                val isUserOrPeerHangup =
+                    state.reason == EndReason.Hangup || state.reason == EndReason.RemoteHangup
+                if (wasConnected && isUserOrPeerHangup) {
+                    val snapshot = _uiState.value
+                    NotificationPermissionGuideTriggerBus.emit(
+                        NotificationPermissionGuideTrigger.CallEndedSuccessfully(
+                            peerAvatarUrl = snapshot.peerAvatarUrl,
+                            peerNickname = snapshot.peerNickname,
+                        ),
+                    )
+                }
                 stopInCallJobs()
                 // Hangup / server end must leave the call page — except insufficient-balance
                 // after a connected call, which opens the hangup recharge sheet first.
@@ -896,6 +909,12 @@ class CallViewModel(
                 is AppResult.Success -> {
                     _uiState.update { it.copy(likePhase = CallLikePhase.Hidden) }
                     scheduleGiftRequest()
+                    NotificationPermissionGuideTriggerBus.emit(
+                        NotificationPermissionGuideTrigger.FollowSuccess(
+                            peerAvatarUrl = state.peerAvatarUrl,
+                            peerNickname = state.peerNickname,
+                        ),
+                    )
                 }
                 is AppResult.Failure -> {
                     _uiState.update { it.copy(likePhase = CallLikePhase.Visible) }

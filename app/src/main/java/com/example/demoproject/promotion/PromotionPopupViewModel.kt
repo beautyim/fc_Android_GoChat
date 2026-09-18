@@ -9,6 +9,8 @@ import com.example.demoproject.platform.data.network.mapper.toPromoGoodsOrNull
 import com.example.demoproject.platform.data.network.mapper.toWinningOfferOrNull
 import com.example.demoproject.platform.data.network.dto.toVipAlertCallbackDtoOrNull
 import com.example.demoproject.platform.data.network.dto.VipAlertCallbackDto
+import com.example.demoproject.platform.data.notification.FeatureOverlayPresence
+import com.example.demoproject.platform.data.notification.MatchImmersiveStore
 import com.example.demoproject.platform.data.promotion.PromotionPopupSelector
 import com.example.demoproject.platform.data.promotion.PromotionPopupType
 import com.example.demoproject.platform.data.promotion.PromotionPresentGate
@@ -116,6 +118,21 @@ class PromotionPopupViewModel(
             while (isActive) {
                 delay(1_000L)
                 tick()
+            }
+        }
+        viewModelScope.launch {
+            _uiState.collect { state ->
+                FeatureOverlayPresence.setPromotionPopupVisible(state.activePopup != null)
+            }
+        }
+        viewModelScope.launch {
+            FeatureOverlayPresence.notificationGuideVisible.collect { visible ->
+                updateGate { it.copy(blockingOverlay = visible) }
+            }
+        }
+        viewModelScope.launch {
+            MatchImmersiveStore.immersive.collect { immersive ->
+                updateGate { it.copy(matchImmersive = immersive) }
             }
         }
     }

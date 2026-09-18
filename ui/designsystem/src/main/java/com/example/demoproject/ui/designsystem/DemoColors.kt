@@ -44,6 +44,14 @@ object DemoColors {
     val gradientEnd = Color(0xFF2158FF)
     /** Online header wash — #E9E5FF. */
     val onlineHeaderStart = Color(0xFFE9E5FF)
+    /** Real-person verify hero wash — #F2EAFF → page. */
+    val verifyHeroWash = Color(0xFFF2EAFF)
+    /** Real-person verify icon disc — #9D41FF @ 10%. */
+    val verifyIconBg = Color(0x1A9D41FF)
+    /** Real-person verify face oval stroke — soft lavender. */
+    val verifyOvalStroke = Color(0xFFC5A8FF)
+    /** Real-person verify camera scrim outside oval. */
+    val verifyCaptureScrim = Color(0x99000000)
     /** Online card action — #00D670. */
     val onlineAction = Color(0xFF00D670)
     /** FREE badge — #FF6A00. */
@@ -254,6 +262,8 @@ object DemoColors {
     val chatSwipeDelete = Color(0xFFFF3B30)
     /** Chat notification banner shadow — rgba(196,170,255,0.25). */
     val chatBannerShadow = Color(0x40C4AAFF)
+    /** Chat notification banner stroke — Figma 1:1640 light gray hairline. */
+    val chatBannerBorder = Color(0xFFEDEDED)
     /** Chat notification bell circle — soft lavender. */
     val chatNotifBellBg = Color(0xFFEDE6FF)
     /** Chat preview text — #666566. */
@@ -447,4 +457,19 @@ object DemoColors {
     val matchSearchingCaption = Color(0xFFE2D1F7)
     /** Matching Cancel link — white @ 40%. */
     val matchSearchingCancel = Color(0x66FFFFFF)
+
+    /**
+     * Privacy unlock sheet wash — samples from Figma 502:3651 bottom
+     * (#F0E2FC) so nav-bar padding matches the hero fade.
+     */
+    val privacyUnlockSheet = Color(0xFFF0E2FC)
+    /** Privacy unlock CTA shadow — rgba(142,45,226,0.35). */
+    val privacyUnlockCtaShadow = Color(0x598E2DE2)
+    /** Don't-remind checkbox border — black @ 25%. */
+    val privacyUnlockRemindBorder = Color(0x40000000)
+
+    /** Chat VIP unlock prompt card shadow — rgba(215,200,255,0.25) (Figma 1:2789). */
+    val chatVipUnlockShadow = Color(0x40D7C8FF)
+    /** Chat VIP unlock Subscribe CTA text shadow — rgba(0,0,0,0.2). */
+    val chatVipUnlockCtaTextShadow = Color(0x33000000)
 }

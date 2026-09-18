@@ -11,8 +11,11 @@ import kotlinx.serialization.json.JsonElement
  *   - `ok`:     newer endpoints may use **1 = success** instead of `status`.
  *   - `msg`:    human-readable failure message.
  *   - `result` / `data`: payload when successful.
- *   - `callback`: some endpoints (e.g. `call/create`) put the vip/recharge guide
- *     callback on the envelope root instead of nesting it inside `data`.
+ *   - `callback`: vip/recharge guide payload. Some endpoints put it on the
+ *     envelope root (`call/create`); others nest it under `data`
+ *     (`private-album/unlock`). The signing interceptor promotes a nested
+ *     `data.callback` to the root when the root omits it so [SafeApiCall] can
+ *     attach it to [com.example.demoproject.platform.network.result.AppResult.BizError].
  */
 @Serializable
 data class ApiResponse<T>(

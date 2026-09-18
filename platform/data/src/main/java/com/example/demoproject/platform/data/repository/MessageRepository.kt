@@ -15,8 +15,8 @@ import kotlinx.coroutines.flow.Flow
 
 /**
  * Chat / messaging operations backed by the `/msg/list`, `/msg/sync`,
- * `/msg/detail`, `/msg/sync-detail`, `/msg/send`, `/msg/delete`, and
- * `/msg/clear-unread` endpoints.
+ * `/msg/detail`, `/msg/sync-detail`, `/msg/send`, `/msg/delete`,
+ * `/msg/clear-unread`, and `/msg/set` endpoints.
  *
  * Conventions:
  *  - `conversationId: String` carries the peer's `target_uid` as a
@@ -186,10 +186,24 @@ interface MessageRepository {
      */
     suspend fun applyIncomingChatPush(push: IncomingChatPush)
 
-    /** Local-only state: backend contract for private chat pinning is not available yet. */
+    /**
+     * Locally marks a private photo/video bubble as unlocked and merges optional
+     * play/cover URLs from `private-album/check` into `msg_content`. Incremental
+     * `/msg/sync-detail` will not re-deliver the same `mtime`, so the UI must
+     * patch the cached row after a successful unlock.
+     */
+    suspend fun markPrivateMediaUnlocked(
+        conversationId: String,
+        messageId: String,
+        playUrl: String? = null,
+        imageUrl: String? = null,
+        coverUrl: String? = null,
+    )
+
+    /** `/msg/set` with `key=is_top` — pin or unpin a private conversation. */
     suspend fun setConversationPinned(conversationId: String, pinned: Boolean): AppResult<Unit>
 
-    /** Local-only state: backend contract for private chat muting is not available yet. */
+    /** Local-only state: backend mute via `/msg/set` `msg_notice` is not wired yet. */
     suspend fun setConversationMuted(conversationId: String, muted: Boolean): AppResult<Unit>
 
     /** Removes cached conversation + messages locally (e.g. block) without calling HTTP. */

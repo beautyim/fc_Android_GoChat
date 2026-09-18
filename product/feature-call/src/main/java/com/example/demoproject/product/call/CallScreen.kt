@@ -133,6 +133,26 @@ fun CallScreen(
         onDispose { viewModel.bindActivity(null) }
     }
 
+    val ringtonePlayer = remember(context) { CallRingtonePlayer(context) }
+    // Preparing can briefly appear on the incoming route before invite applies — only
+    // ring after the phase is unambiguously Incoming or Outgoing (same as BerryCam).
+    val ringingKind = when (state.phase) {
+        CallRingingPhase.Incoming -> CallRingtoneKind.Incoming
+        CallRingingPhase.Outgoing -> CallRingtoneKind.Outgoing
+        CallRingingPhase.Preparing,
+        CallRingingPhase.Connecting,
+        CallRingingPhase.InCall,
+        CallRingingPhase.Ended,
+        -> null
+    }
+    LaunchedEffect(ringingKind) {
+        val kind = ringingKind
+        if (kind != null) ringtonePlayer.start(kind) else ringtonePlayer.stop()
+    }
+    DisposableEffect(ringtonePlayer) {
+        onDispose { ringtonePlayer.stop() }
+    }
+
     // AMV audience rooms subscribe only and do not need camera/mic runtime permissions.
     LaunchedEffect(state.isMatchReceiveOnly) {
         if (!state.isMatchReceiveOnly && !RtcCallPermissions.mediaGranted(context)) {

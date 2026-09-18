@@ -139,15 +139,30 @@ private fun MessageType.keepsStructuredWireBody(): Boolean = when (this) {
 /**
  * Combines a conversation row with the peer [UserDto] looked up from
  * the response-level `user_infos` map.
+ *
+ * Pin / mute come from nested preview rows (`list[].is_top` / `list[].msg_notice`)
+ * that `msg/list` and `msg/sync` attach to the session's latest message(s).
  */
-fun ConversationDto.toDomain(peer: User): Conversation = Conversation(
-    id = (targetUid.takeIf { it != 0L } ?: chatId).toString(),
-    peer = peer,
-    lastMessage = latestMessageForPreview()
-        ?.toDomain(conversationId = (targetUid.takeIf { it != 0L } ?: chatId).toString()),
-    unreadCount = resolvedUnread,
-    updatedAt = mtime.takeIf { it != 0L } ?: (latestMessageForPreview()?.mtime ?: 0L),
-)
+fun ConversationDto.toDomain(peer: User): Conversation {
+    val conversationId = (targetUid.takeIf { it != 0L } ?: chatId).toString()
+    val sessionFlags = sessionFlagSource()
+    return Conversation(
+        id = conversationId,
+        peer = peer,
+        lastMessage = latestMessageForPreview()?.toDomain(conversationId = conversationId),
+        unreadCount = resolvedUnread,
+        updatedAt = mtime.takeIf { it != 0L } ?: (latestMessageForPreview()?.mtime ?: 0L),
+        isPinned = sessionFlags?.isTop == true,
+        isMuted = sessionFlags?.isMuted == true,
+    )
+}
+
+/**
+ * Prefer nested `list[]` rows — that is where `msg/list` puts `is_top` /
+ * `msg_notice` — then fall back to `last_msg` when present.
+ */
+private fun ConversationDto.sessionFlagSource(): MessageDto? =
+    list.maxByOrNull { it.mtime } ?: lastMessage
 
 /**
  * Resolves every conversation row's peer user and returns the domain

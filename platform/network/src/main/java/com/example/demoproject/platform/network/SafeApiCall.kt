@@ -29,11 +29,16 @@ private val envelopeJson = Json {
 
 /**
  * Best-effort `from_type` extraction from an envelope's `callback` object (e.g.
- * `msg/send`'s `{"ok":3,"callback":{"from_type":1,...}}`). Returns `null` when the
- * callback is missing, isn't an object, or has no numeric `from_type`.
+ * `msg/send`'s `{"ok":3,"callback":{"from_type":1,...}}`, or
+ * `recharge_alert` payloads that nest it under `func_data`). Returns `null` when
+ * the callback is missing, isn't an object, or has no numeric `from_type`.
  */
-private fun JsonElement?.callbackFromType(): Int? =
-    ((this as? JsonObject)?.get("from_type") as? JsonPrimitive)?.intOrNull
+private fun JsonElement?.callbackFromType(): Int? {
+    val obj = this as? JsonObject ?: return null
+    (obj["from_type"] as? JsonPrimitive)?.intOrNull?.let { return it }
+    val funcData = obj["func_data"] as? JsonObject ?: return null
+    return (funcData["from_type"] as? JsonPrimitive)?.intOrNull
+}
 
 /**
  * Executes a Retrofit suspend call returning [ApiResponse] and maps every failure mode
@@ -142,11 +147,24 @@ suspend fun safeApiCallUnit(block: suspend () -> ApiResponse<Unit?>): AppResult<
 
 private fun ApiResponse<*>.failureMessage(): String =
     businessMessage.ifBlank {
+        callback.callbackTitleOrNull().orEmpty()
+    }.ifBlank {
         when (failureCode) {
             99 -> mapHttpStatus(401)
             else -> AppResult.requestFailedMessage()
         }
     }
+
+/** `recharge_alert` / alert payloads often put the user-facing copy under `func_data.title`. */
+private fun JsonElement?.callbackTitleOrNull(): String? {
+    val obj = this as? JsonObject ?: return null
+    val funcData = obj["func_data"] as? JsonObject ?: return null
+    val title = (funcData["title"] as? JsonPrimitive)?.content?.trim().orEmpty()
+    if (title.isNotEmpty()) return title
+    val message = (funcData["msg"] as? JsonPrimitive)?.content?.trim().orEmpty()
+        .ifEmpty { (funcData["message"] as? JsonPrimitive)?.content?.trim().orEmpty() }
+    return message.takeIf { it.isNotEmpty() }
+}
 
 internal fun parseErrorBody(body: ResponseBody?): String? =
     try {

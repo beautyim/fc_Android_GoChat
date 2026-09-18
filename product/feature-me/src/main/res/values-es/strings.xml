@@ -109,4 +109,27 @@
     <string name="blocked_load_error">No se pudieron cargar los usuarios bloqueados</string>
     <string name="blocked_unlock_failed">No se pudo desbloquear a este usuario</string>
     <string name="blocked_retry">Reintentar</string>
+    <string name="verify_title">Verificación de persona real</string>
+    <string name="verify_cd_back">Atrás</string>
+    <string name="verify_hero_title_line1">Verifica para crear</string>
+    <string name="verify_hero_title_real">conexiones</string>
+    <string name="verify_hero_title_rest"> reales</string>
+    <string name="verify_hero_subtitle">Completa la verificación para demostrar que eres una persona real y desbloquear una comunidad más segura.</string>
+    <string name="verify_benefit_safer_title">Comunidad más segura</string>
+    <string name="verify_benefit_safer_body">Ayuda a mantener la comunidad real y confiable</string>
+    <string name="verify_benefit_trust_title">Más confianza</string>
+    <string name="verify_benefit_trust_body">Otros pueden conectar con seguridad</string>
+    <string name="verify_benefit_badge_title">Insignia exclusiva</string>
+    <string name="verify_benefit_badge_body">Muestra una marca verificada en tu perfil</string>
+    <string name="verify_how_title">Cómo funciona</string>
+    <string name="verify_step_selfie_title">Toma una selfie</string>
+    <string name="verify_step_selfie_body">Te pediremos una selfie nítida.</string>
+    <string name="verify_step_liveness_title">Prueba de vida</string>
+    <string name="verify_step_liveness_body">Sigue las instrucciones en pantalla para demostrar que eres una persona real.</string>
+    <string name="verify_step_done_title">Obtén la verificación</string>
+    <string name="verify_step_done_body">La verificación suele tardar solo unos segundos.</string>
+    <string name="verify_action_start">Empezar verificación</string>
+    <string name="verify_camera_requesting">Solicitando acceso a la cámara…</string>
+    <string name="verify_camera_permission_denied">Se necesita permiso de cámara para verificar</string>
+    <string name="verify_camera_permission_retry">Permitir cámara</string>
 </resources>

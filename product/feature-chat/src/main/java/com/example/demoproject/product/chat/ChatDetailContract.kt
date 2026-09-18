@@ -20,7 +20,10 @@ data class ChatDetailUiState(
     val isFollowing: Boolean = false,
     val showFollowedFlash: Boolean = false,
     val freeMessageCount: Int = 0,
-    val unlockFromType: Int? = null,
+    /** Mapped from `/msg/detail` `unlock_from_type` or `msg/send` ok=3 `from_type`. */
+    val unlockPromptType: ChatUnlockPromptType? = null,
+    /** True when the peer is in the local blocked list — hides the VIP unlock card. */
+    val isBlockedByMe: Boolean = false,
     val draft: String = "",
     val coinBalance: Int = 0,
     val isGiftSheetVisible: Boolean = false,
@@ -43,6 +46,8 @@ data class ChatDetailUiState(
     val vipPayGuide: VipPayGuideUiState? = null,
     /** Coin pay-guide sheet after insufficient balance (`msg/send` ok=6 / balance errors). */
     val coinPayGuide: CoinPayGuideUiState? = null,
+    /** Privacy media unlock sheet when tapping a locked private photo/video bubble. */
+    val privacyMediaUnlock: PrivacyMediaUnlockUiState? = null,
     val items: List<ChatDetailListItem> = emptyList(),
     val hasMore: Boolean = true,
     val isLoading: Boolean = true,
@@ -58,8 +63,16 @@ data class ChatDetailUiState(
     val showFollowAction: Boolean
         get() = !isFollowing && !showFollowedFlash
 
+    /**
+     * Idle + empty draft: video call. IME / emoji up, or non-empty draft: send.
+     * Independent of free message count.
+     */
     val composerShowsVideoCall: Boolean
-        get() = draft.isBlank() && freeMessageCount > 0
+        get() = draft.isBlank()
+
+    /** Inline VIP unlock card between list and composer. */
+    val showVipUnlockPrompt: Boolean
+        get() = unlockPromptType != null && !isBlockedByMe
 }
 
 sealed interface ChatDetailListItem {
@@ -101,6 +114,15 @@ data class ChatDetailMessageUi(
     val createdAtMillis: Long,
     val timeLabel: String,
     val body: ChatDetailMessageBody,
+)
+
+data class PrivacyMediaUnlockUiState(
+    val messageId: String,
+    val mediaId: Long,
+    val price: Int,
+    val isVideo: Boolean,
+    val dontRemind: Boolean = false,
+    val isUnlocking: Boolean = false,
 )
 
 /** Maps an unlocked image/video bubble into the shared [MediaViewerItem] model. */
@@ -227,11 +249,16 @@ sealed interface ChatDetailIntent {
     data object StartVideoCall : ChatDetailIntent
     data class OpenMedia(val messageId: String) : ChatDetailIntent
     data object DismissMediaPreview : ChatDetailIntent
+    data object DismissPrivacyMediaUnlock : ChatDetailIntent
+    data class PrivacyMediaUnlockDontRemindChanged(val checked: Boolean) : ChatDetailIntent
+    data object ConfirmPrivacyMediaUnlock : ChatDetailIntent
     data class SendRequestedGift(val messageId: String) : ChatDetailIntent
     data class PlayGiftAnimation(val messageId: String) : ChatDetailIntent
     data object DismissGiftAnimation : ChatDetailIntent
     data object DismissVipPayGuide : ChatDetailIntent
     data object PurchaseVipPayGuide : ChatDetailIntent
+    /** Inline VIP unlock card Subscribe — opens the full VIP purchase page. */
+    data object UnlockPromptCtaClick : ChatDetailIntent
     data object DismissCoinPayGuide : ChatDetailIntent
     data class PurchaseCoinPayGuideCoin(val offerId: Long) : ChatDetailIntent
     data class PurchaseCoinPayGuideSale(val offerId: Long) : ChatDetailIntent
@@ -244,6 +271,8 @@ sealed interface ChatDetailEffect {
     data class ShowMessage(val message: String) : ChatDetailEffect
     data object OpenMoreMenu : ChatDetailEffect
     data object OpenStore : ChatDetailEffect
+    /** Inline unlock-card CTA — full VIP purchase page (not the pay-guide sheet). */
+    data object NavigateVipPurchase : ChatDetailEffect
     /** User chose send-image from the plus action sheet; wire media picker next. */
     data object PickSendImage : ChatDetailEffect
     /** User chose send-video from the plus action sheet; wire media picker next. */

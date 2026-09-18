@@ -31,6 +31,12 @@ object Radius {
     val vipPlanCard = 16.dp
     /** VIP pay-guide sheet top corners — Figma 32dp. */
     val vipPayGuideSheet = 32.dp
+    /** Privacy unlock sheet top corners — Figma 502:3651 ≈ 18dp. */
+    val privacyUnlockSheet = 18.dp
+    /** Privacy unlock CTA — Figma 502:3658 ≈ 15.24dp. */
+    val privacyUnlockCta = 15.dp
+    /** Privacy unlock don't-remind checkbox — Figma ≈ 4.36dp. */
+    val privacyUnlockRemindCheck = 4.dp
     /** In-call gift-sent tip end corners — Figma ~32dp. */
     val callInCallGiftSentTipEnd = 32.dp
     /** Call hangup speech bubble — Figma 13dp. */

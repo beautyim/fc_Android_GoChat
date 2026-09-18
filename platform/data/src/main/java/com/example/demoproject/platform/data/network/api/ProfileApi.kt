@@ -20,6 +20,10 @@ import com.example.demoproject.platform.data.network.dto.HomeMyResponseDto
 import com.example.demoproject.platform.data.network.dto.NewVisitorRequestDto
 import com.example.demoproject.platform.data.network.dto.NewVisitorSummaryDto
 import com.example.demoproject.platform.data.network.dto.PrivacyUpdateRequestDto
+import com.example.demoproject.platform.data.network.dto.PrivateAlbumCheckRequestDto
+import com.example.demoproject.platform.data.network.dto.PrivateAlbumCheckResponseDto
+import com.example.demoproject.platform.data.network.dto.PrivateAlbumUnlockRequestDto
+import com.example.demoproject.platform.data.network.dto.PrivateAlbumUnlockResponseDto
 import com.example.demoproject.platform.data.network.dto.ProfileChangePasswordRequestDto
 import com.example.demoproject.platform.data.network.dto.ProfileEmailCodeRequestDto
 import com.example.demoproject.platform.data.network.dto.ProfileEmailCodeResponseDto
@@ -66,6 +70,18 @@ interface ProfileApi {
     /** `album/add` — add photos/videos into album. */
     @POST("album/add")
     suspend fun addAlbum(@Body body: AlbumAddRequestDto): ApiResponse<Unit?>
+
+    /** `private-album/check` — unlock status + remaining counts / balance. */
+    @POST("private-album/check")
+    suspend fun checkPrivateAlbum(
+        @Body body: PrivateAlbumCheckRequestDto,
+    ): ApiResponse<PrivateAlbumCheckResponseDto>
+
+    /** `private-album/unlock` — unlock a private album media item. */
+    @POST("private-album/unlock")
+    suspend fun unlockPrivateAlbum(
+        @Body body: PrivateAlbumUnlockRequestDto,
+    ): ApiResponse<PrivateAlbumUnlockResponseDto?>
 
     /** `gift/send-list` — paged gifts sent by the current or target user. */
     @POST("gift/send-list")

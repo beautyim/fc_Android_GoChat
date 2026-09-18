@@ -32,11 +32,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -48,18 +50,18 @@ import androidx.compose.ui.tooling.preview.PreviewFontScale
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
 import androidx.compose.ui.unit.Dp
 import com.example.demoproject.ui.designsystem.DemoColors
-import com.example.demoproject.ui.designsystem.DemoGradients
 import com.example.demoproject.ui.designsystem.DemoTheme
 import com.example.demoproject.ui.foundation.ComponentSize
 import com.example.demoproject.ui.foundation.Spacing
 import com.example.demoproject.ui.foundation.TextSize
 import kotlin.math.PI
+import kotlin.math.cos
 import kotlin.math.sin
 
 /**
  * Full-bleed "Matching…" state shown while `/match/start` is in flight
  * (Figma 1:1442). Per the design annotation (Figma 203:6836) the outer bands
- * ripple outwards and the bright arc spins around the core.
+ * ripple outwards and a bright head sweeps the core ring, painting a fading trail.
  */
 @Composable
 fun MatchSearchingOverlay(
@@ -189,9 +191,8 @@ private fun MatchSearchingRadar(modifier: Modifier = Modifier) {
 
         MatchSearchingArc(
             scale = scale,
-            modifier = Modifier
-                .size(ComponentSize.matchSearchingArcRing * scale)
-                .graphicsLayer { rotationZ = spin },
+            headAngleDegrees = ArcAnchorDegrees + spin,
+            modifier = Modifier.size(ComponentSize.matchSearchingArcRing * scale),
         )
 
         Image(
@@ -256,47 +257,62 @@ private fun MatchSearchingRadar(modifier: Modifier = Modifier) {
 }
 
 /**
- * Bright half-ring with the two glow caps at its ends. Kept in its own square
- * box the size of the arc circle so the gradient runs along the arc's vertical
- * axis exactly as in Figma, and so the caller can spin the whole group.
+ * Core-ring sweep: a bright head orbits and paints a trail that fades out until
+ * the head sweeps that stretch again.
+ *
+ * Stroke is centred on the box edge (overflows by half its width) — same as the
+ * Figma vector. Kept in its own square so the sweep gradient is ring-local.
  */
 @Composable
 private fun MatchSearchingArc(
     scale: Float,
+    headAngleDegrees: Float,
     modifier: Modifier = Modifier,
 ) {
-    val arcBrush = DemoGradients.matchSearchingArc
+    val arcHead = DemoColors.matchSearchingArcStart
+    val arcTail = DemoColors.matchSearchingArcEnd
     val arcStroke = ComponentSize.matchSearchingArcStroke
-    Box(modifier = modifier) {
+    val leadingDot = ComponentSize.matchSearchingArcDotLeading * scale
+    BoxWithConstraints(modifier = modifier, contentAlignment = Alignment.Center) {
+        val ringRadius = maxWidth / 2
         Canvas(modifier = Modifier.fillMaxSize()) {
-            // Stroke is centred on the box edge, so it overflows by half its
-            // width on both sides — the same as the Figma vector.
-            drawArc(
-                brush = arcBrush,
-                startAngle = ArcStartDegrees,
-                sweepAngle = ArcSweepDegrees,
-                useCenter = false,
-                style = Stroke(width = arcStroke.toPx() * scale, cap = StrokeCap.Round),
-            )
+            val strokeWidth = arcStroke.toPx() * scale
+            val center = Offset(size.width / 2f, size.height / 2f)
+            val radius = size.minDimension / 2f
+            val trailFraction = ArcTrailDegrees / FullTurnDegrees
+            // Sweep gradient runs clockwise from 3 o'clock; rotate so 0 sits at
+            // the faded tail and [trailFraction] lands on the moving head.
+            rotate(
+                degrees = headAngleDegrees - ArcTrailDegrees,
+                pivot = center,
+            ) {
+                drawCircle(
+                    brush = Brush.sweepGradient(
+                        colorStops = arrayOf(
+                            0f to arcTail.copy(alpha = 0f),
+                            trailFraction * 0.45f to arcTail.copy(alpha = 0.35f),
+                            trailFraction to arcHead,
+                            (trailFraction + 0.002f).coerceAtMost(1f) to Color.Transparent,
+                            1f to Color.Transparent,
+                        ),
+                        center = center,
+                    ),
+                    radius = radius,
+                    center = center,
+                    style = Stroke(width = strokeWidth, cap = StrokeCap.Round),
+                )
+            }
         }
-        val leadingDot = ComponentSize.matchSearchingArcDotLeading * scale
-        val trailingDot = ComponentSize.matchSearchingArcDotTrailing * scale
         Image(
             painter = painterResource(R.drawable.match_searching_arc_dot_leading),
             contentDescription = null,
             modifier = Modifier
-                .align(Alignment.TopCenter)
-                .offset(y = -leadingDot / 2)
+                .align(Alignment.Center)
+                .offset(
+                    x = ringRadius * cos(headAngleDegrees * PI / 180.0).toFloat(),
+                    y = ringRadius * sin(headAngleDegrees * PI / 180.0).toFloat(),
+                )
                 .size(leadingDot),
-            contentScale = ContentScale.Fit,
-        )
-        Image(
-            painter = painterResource(R.drawable.match_searching_arc_dot_trailing),
-            contentDescription = null,
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .offset(y = trailingDot / 2)
-                .size(trailingDot),
             contentScale = ContentScale.Fit,
         )
     }
@@ -339,9 +355,10 @@ private const val WaveDurationMillis = 2600
 private const val SpinDurationMillis = 3600
 private const val FullTurnDegrees = 360f
 
-/** Compose angles start at 3 o'clock; the arc runs top → right → bottom. */
-private const val ArcStartDegrees = -90f
-private const val ArcSweepDegrees = 180f
+/** Compose angles start at 3 o'clock; the head starts at the top and sweeps clockwise. */
+private const val ArcAnchorDegrees = -90f
+/** How far behind the head the painted trail stays visible before it fades out. */
+private const val ArcTrailDegrees = 270f
 
 /** Sparkle centres as a fraction of the field side, from its centre (172:3635…3639). */
 private val MatchSearchingSparks = listOf(

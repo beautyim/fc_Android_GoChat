@@ -91,4 +91,12 @@
     <string name="chat_detail_greeting_text">hi～</string>
     <string name="chat_detail_cd_greeting">Enviar saudação</string>
     <string name="chat_detail_cd_quick_gift">Enviar presente %1$s</string>
+    <string name="chat_detail_privacy_unlock_pending">O desbloqueio ainda não está disponível. Tente novamente mais tarde.</string>
+    <string name="chat_detail_privacy_unlock_failed">Não foi possível desbloquear esta mídia. Tente novamente.</string>
+
+    <string name="chat_detail_unlock_waiting_title">Ela está esperando sua resposta</string>
+    <string name="chat_detail_unlock_waiting_subtitle">Assine para continuar conversando com ela</string>
+    <string name="chat_detail_unlock_user_title">Quer conversar com ela?</string>
+    <string name="chat_detail_unlock_user_subtitle">Assine para continuar conversando com ela</string>
+    <string name="chat_detail_unlock_cta">Assinar</string>
 </resources>

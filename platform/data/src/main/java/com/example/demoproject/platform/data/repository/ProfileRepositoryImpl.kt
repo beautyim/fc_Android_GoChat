@@ -26,6 +26,11 @@ import com.example.demoproject.platform.data.network.api.ProfileApi
 import com.example.demoproject.platform.data.network.dto.UserDto
 import com.example.demoproject.platform.data.network.dto.UserSearchRequestDto
 import com.example.demoproject.platform.data.network.mapper.toDomain
+import com.example.demoproject.platform.data.network.dto.PrivateAlbumCheckRequestDto
+import com.example.demoproject.platform.data.network.dto.PrivateAlbumCheckResponseDto
+import com.example.demoproject.platform.data.network.dto.PrivateAlbumUnlockRequestDto
+import com.example.demoproject.platform.data.network.dto.PrivateAlbumUnlockResponseDto
+import com.example.demoproject.platform.data.wallet.AccountBalanceStore
 import com.example.demoproject.platform.network.result.AppResult
 import com.example.demoproject.platform.network.result.map
 import com.example.demoproject.platform.network.result.onSuccessSuspend
@@ -45,6 +50,7 @@ class ProfileRepositoryImpl @Inject constructor(
     private val profileApi: ProfileApi,
     private val userDao: UserCache,
     private val mediaUploadService: MediaUploadService,
+    private val accountBalanceStore: AccountBalanceStore,
 ) : ProfileRepository {
 
     override fun observeCachedUser(id: String): Flow<User?> =
@@ -121,6 +127,68 @@ class ProfileRepositoryImpl @Inject constructor(
 
     override suspend fun getMyPrivateUnlockCounts(): AppResult<MyPrivateUnlockCounts> =
         AppResult.Success(MyPrivateUnlockCounts(photoCount = 0, videoCount = 0))
+
+    override suspend fun checkPrivateAlbum(
+        coachUid: Long,
+        mediaId: Long,
+        mtime: Long,
+    ): AppResult<PrivateAlbumCheckResult> {
+        if (coachUid <= 0L || mediaId <= 0L) {
+            return AppResult.BizError(
+                code = AppResult.CODE_EMPTY_PAYLOAD,
+                message = AppResult.DEFAULT_EMPTY_PAYLOAD_MESSAGE,
+            )
+        }
+        return safeApiCall {
+            profileApi.checkPrivateAlbum(
+                PrivateAlbumCheckRequestDto(
+                    coachUid = coachUid,
+                    mediaId = mediaId,
+                    mtime = mtime,
+                ),
+            )
+        }.map { dto ->
+            dto.toCheckResult(fallbackMediaId = mediaId)
+        }.onSuccessSuspend { result ->
+            accountBalanceStore.update(result.balance)
+        }
+    }
+
+    override suspend fun unlockPrivateAlbum(
+        coachUid: Long,
+        mediaId: Long,
+        fromType: Int,
+        mtime: Long,
+        useType: Int,
+        rechargeFromType: Int,
+        isAll: Boolean,
+        feedsId: Long,
+    ): AppResult<PrivateAlbumUnlockResult> {
+        if (coachUid <= 0L || (mediaId <= 0L && feedsId <= 0L)) {
+            return AppResult.BizError(
+                code = AppResult.CODE_EMPTY_PAYLOAD,
+                message = AppResult.DEFAULT_EMPTY_PAYLOAD_MESSAGE,
+            )
+        }
+        return safeApiCallNullable {
+            profileApi.unlockPrivateAlbum(
+                PrivateAlbumUnlockRequestDto(
+                    coachUid = coachUid,
+                    mediaId = mediaId.takeIf { it > 0L }?.toString().orEmpty(),
+                    fromType = fromType,
+                    mtime = mtime,
+                    isAll = if (isAll) 1 else 0,
+                    rechargeFromType = rechargeFromType,
+                    useType = useType,
+                    feedsId = feedsId,
+                ),
+            )
+        }.map { dto ->
+            dto.toUnlockResult()
+        }.onSuccessSuspend { result ->
+            result.balance?.let { accountBalanceStore.update(it) }
+        }
+    }
 
     override suspend fun getEditProfileData(): AppResult<EditProfileData> =
         safeApiCall { profileApi.getEditProfileInfo() }
@@ -530,6 +598,44 @@ private fun EditProfileTagDto.toDomain(): EditProfileTag =
         id = id,
         name = name,
     )
+
+private fun PrivateAlbumUnlockResponseDto?.toUnlockResult(): PrivateAlbumUnlockResult {
+    if (this == null) return PrivateAlbumUnlockResult()
+    return PrivateAlbumUnlockResult(
+        balance = balance.takeIf { hasBalance },
+        photoCount = photoCount.takeIf { hasPhotoCount },
+        videoCount = videoCount.takeIf { hasVideoCount },
+    )
+}
+
+/**
+ * Maps `private-album/check` into domain URLs. Unlocked payloads nest CDN keys under
+ * `origin_media_info` (`url` / `cover_url`); locked payloads may only carry price there.
+ */
+private fun PrivateAlbumCheckResponseDto.toCheckResult(
+    fallbackMediaId: Long,
+): PrivateAlbumCheckResult {
+    val isVideo = resolvedMediaType == AlbumMediaDto.MEDIA_VIDEO
+    val rawPlay = resolvedRawUrl
+    val rawImage = resolvedRawImageUrl ?: rawPlay.takeUnless { isVideo }
+    val rawCover = resolvedRawCoverUrl
+    return PrivateAlbumCheckResult(
+        photoCount = photoCount.coerceAtLeast(0),
+        videoCount = videoCount.coerceAtLeast(0),
+        balance = balance.coerceAtLeast(0),
+        isUnlocked = isUnlock,
+        viewPrice = resolvedViewPrice.coerceAtLeast(0),
+        mediaId = resolvedMediaId.takeIf { it > 0L } ?: fallbackMediaId,
+        playUrl = if (isVideo) {
+            rawPlay.toChatBinaryUrlOrNull()
+        } else {
+            null
+        },
+        imageUrl = (rawImage ?: rawPlay.takeUnless { isVideo }).toPicUrlOrNull(),
+        coverUrl = rawCover.toPicUrlOrNull()
+            ?: rawImage.takeUnless { isVideo }?.toPicUrlOrNull(),
+    )
+}
 
 private fun AlbumMediaDto.toAlbumPhoto(): AlbumPhoto? {
     val thumbnail = smallPhotoUrl.toPicUrlOrNull()

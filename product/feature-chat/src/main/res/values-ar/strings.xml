@@ -91,4 +91,12 @@
     <string name="chat_detail_greeting_text">hi～</string>
     <string name="chat_detail_cd_greeting">إرسال تحية</string>
     <string name="chat_detail_cd_quick_gift">إرسال هدية %1$s</string>
+    <string name="chat_detail_privacy_unlock_pending">فتح المحتوى غير متاح بعد. يُرجى المحاولة لاحقًا.</string>
+    <string name="chat_detail_privacy_unlock_failed">تعذر فتح هذا المحتوى. يُرجى المحاولة مرة أخرى.</string>
+
+    <string name="chat_detail_unlock_waiting_title">هي بانتظار ردك</string>
+    <string name="chat_detail_unlock_waiting_subtitle">اشترك لمواصلة الدردشة معها</string>
+    <string name="chat_detail_unlock_user_title">هل تريد الدردشة معها؟</string>
+    <string name="chat_detail_unlock_user_subtitle">اشترك لمواصلة الدردشة معها</string>
+    <string name="chat_detail_unlock_cta">اشترك</string>
 </resources>

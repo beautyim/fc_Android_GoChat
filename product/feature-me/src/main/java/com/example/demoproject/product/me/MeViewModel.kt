@@ -66,7 +66,9 @@ class MeViewModel(
             MeIntent.OpenAddCoins -> viewModelScope.launch { _effects.send(MeEffect.OpenStore) }
             MeIntent.OpenVip -> viewModelScope.launch { _effects.send(MeEffect.OpenVip) }
             MeIntent.OpenGift -> emitComingSoon(R.string.me_message_gift_soon)
-            MeIntent.OpenVerification -> emitComingSoon(R.string.me_message_verify_soon)
+            MeIntent.OpenVerification -> viewModelScope.launch {
+                _effects.send(MeEffect.OpenVerification)
+            }
             MeIntent.OpenSettings -> viewModelScope.launch { _effects.send(MeEffect.OpenSettings) }
         }
     }
